@@ -1,0 +1,6647 @@
+{
+  "scope": "Bounded original evidence for campaign scenes with an authored stock player.\n\nNo original files or live careers are modified. Archive traversal is read-only.\nThe original simulator's stock/external selection slice and return loop execute\nwith resource/file services isolated. The original shell's untouched deployment\nimport and player-ejection selectors execute with declared records and lists.\nThis is not a mission completion or a whole-shell launch capture.\n",
+  "pass_all": true,
+  "inputs": {
+    "dos_sim_elf": {
+      "path": "/workspace/scratch/bd71f0e9c389/originals/MERCS_MW2_DOS.elf",
+      "sha256": "21691acc117165269baa37974a37cef07bb23b9437f6bb4d5c4d18e9d7c06f51"
+    },
+    "windows_sim": {
+      "path": "/workspace/scratch/bd71f0e9c389/Mercs-game/cd/MERCS/MERCSW.DLL",
+      "sha256": "bc375715180221e42fa5970ef966854fc691f076762fb9c71df846b04dfb69ef"
+    },
+    "dos_shell_elf": {
+      "path": "/workspace/scratch/bd71f0e9c389/originals/MERCS_MW2SHELL_DOS.elf",
+      "sha256": "cb355cf34234aa5b209b85c2c1e8e5bd1f3f4b2a2541da03a170e019c87f526c"
+    },
+    "windows_shell": {
+      "path": "/workspace/scratch/bd71f0e9c389/Mercs-game/cd/MERCS/MW2SHELL.DLL",
+      "sha256": "f59de3cce3e7ec16cc9dc1d539cf19d2b8d1673f107a3b0d8f280c069d2d1bf0"
+    }
+  },
+  "archives": {
+    "dos": {
+      "path": "/workspace/scratch/bd71f0e9c389/Mercs-game/cd/MERCS/MW2.PRJ",
+      "bytes": 41479843,
+      "sha256": "75d905d0544e0031517a70003ea69d8798d46bb5f68106f25ba0cdaf51500a55"
+    },
+    "3dfx": {
+      "path": "/workspace/scratch/bd71f0e9c389/Mercs-game/3d/models.prj",
+      "bytes": 51841737,
+      "sha256": "6df836e267ffa5e48b59226754330d4b6134302dda4983444de1a41be9704007"
+    },
+    "direct3d": {
+      "path": "/workspace/scratch/bd71f0e9c389/Mercs-game/titanium/MW2.PRJ",
+      "bytes": 51841737,
+      "sha256": "1f4410c0b80f5ab62bff64f1919b44e9123d8822365c4e77fd0d10a7fa178985"
+    }
+  },
+  "missions": {
+    "dos": {
+      "MCC4CAM1": {
+        "campaign": {
+          "name": "MCC4CAM1",
+          "id": 2270,
+          "payload_bytes": 3236,
+          "payload_sha256": "5a1d6a3a75601c31c862e49c0c5979af5139a76774f97daba885de23f5c58161"
+        },
+        "scene": "MCC4SCN1",
+        "briefing_movie": "MCC4BRF1",
+        "kind": 2,
+        "orders_resource": {
+          "name": "MCC4BRF1",
+          "id": 937,
+          "payload_bytes": 2592,
+          "payload_sha256": "0893885de458019e538f3383abd7360f62caa2c2249a62abc65d1f49d510aade"
+        },
+        "header_string_44": "diz3",
+        "header_string_60": "diz4",
+        "successors": {
+          "SLST": [
+            "iva1cam1",
+            "masBcam1",
+            "ran7cam1"
+          ],
+          "FLST": [
+            "iva1cam1",
+            "masBcam1",
+            "ran7cam1"
+          ]
+        },
+        "cpgn_subchunks": [
+          {
+            "tag": "SLST",
+            "offset_in_bwd": 212,
+            "bytes": 56
+          },
+          {
+            "tag": "FLST",
+            "offset_in_bwd": 268,
+            "bytes": 56
+          },
+          {
+            "tag": "MHLT",
+            "offset_in_bwd": 324,
+            "bytes": 272
+          },
+          {
+            "tag": "NEWS",
+            "offset_in_bwd": 596,
+            "bytes": 1624
+          },
+          {
+            "tag": "PTLT",
+            "offset_in_bwd": 2220,
+            "bytes": 40
+          },
+          {
+            "tag": "THLT",
+            "offset_in_bwd": 2260,
+            "bytes": 24
+          },
+          {
+            "tag": "CTNT",
+            "offset_in_bwd": 2284,
+            "bytes": 136
+          },
+          {
+            "tag": "WNLT",
+            "offset_in_bwd": 2420,
+            "bytes": 308
+          },
+          {
+            "tag": "AMMO",
+            "offset_in_bwd": 2728,
+            "bytes": 168
+          },
+          {
+            "tag": "EQUP",
+            "offset_in_bwd": 2896,
+            "bytes": 248
+          },
+          {
+            "tag": "SWNL",
+            "offset_in_bwd": 3144,
+            "bytes": 56
+          },
+          {
+            "tag": "SMHL",
+            "offset_in_bwd": 3200,
+            "bytes": 36
+          }
+        ],
+        "salvage_mechs": [
+          {
+            "name": "PNT51STD",
+            "threshold": 30,
+            "value": 2400000,
+            "year": 3044
+          }
+        ],
+        "external_userstar_count": 0,
+        "players": [
+          {
+            "record": "MCC4STAR",
+            "chunk_offset": 52,
+            "mek_id": 140,
+            "skeleton_id": 78,
+            "table": 0,
+            "leader": 1,
+            "control": 0,
+            "skeleton": "stalker",
+            "loadout": "stk00std",
+            "display_name": "Raider1",
+            "pilot": "",
+            "flags": 1024,
+            "mek_source": {
+              "name": "STK00STD",
+              "id": 140,
+              "payload_bytes": 514,
+              "payload_sha256": "87c952ee6a89cedd48cf8c3b38efd42c9f663be996d69a9533b88524df6f1105"
+            }
+          }
+        ],
+        "include_edges": [
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4BRF1",
+            "id": 937,
+            "chunk_offset": 52
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4BRF2",
+            "id": 936,
+            "chunk_offset": 72
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4DBFF",
+            "id": 935,
+            "chunk_offset": 92
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4DBFS",
+            "id": 934,
+            "chunk_offset": 112
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4FRM1",
+            "id": 933,
+            "chunk_offset": 132
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "FORMATNS",
+            "id": 131,
+            "chunk_offset": 152
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4STAR",
+            "id": 932,
+            "chunk_offset": 9266
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4USR1",
+            "id": 931,
+            "chunk_offset": 9286
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4USR2",
+            "id": 930,
+            "chunk_offset": 9306
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4TAN1",
+            "id": 929,
+            "chunk_offset": 9326
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ENS1",
+            "id": 928,
+            "chunk_offset": 9346
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ENS2",
+            "id": 927,
+            "chunk_offset": 9366
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ENS3",
+            "id": 926,
+            "chunk_offset": 9386
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ENS4",
+            "id": 925,
+            "chunk_offset": 9406
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ENS5",
+            "id": 924,
+            "chunk_offset": 9426
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4PLT1",
+            "id": 923,
+            "chunk_offset": 9446
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4MAP1",
+            "id": 899,
+            "chunk_offset": 9466
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MW2_SHT1",
+            "id": 133,
+            "chunk_offset": 9486
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4WLD1",
+            "id": 922,
+            "chunk_offset": 9506
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MW2_XPL1",
+            "id": 132,
+            "chunk_offset": 9526
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST01",
+            "id": 921,
+            "chunk_offset": 9546
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST11",
+            "id": 920,
+            "chunk_offset": 9566
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST21",
+            "id": 919,
+            "chunk_offset": 9586
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST31",
+            "id": 918,
+            "chunk_offset": 9606
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST41",
+            "id": 917,
+            "chunk_offset": 9626
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST51",
+            "id": 916,
+            "chunk_offset": 9646
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST61",
+            "id": 915,
+            "chunk_offset": 9666
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST71",
+            "id": 914,
+            "chunk_offset": 9686
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST81",
+            "id": 913,
+            "chunk_offset": 9706
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4NAV1",
+            "id": 912,
+            "chunk_offset": 9726
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4NAV2",
+            "id": 911,
+            "chunk_offset": 9746
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOU1",
+            "id": 910,
+            "chunk_offset": 9766
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOU2",
+            "id": 909,
+            "chunk_offset": 9786
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOU3",
+            "id": 908,
+            "chunk_offset": 9806
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOU4",
+            "id": 907,
+            "chunk_offset": 9826
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOU5",
+            "id": 906,
+            "chunk_offset": 9846
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOU6",
+            "id": 905,
+            "chunk_offset": 9866
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOE1",
+            "id": 904,
+            "chunk_offset": 9886
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOE2",
+            "id": 903,
+            "chunk_offset": 9906
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOE3",
+            "id": 902,
+            "chunk_offset": 9926
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4LVE1",
+            "id": 901,
+            "chunk_offset": 9946
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4LVE2",
+            "id": 900,
+            "chunk_offset": 9966
+          },
+          {
+            "parent": "MCC4PLT1",
+            "child": "BR0FPAL1",
+            "id": 778,
+            "chunk_offset": 328
+          },
+          {
+            "parent": "MCC4PLT1",
+            "child": "MCC4MAP1",
+            "id": 899,
+            "chunk_offset": 348
+          },
+          {
+            "parent": "MW2_SHT1",
+            "child": "MW2_XPL1",
+            "id": 132,
+            "chunk_offset": 60
+          },
+          {
+            "parent": "MCC4WLD1",
+            "child": "MCC4ARE1",
+            "id": 898,
+            "chunk_offset": 52
+          },
+          {
+            "parent": "MCC4WLD1",
+            "child": "MCC4ARE2",
+            "id": 897,
+            "chunk_offset": 72
+          },
+          {
+            "parent": "MCC4WLD1",
+            "child": "MCC4ARE4",
+            "id": 896,
+            "chunk_offset": 136
+          },
+          {
+            "parent": "MCC4WLD1",
+            "child": "MCC4ARE5",
+            "id": 895,
+            "chunk_offset": 200
+          }
+        ],
+        "traversed_records": [
+          {
+            "name": "MCC4SCN1",
+            "id": 938,
+            "payload_bytes": 9986,
+            "payload_sha256": "fb1c81a6d70eae722f2f5a0bf2d76f0ba4d1170b02c26c15902da300f5d21bb9"
+          },
+          {
+            "name": "MCC4BRF1",
+            "id": 937,
+            "payload_bytes": 2592,
+            "payload_sha256": "0893885de458019e538f3383abd7360f62caa2c2249a62abc65d1f49d510aade"
+          },
+          {
+            "name": "MCC4BRF2",
+            "id": 936,
+            "payload_bytes": 148,
+            "payload_sha256": "0648c0702040fd4f18f12983eaef7a29ed0cccb50e6be816b9fdc65f2ab96769"
+          },
+          {
+            "name": "MCC4DBFF",
+            "id": 935,
+            "payload_bytes": 1968,
+            "payload_sha256": "ec0af0e559bc491c0b7676f65f606def9cc476946cc24d77a90dfc2964aa783c"
+          },
+          {
+            "name": "MCC4DBFS",
+            "id": 934,
+            "payload_bytes": 2412,
+            "payload_sha256": "c32f5a8e027645118a2e68ee654cb0cbceea267c4cdac1900f099b98f609ea01"
+          },
+          {
+            "name": "MCC4FRM1",
+            "id": 933,
+            "payload_bytes": 136,
+            "payload_sha256": "c5db19b6bf012deaea38c9571d0db556e7a1508e3db4fd67f57e90fadf3c6996"
+          },
+          {
+            "name": "FORMATNS",
+            "id": 131,
+            "payload_bytes": 892,
+            "payload_sha256": "29b67e37b652ddc6e7d6e5cc8d5619d830b0f6b312c7f1d1f183c4518fbbea82"
+          },
+          {
+            "name": "MCC4STAR",
+            "id": 932,
+            "payload_bytes": 152,
+            "payload_sha256": "87706eae26204d0c5a769763fda10e7f894e58b59ce3137e457fc9123102c2ad"
+          },
+          {
+            "name": "MCC4USR1",
+            "id": 931,
+            "payload_bytes": 252,
+            "payload_sha256": "1a538e7a88d0550159bae94ae8b5678d0264c2b54c1da5078379986ee745d551"
+          },
+          {
+            "name": "MCC4USR2",
+            "id": 930,
+            "payload_bytes": 152,
+            "payload_sha256": "36aa8c50c430b5a6e4da183565dabbce1a6ae466c063787a2ada8da9fd4fc8cd"
+          },
+          {
+            "name": "MCC4TAN1",
+            "id": 929,
+            "payload_bytes": 252,
+            "payload_sha256": "a2fe27f97be8798b5155dc0b98ea8dbb6e901c4ff953280e5c40fa6a41388f9f"
+          },
+          {
+            "name": "MCC4ENS1",
+            "id": 928,
+            "payload_bytes": 52,
+            "payload_sha256": "c9733dbc94b0cfeea9fff12229605db889d4fee8a6e85e00c14ad71662b86b11"
+          },
+          {
+            "name": "MCC4ENS2",
+            "id": 927,
+            "payload_bytes": 152,
+            "payload_sha256": "0ba38dcfa96408949671c46bdde81dfcbe609fd7a14102ddd0f28a75805fbd17"
+          },
+          {
+            "name": "MCC4ENS3",
+            "id": 926,
+            "payload_bytes": 152,
+            "payload_sha256": "5c1bce6fb99f39e6df252c26f623a2375077b293b51890e115ce7358c74c853f"
+          },
+          {
+            "name": "MCC4ENS4",
+            "id": 925,
+            "payload_bytes": 252,
+            "payload_sha256": "70307f80be41aab9d63141fea7dde091a1d8aac5e54f9b1d9683fcca2cd791e6"
+          },
+          {
+            "name": "MCC4ENS5",
+            "id": 924,
+            "payload_bytes": 252,
+            "payload_sha256": "8832989543fd19138467300ba706219d4d4d45421c568494f2b062cd9cd5ba42"
+          },
+          {
+            "name": "MCC4PLT1",
+            "id": 923,
+            "payload_bytes": 368,
+            "payload_sha256": "09c0bb47a5c21dbb57181e05c1c8a896807fa2240315583083554c32219528e1"
+          },
+          {
+            "name": "MCC4MAP1",
+            "id": 899,
+            "payload_bytes": 14768,
+            "payload_sha256": "faf79db99c8f3c46ab18e3f0eecb8e497521440e7eb1a5d37281d5a60d287496"
+          },
+          {
+            "name": "MW2_SHT1",
+            "id": 133,
+            "payload_bytes": 32168,
+            "payload_sha256": "cf903cb095afd6df0fe262d495dcf74f94b503fd68bb4b702411671dfcfc2cad"
+          },
+          {
+            "name": "MCC4WLD1",
+            "id": 922,
+            "payload_bytes": 220,
+            "payload_sha256": "a14f65610898df14d2788e5ba2fb8404a302f09dd9b5606c79f744ee09efbd4b"
+          },
+          {
+            "name": "MW2_XPL1",
+            "id": 132,
+            "payload_bytes": 13016,
+            "payload_sha256": "7f0b1a1916b631c9b5a17ce3aa2af48aeb6cee68fc194576e299e91a7ab4553a"
+          },
+          {
+            "name": "MCC4ST01",
+            "id": 921,
+            "payload_bytes": 132,
+            "payload_sha256": "c4f585955b34038ae6a56174a8aac95201d3a641cf3da2dcdd78a75f70926395"
+          },
+          {
+            "name": "MCC4ST11",
+            "id": 920,
+            "payload_bytes": 132,
+            "payload_sha256": "7344ce35f5653c528425126b2e6eaf5f2b1351085e176f924a1d4365e23e4e4c"
+          },
+          {
+            "name": "MCC4ST21",
+            "id": 919,
+            "payload_bytes": 132,
+            "payload_sha256": "8c45e4a2c19aa81abf78eb1b533df3ae9ce22e47d77cb82ca5a5b62a2d630071"
+          },
+          {
+            "name": "MCC4ST31",
+            "id": 918,
+            "payload_bytes": 132,
+            "payload_sha256": "36d5d5f67f46ac7346396e43e5f8060d194d167ff14230c8db1a1c55f7c15162"
+          },
+          {
+            "name": "MCC4ST41",
+            "id": 917,
+            "payload_bytes": 132,
+            "payload_sha256": "dc9b9785ab7e1396e9d443ed598b6f118fc34c167a20cf7d29246a3799fde255"
+          },
+          {
+            "name": "MCC4ST51",
+            "id": 916,
+            "payload_bytes": 132,
+            "payload_sha256": "283eb23c26520c987fe17fce1180b0ebfdb1f7c0216878c44d0f9602774abcf2"
+          },
+          {
+            "name": "MCC4ST61",
+            "id": 915,
+            "payload_bytes": 132,
+            "payload_sha256": "e847dcd72b59cc4dfaa0b0c9f89da0890f09c56aad4f4294f2beb145f311d2f8"
+          },
+          {
+            "name": "MCC4ST71",
+            "id": 914,
+            "payload_bytes": 132,
+            "payload_sha256": "e87b3f5fc87ac6f57421a67ad2ab6f2d9f53268b9d9b30c83b6987d057f4b8a7"
+          },
+          {
+            "name": "MCC4ST81",
+            "id": 913,
+            "payload_bytes": 132,
+            "payload_sha256": "35f15d19cfd1fb4c599f6b4418b2db28546a076aa1ef19ac888761607fd9635d"
+          },
+          {
+            "name": "MCC4NAV1",
+            "id": 912,
+            "payload_bytes": 132,
+            "payload_sha256": "0138910d237f0737fb0f70beef075ae36915aca67ed3d1fdbc63d28340297785"
+          },
+          {
+            "name": "MCC4NAV2",
+            "id": 911,
+            "payload_bytes": 132,
+            "payload_sha256": "9bd698af016fe359d2b51b90ec521ed457eb7bbcb3520fb21cbba23781f2c94f"
+          },
+          {
+            "name": "MCC4GOU1",
+            "id": 910,
+            "payload_bytes": 132,
+            "payload_sha256": "44cc0e4409e9165698edc7c2cec09efc37e3186c449f0cfc517f5984a9de46ac"
+          },
+          {
+            "name": "MCC4GOU2",
+            "id": 909,
+            "payload_bytes": 132,
+            "payload_sha256": "859f1a2c3922dc067309bb46eac32f7339e2d4178338bf72f431f91f5cf95a53"
+          },
+          {
+            "name": "MCC4GOU3",
+            "id": 908,
+            "payload_bytes": 132,
+            "payload_sha256": "0ea77973511d0b3f3439f6dc501ccd80c90be87a787bbeee8e47cd48da7b9dce"
+          },
+          {
+            "name": "MCC4GOU4",
+            "id": 907,
+            "payload_bytes": 132,
+            "payload_sha256": "6e5035b83e7a92ede345d4f54260215b95cba76f7cec01a31084e6a8aa277af1"
+          },
+          {
+            "name": "MCC4GOU5",
+            "id": 906,
+            "payload_bytes": 132,
+            "payload_sha256": "230c91ab5f5c7e0aeba702f8172756134984e03c8a3b60343dc17e3e7ed0bf3e"
+          },
+          {
+            "name": "MCC4GOU6",
+            "id": 905,
+            "payload_bytes": 132,
+            "payload_sha256": "e8588c9d9e5ece24b12d5d1c2163444e44a966d1a4e12a3878f05c883573cfa1"
+          },
+          {
+            "name": "MCC4GOE1",
+            "id": 904,
+            "payload_bytes": 132,
+            "payload_sha256": "3fbec2fbd141d78d49117c6763c0975c863d41f12831e72a129c585f53290df8"
+          },
+          {
+            "name": "MCC4GOE2",
+            "id": 903,
+            "payload_bytes": 132,
+            "payload_sha256": "7795fced0a50a1cb02d5b284c889848f40a824e2a1c233f09f92ce48a5c417a9"
+          },
+          {
+            "name": "MCC4GOE3",
+            "id": 902,
+            "payload_bytes": 132,
+            "payload_sha256": "94552369dcf46ed3ca0ca3c83305dd7309349992e4c14a1311c5d359c643d615"
+          },
+          {
+            "name": "MCC4LVE1",
+            "id": 901,
+            "payload_bytes": 132,
+            "payload_sha256": "40a66009add8111915a2eee8f7f102b7fb99b5b93bcbb546b11c21353468d096"
+          },
+          {
+            "name": "MCC4LVE2",
+            "id": 900,
+            "payload_bytes": 132,
+            "payload_sha256": "2b4a1587451f1d2a9f4c305f6f3404e36622a9c9d11fd79a07489306fae7d0ea"
+          },
+          {
+            "name": "BR0FPAL1",
+            "id": 778,
+            "payload_bytes": 100,
+            "payload_sha256": "b98b85c9f27b6513d41eb2629cdafd1765f0b4bd3f613d1c4923bde3ac3620d7"
+          },
+          {
+            "name": "MCC4ARE1",
+            "id": 898,
+            "payload_bytes": 14124,
+            "payload_sha256": "0b98eb066964c2c55055a31579ea13e07723b15c91f529854a83128ca4348b31"
+          },
+          {
+            "name": "MCC4ARE2",
+            "id": 897,
+            "payload_bytes": 952,
+            "payload_sha256": "6fa34ac4808663d9fdb6a815be4f21c316363a1a66e00766f9fc31c1b2522f74"
+          },
+          {
+            "name": "MCC4ARE4",
+            "id": 896,
+            "payload_bytes": 836,
+            "payload_sha256": "bafc3fd8c2e15ff17d8078b3e785afb627831a2cd94f4b571b33da6448c0950b"
+          },
+          {
+            "name": "MCC4ARE5",
+            "id": 895,
+            "payload_bytes": 1104,
+            "payload_sha256": "058a23ed13cef5c92618089772477066578f3dfefde1802f5ade7da577a35a92"
+          }
+        ]
+      },
+      "SIG2CAM1": {
+        "campaign": {
+          "name": "SIG2CAM1",
+          "id": 2316,
+          "payload_bytes": 1632,
+          "payload_sha256": "f885bee9161fe8ca6ea913700b5ac534d1d3e2fe0071850fe21f524253f2dd63"
+        },
+        "scene": "SIG2SCN1",
+        "briefing_movie": "NODATA",
+        "kind": 1,
+        "orders_resource": {
+          "name": "SIG2BRF1",
+          "id": 1206,
+          "payload_bytes": 2580,
+          "payload_sha256": "c258d78b6a046323c7528bb20705078236dd02ab379c17cdad00d762b2d28255"
+        },
+        "header_string_44": "diz3",
+        "header_string_60": "diz4",
+        "successors": {
+          "SLST": [
+            "sig3cam1"
+          ],
+          "FLST": [
+            "DEATH"
+          ]
+        },
+        "cpgn_subchunks": [
+          {
+            "tag": "SLST",
+            "offset_in_bwd": 212,
+            "bytes": 24
+          },
+          {
+            "tag": "FLST",
+            "offset_in_bwd": 236,
+            "bytes": 24
+          },
+          {
+            "tag": "MHLT",
+            "offset_in_bwd": 260,
+            "bytes": 584
+          },
+          {
+            "tag": "NEWS",
+            "offset_in_bwd": 844,
+            "bytes": 80
+          },
+          {
+            "tag": "PTLT",
+            "offset_in_bwd": 924,
+            "bytes": 8
+          },
+          {
+            "tag": "THLT",
+            "offset_in_bwd": 932,
+            "bytes": 8
+          },
+          {
+            "tag": "CTNT",
+            "offset_in_bwd": 940,
+            "bytes": 136
+          },
+          {
+            "tag": "WNLT",
+            "offset_in_bwd": 1076,
+            "bytes": 212
+          },
+          {
+            "tag": "EQUP",
+            "offset_in_bwd": 1288,
+            "bytes": 328
+          },
+          {
+            "tag": "SWNL",
+            "offset_in_bwd": 1616,
+            "bytes": 8
+          },
+          {
+            "tag": "SMHL",
+            "offset_in_bwd": 1624,
+            "bytes": 8
+          }
+        ],
+        "salvage_mechs": [],
+        "external_userstar_count": 0,
+        "players": [
+          {
+            "record": "SIG2STAR",
+            "chunk_offset": 52,
+            "mek_id": 116,
+            "skeleton_id": 66,
+            "table": 0,
+            "leader": 1,
+            "control": 0,
+            "skeleton": "pegasus",
+            "loadout": "peg00std",
+            "display_name": "Escaping POW",
+            "pilot": "",
+            "flags": 1024,
+            "mek_source": {
+              "name": "PEG00STD",
+              "id": 116,
+              "payload_bytes": 434,
+              "payload_sha256": "4e46c11309e5c7735ebe4b0558c9e0ea5a215139ae058efcd350b23027bcc8ec"
+            }
+          }
+        ],
+        "include_edges": [
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2BRF1",
+            "id": 1206,
+            "chunk_offset": 52
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2BRF2",
+            "id": 1205,
+            "chunk_offset": 72
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2DBFF",
+            "id": 1204,
+            "chunk_offset": 92
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2DBFS",
+            "id": 1203,
+            "chunk_offset": 112
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "FORMATNS",
+            "id": 131,
+            "chunk_offset": 132
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2FRM1",
+            "id": 1202,
+            "chunk_offset": 152
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2STAR",
+            "id": 1201,
+            "chunk_offset": 7605
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ENS1",
+            "id": 1200,
+            "chunk_offset": 7625
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ENS2",
+            "id": 1199,
+            "chunk_offset": 7645
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ENS3",
+            "id": 1198,
+            "chunk_offset": 7665
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ENS4",
+            "id": 1197,
+            "chunk_offset": 7685
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ENS5",
+            "id": 1196,
+            "chunk_offset": 7705
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NUK1",
+            "id": 1195,
+            "chunk_offset": 7725
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NUK2",
+            "id": 1194,
+            "chunk_offset": 7745
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2TUR1",
+            "id": 1193,
+            "chunk_offset": 7765
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2PLT1",
+            "id": 1192,
+            "chunk_offset": 7785
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2MAP1",
+            "id": 1171,
+            "chunk_offset": 7805
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "MW2_SHT1",
+            "id": 133,
+            "chunk_offset": 7825
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2WLD1",
+            "id": 1191,
+            "chunk_offset": 7845
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "MW2_XPL1",
+            "id": 132,
+            "chunk_offset": 7865
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST01",
+            "id": 1190,
+            "chunk_offset": 7885
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST11",
+            "id": 1189,
+            "chunk_offset": 7905
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST21",
+            "id": 1188,
+            "chunk_offset": 7925
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST31",
+            "id": 1187,
+            "chunk_offset": 7945
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST41",
+            "id": 1186,
+            "chunk_offset": 7965
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST51",
+            "id": 1185,
+            "chunk_offset": 7985
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST61",
+            "id": 1184,
+            "chunk_offset": 8005
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST71",
+            "id": 1183,
+            "chunk_offset": 8025
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST81",
+            "id": 1182,
+            "chunk_offset": 8045
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NAV1",
+            "id": 1181,
+            "chunk_offset": 8065
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NAV2",
+            "id": 1180,
+            "chunk_offset": 8085
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NAV3",
+            "id": 1179,
+            "chunk_offset": 8105
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NAV4",
+            "id": 1178,
+            "chunk_offset": 8125
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NAV5",
+            "id": 1177,
+            "chunk_offset": 8145
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2GOU1",
+            "id": 1176,
+            "chunk_offset": 8165
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2GOU2",
+            "id": 1175,
+            "chunk_offset": 8185
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2GOU3",
+            "id": 1174,
+            "chunk_offset": 8205
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2LVE1",
+            "id": 1173,
+            "chunk_offset": 8225
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2LVE2",
+            "id": 1172,
+            "chunk_offset": 8245
+          },
+          {
+            "parent": "SIG2PLT1",
+            "child": "BR0NPAL1",
+            "id": 829,
+            "chunk_offset": 328
+          },
+          {
+            "parent": "SIG2PLT1",
+            "child": "SIG2MAP1",
+            "id": 1171,
+            "chunk_offset": 348
+          },
+          {
+            "parent": "MW2_SHT1",
+            "child": "MW2_XPL1",
+            "id": 132,
+            "chunk_offset": 60
+          },
+          {
+            "parent": "SIG2WLD1",
+            "child": "SIG2ARE1",
+            "id": 1170,
+            "chunk_offset": 52
+          },
+          {
+            "parent": "SIG2WLD1",
+            "child": "SIG2ARE2",
+            "id": 1169,
+            "chunk_offset": 116
+          }
+        ],
+        "traversed_records": [
+          {
+            "name": "SIG2SCN1",
+            "id": 1207,
+            "payload_bytes": 8265,
+            "payload_sha256": "cbcd04b57e65d3741a1b2041ed65ec5e171b19354abe0f2f35b23a6fd2f8c540"
+          },
+          {
+            "name": "SIG2BRF1",
+            "id": 1206,
+            "payload_bytes": 2580,
+            "payload_sha256": "c258d78b6a046323c7528bb20705078236dd02ab379c17cdad00d762b2d28255"
+          },
+          {
+            "name": "SIG2BRF2",
+            "id": 1205,
+            "payload_bytes": 148,
+            "payload_sha256": "cdd17134547932d947610cc23f665681535a1fc27573e9052b9b2cc82f1ad1d4"
+          },
+          {
+            "name": "SIG2DBFF",
+            "id": 1204,
+            "payload_bytes": 456,
+            "payload_sha256": "62946d575663c1b0d9f8feec866b0346a2d6ffbfbe2af97f69db35d52a83e1fa"
+          },
+          {
+            "name": "SIG2DBFS",
+            "id": 1203,
+            "payload_bytes": 672,
+            "payload_sha256": "f7c51a2faecfd3b554b3cf96a2ed1d9c22b21780c89676fc8ebea6b0a451bcc2"
+          },
+          {
+            "name": "FORMATNS",
+            "id": 131,
+            "payload_bytes": 892,
+            "payload_sha256": "29b67e37b652ddc6e7d6e5cc8d5619d830b0f6b312c7f1d1f183c4518fbbea82"
+          },
+          {
+            "name": "SIG2FRM1",
+            "id": 1202,
+            "payload_bytes": 220,
+            "payload_sha256": "5f3fd2bb408158b3d22080d8323eb92f070e5c77e0f82e3d5a1e96ed464682b7"
+          },
+          {
+            "name": "SIG2STAR",
+            "id": 1201,
+            "payload_bytes": 252,
+            "payload_sha256": "ffe033130c1b10498a8d4109e35dbcbac839c6efdc7cc8ed31e75135fce7919e"
+          },
+          {
+            "name": "SIG2ENS1",
+            "id": 1200,
+            "payload_bytes": 152,
+            "payload_sha256": "1ec3f661d5b2cc783354adf1e2175b1203b5143b383f9e58c0359a8ef55f5f50"
+          },
+          {
+            "name": "SIG2ENS2",
+            "id": 1199,
+            "payload_bytes": 152,
+            "payload_sha256": "53a71bbc29c350b9a2237f48a0bec0ba32733ad385cfa79094db7a625d92d61d"
+          },
+          {
+            "name": "SIG2ENS3",
+            "id": 1198,
+            "payload_bytes": 52,
+            "payload_sha256": "c9733dbc94b0cfeea9fff12229605db889d4fee8a6e85e00c14ad71662b86b11"
+          },
+          {
+            "name": "SIG2ENS4",
+            "id": 1197,
+            "payload_bytes": 152,
+            "payload_sha256": "86e8b1f03c54d9d9e60605d36f536d2a1873f25f057371fd5be0695c755aa63e"
+          },
+          {
+            "name": "SIG2ENS5",
+            "id": 1196,
+            "payload_bytes": 152,
+            "payload_sha256": "90e4d9e90c33e8b580633b7725075e69fc867b138c90df9b3da1dbe5c14fdd5d"
+          },
+          {
+            "name": "SIG2NUK1",
+            "id": 1195,
+            "payload_bytes": 252,
+            "payload_sha256": "26d2ee4c1cffa36c39b8e1cba9a06dbf75147634bbad3e5f62151638e30766b2"
+          },
+          {
+            "name": "SIG2NUK2",
+            "id": 1194,
+            "payload_bytes": 252,
+            "payload_sha256": "670705eee4c27180062ace3e5e31252faad3751fb12ce1129a705d139f50e841"
+          },
+          {
+            "name": "SIG2TUR1",
+            "id": 1193,
+            "payload_bytes": 252,
+            "payload_sha256": "90fa5f10f16a26f1159013e684cf214dc2f90eef9e4c4ad8ba33c471e2d908fa"
+          },
+          {
+            "name": "SIG2PLT1",
+            "id": 1192,
+            "payload_bytes": 368,
+            "payload_sha256": "d558ae6ae9dbd135a112dc4c325992de5463c7bbc7255e7ab9142b1598fadbcd"
+          },
+          {
+            "name": "SIG2MAP1",
+            "id": 1171,
+            "payload_bytes": 14768,
+            "payload_sha256": "872099e3607aad680b2d4968454a8f0ec32ffa3e2d0dde3a04f2be8c1f76e68a"
+          },
+          {
+            "name": "MW2_SHT1",
+            "id": 133,
+            "payload_bytes": 32168,
+            "payload_sha256": "cf903cb095afd6df0fe262d495dcf74f94b503fd68bb4b702411671dfcfc2cad"
+          },
+          {
+            "name": "SIG2WLD1",
+            "id": 1191,
+            "payload_bytes": 136,
+            "payload_sha256": "1bf507bf48a4af9ce60d9b58798a00d167ef4cdd4f69093291c4281fd32503a8"
+          },
+          {
+            "name": "MW2_XPL1",
+            "id": 132,
+            "payload_bytes": 13016,
+            "payload_sha256": "7f0b1a1916b631c9b5a17ce3aa2af48aeb6cee68fc194576e299e91a7ab4553a"
+          },
+          {
+            "name": "SIG2ST01",
+            "id": 1190,
+            "payload_bytes": 132,
+            "payload_sha256": "c2e72003bedc22664d68d29d299a605dbe61cdb87b5d6f3effc217948644702b"
+          },
+          {
+            "name": "SIG2ST11",
+            "id": 1189,
+            "payload_bytes": 132,
+            "payload_sha256": "9dadd9ecd7ad87cdbc7389519107522114ccb288b0decfe3292b3925b8def9b5"
+          },
+          {
+            "name": "SIG2ST21",
+            "id": 1188,
+            "payload_bytes": 132,
+            "payload_sha256": "e2a0c2b5ffec97ccdfc71370150504e53d15c50bbdd5528ddf8966f1176a42ec"
+          },
+          {
+            "name": "SIG2ST31",
+            "id": 1187,
+            "payload_bytes": 132,
+            "payload_sha256": "9a7a84e51f17554cead0b13a53312854a68900c5281e5b34106b2a996ae77de0"
+          },
+          {
+            "name": "SIG2ST41",
+            "id": 1186,
+            "payload_bytes": 132,
+            "payload_sha256": "c19422ebbec5c9d6346fadb6f71cd3beb1b54f3998c2b3475fb19e24618674cc"
+          },
+          {
+            "name": "SIG2ST51",
+            "id": 1185,
+            "payload_bytes": 132,
+            "payload_sha256": "c80c76284b04112857d47c98fe58084a6ab9830f1f492b5b62e28d53acb38536"
+          },
+          {
+            "name": "SIG2ST61",
+            "id": 1184,
+            "payload_bytes": 132,
+            "payload_sha256": "99d44b8e4298ca149709f068ae7e56280a0c913ab2a2afacac0c3957aea64818"
+          },
+          {
+            "name": "SIG2ST71",
+            "id": 1183,
+            "payload_bytes": 132,
+            "payload_sha256": "4bb5c8326ace9a7a8b330a63814c4bb6748f5e37c5bae6b9f020c83e5f31d514"
+          },
+          {
+            "name": "SIG2ST81",
+            "id": 1182,
+            "payload_bytes": 132,
+            "payload_sha256": "50d9329b6ed37b9c30c5d44525627c1b599c1f4546570149237b12d4749ad5b7"
+          },
+          {
+            "name": "SIG2NAV1",
+            "id": 1181,
+            "payload_bytes": 132,
+            "payload_sha256": "402022cf9ec38a1635559219dd806a003b2e67b229cd1ecd8c221a5996bec18a"
+          },
+          {
+            "name": "SIG2NAV2",
+            "id": 1180,
+            "payload_bytes": 132,
+            "payload_sha256": "a9de49582715637ef2ecd24c4116cb3909701e843aa8d77d281097f1f611c9bb"
+          },
+          {
+            "name": "SIG2NAV3",
+            "id": 1179,
+            "payload_bytes": 132,
+            "payload_sha256": "ceae5bcfce6eb81a61633c7f9b7296c746373fb319db62ca77083570e59d0f31"
+          },
+          {
+            "name": "SIG2NAV4",
+            "id": 1178,
+            "payload_bytes": 132,
+            "payload_sha256": "18f3227ddbee0358e2d0bd5626b35cf7bcaab50b50ad12c9eac0d3e9a3917f6d"
+          },
+          {
+            "name": "SIG2NAV5",
+            "id": 1177,
+            "payload_bytes": 132,
+            "payload_sha256": "9931729203026527fbb58d6ec4079fd93c80332ee1c09a8bff02722fe26ed3a0"
+          },
+          {
+            "name": "SIG2GOU1",
+            "id": 1176,
+            "payload_bytes": 132,
+            "payload_sha256": "3d6280ed955672c5ceaa485f7fd9023ecc3a62d1422c3c29507e16b6f784e847"
+          },
+          {
+            "name": "SIG2GOU2",
+            "id": 1175,
+            "payload_bytes": 132,
+            "payload_sha256": "3af4f115e0259e2deebd9de67d54f4ba82437da3b8f4af4a2063e4ee6fa92849"
+          },
+          {
+            "name": "SIG2GOU3",
+            "id": 1174,
+            "payload_bytes": 132,
+            "payload_sha256": "2aaf0907d2485797fc375ee9f52f2c976cec2c8aa1a17ceeaf5d46b92423b363"
+          },
+          {
+            "name": "SIG2LVE1",
+            "id": 1173,
+            "payload_bytes": 132,
+            "payload_sha256": "40a66009add8111915a2eee8f7f102b7fb99b5b93bcbb546b11c21353468d096"
+          },
+          {
+            "name": "SIG2LVE2",
+            "id": 1172,
+            "payload_bytes": 132,
+            "payload_sha256": "2b4a1587451f1d2a9f4c305f6f3404e36622a9c9d11fd79a07489306fae7d0ea"
+          },
+          {
+            "name": "BR0NPAL1",
+            "id": 829,
+            "payload_bytes": 100,
+            "payload_sha256": "9814a25d2f971cbb27f9a5896cec83505ea5cfb084e99a028408a50b9517f200"
+          },
+          {
+            "name": "SIG2ARE1",
+            "id": 1170,
+            "payload_bytes": 10396,
+            "payload_sha256": "9acf6b3f8e5f8d62ca815d1c87c3c58c52e96e7e17453cc33124cae5b36a747f"
+          },
+          {
+            "name": "SIG2ARE2",
+            "id": 1169,
+            "payload_bytes": 1224,
+            "payload_sha256": "61da5229c95f7add915973441471bb3ee34f4f5ba13fa521dadbefc181c86f41"
+          }
+        ]
+      },
+      "OUT3CAM1": {
+        "campaign": {
+          "name": "OUT3CAM1",
+          "id": 2279,
+          "payload_bytes": 3780,
+          "payload_sha256": "7cce8d1650e2f053ab11c85278b500c6321f4d06e11647e996e0da4af4722b3e"
+        },
+        "scene": "OUT3SCN1",
+        "briefing_movie": "OUT3BRF1",
+        "kind": 2,
+        "orders_resource": {
+          "name": "OUT3BRF1",
+          "id": 1105,
+          "payload_bytes": 2112,
+          "payload_sha256": "da9a6c63045848f6a653738caea6a5c44890eabcaf5cac85dfe48372018a30e4"
+        },
+        "header_string_44": "diz3",
+        "header_string_60": "diz4",
+        "successors": {
+          "SLST": [
+            "lut1cam1"
+          ],
+          "FLST": [
+            "lut1cam1"
+          ]
+        },
+        "cpgn_subchunks": [
+          {
+            "tag": "SLST",
+            "offset_in_bwd": 212,
+            "bytes": 24
+          },
+          {
+            "tag": "FLST",
+            "offset_in_bwd": 236,
+            "bytes": 24
+          },
+          {
+            "tag": "MHLT",
+            "offset_in_bwd": 260,
+            "bytes": 272
+          },
+          {
+            "tag": "NEWS",
+            "offset_in_bwd": 532,
+            "bytes": 1772
+          },
+          {
+            "tag": "PTLT",
+            "offset_in_bwd": 2304,
+            "bytes": 40
+          },
+          {
+            "tag": "THLT",
+            "offset_in_bwd": 2344,
+            "bytes": 24
+          },
+          {
+            "tag": "CTNT",
+            "offset_in_bwd": 2368,
+            "bytes": 136
+          },
+          {
+            "tag": "WNLT",
+            "offset_in_bwd": 2504,
+            "bytes": 596
+          },
+          {
+            "tag": "AMMO",
+            "offset_in_bwd": 3100,
+            "bytes": 248
+          },
+          {
+            "tag": "EQUP",
+            "offset_in_bwd": 3348,
+            "bytes": 388
+          },
+          {
+            "tag": "SWNL",
+            "offset_in_bwd": 3736,
+            "bytes": 8
+          },
+          {
+            "tag": "SMHL",
+            "offset_in_bwd": 3744,
+            "bytes": 36
+          }
+        ],
+        "salvage_mechs": [
+          {
+            "name": "KDK00STD",
+            "threshold": 100,
+            "value": 15000000,
+            "year": 3050
+          }
+        ],
+        "external_userstar_count": 0,
+        "players": [
+          {
+            "record": "OUT3USER",
+            "chunk_offset": 52,
+            "mek_id": 82,
+            "skeleton_id": 56,
+            "table": 0,
+            "leader": 1,
+            "control": 0,
+            "skeleton": "kodiak",
+            "loadout": "kdk00std",
+            "display_name": "Raider1",
+            "pilot": "",
+            "flags": 1024,
+            "mek_source": {
+              "name": "KDK00STD",
+              "id": 82,
+              "payload_bytes": 522,
+              "payload_sha256": "a0d2fb22e86dc22a8d5aacc8228b324a195b9a4a9eb254171d9506a300119e34"
+            }
+          }
+        ],
+        "include_edges": [
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3BRF1",
+            "id": 1105,
+            "chunk_offset": 52
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3BRF2",
+            "id": 1104,
+            "chunk_offset": 72
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3DBFF",
+            "id": 1103,
+            "chunk_offset": 92
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3DBFS",
+            "id": 1102,
+            "chunk_offset": 112
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "FORMATNS",
+            "id": 131,
+            "chunk_offset": 132
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3USER",
+            "id": 1101,
+            "chunk_offset": 4530
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ENS1",
+            "id": 1100,
+            "chunk_offset": 4550
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ENS2",
+            "id": 1099,
+            "chunk_offset": 4570
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ENS3",
+            "id": 1098,
+            "chunk_offset": 4590
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ENS4",
+            "id": 1097,
+            "chunk_offset": 4610
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3USR1",
+            "id": 1096,
+            "chunk_offset": 4630
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3PLT1",
+            "id": 1095,
+            "chunk_offset": 4650
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3MAP1",
+            "id": 1082,
+            "chunk_offset": 4670
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "MW2_SHT1",
+            "id": 133,
+            "chunk_offset": 4690
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3WLD1",
+            "id": 1094,
+            "chunk_offset": 4710
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "MW2_XPL1",
+            "id": 132,
+            "chunk_offset": 4730
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ST01",
+            "id": 1093,
+            "chunk_offset": 4750
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ST11",
+            "id": 1092,
+            "chunk_offset": 4770
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ST21",
+            "id": 1091,
+            "chunk_offset": 4790
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ST31",
+            "id": 1090,
+            "chunk_offset": 4810
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ST41",
+            "id": 1089,
+            "chunk_offset": 4830
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ST51",
+            "id": 1088,
+            "chunk_offset": 4850
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3NAV1",
+            "id": 1087,
+            "chunk_offset": 4870
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3GOU1",
+            "id": 1086,
+            "chunk_offset": 4890
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3GOU2",
+            "id": 1085,
+            "chunk_offset": 4910
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3LVE1",
+            "id": 1084,
+            "chunk_offset": 4930
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3LVE2",
+            "id": 1083,
+            "chunk_offset": 4950
+          },
+          {
+            "parent": "OUT3PLT1",
+            "child": "GR0NPAL1",
+            "id": 1015,
+            "chunk_offset": 328
+          },
+          {
+            "parent": "OUT3PLT1",
+            "child": "OUT3MAP1",
+            "id": 1082,
+            "chunk_offset": 348
+          },
+          {
+            "parent": "MW2_SHT1",
+            "child": "MW2_XPL1",
+            "id": 132,
+            "chunk_offset": 60
+          },
+          {
+            "parent": "OUT3WLD1",
+            "child": "OUT3ARE1",
+            "id": 1081,
+            "chunk_offset": 52
+          },
+          {
+            "parent": "OUT3WLD1",
+            "child": "OUT3ARE3",
+            "id": 1080,
+            "chunk_offset": 116
+          },
+          {
+            "parent": "OUT3WLD1",
+            "child": "OUT3ARE5",
+            "id": 1079,
+            "chunk_offset": 180
+          }
+        ],
+        "traversed_records": [
+          {
+            "name": "OUT3SCN1",
+            "id": 1106,
+            "payload_bytes": 4970,
+            "payload_sha256": "48381a7a5096610febe4dec8e85457530b4245d67975780fce8fe5c1429d5500"
+          },
+          {
+            "name": "OUT3BRF1",
+            "id": 1105,
+            "payload_bytes": 2112,
+            "payload_sha256": "da9a6c63045848f6a653738caea6a5c44890eabcaf5cac85dfe48372018a30e4"
+          },
+          {
+            "name": "OUT3BRF2",
+            "id": 1104,
+            "payload_bytes": 148,
+            "payload_sha256": "cdd17134547932d947610cc23f665681535a1fc27573e9052b9b2cc82f1ad1d4"
+          },
+          {
+            "name": "OUT3DBFF",
+            "id": 1103,
+            "payload_bytes": 548,
+            "payload_sha256": "d61e22fe453b3aa1e4b090f212a8ef371c7f39125ea00bc8f4d01f05a8dd7240"
+          },
+          {
+            "name": "OUT3DBFS",
+            "id": 1102,
+            "payload_bytes": 760,
+            "payload_sha256": "7b1ab18ae8bb86ede697150f7722a57c07b19ac9f6574b0403e6f95d6cb090f2"
+          },
+          {
+            "name": "FORMATNS",
+            "id": 131,
+            "payload_bytes": 892,
+            "payload_sha256": "29b67e37b652ddc6e7d6e5cc8d5619d830b0f6b312c7f1d1f183c4518fbbea82"
+          },
+          {
+            "name": "OUT3USER",
+            "id": 1101,
+            "payload_bytes": 152,
+            "payload_sha256": "e1db01aa781a05c1fa0e9d9fefdc2402743ff001757ac166db289411ba99ed91"
+          },
+          {
+            "name": "OUT3ENS1",
+            "id": 1100,
+            "payload_bytes": 252,
+            "payload_sha256": "5a9cda67ac29161247ce5e36432dd8dfd65f91b1cbf5a21ef471b4827aba8e1a"
+          },
+          {
+            "name": "OUT3ENS2",
+            "id": 1099,
+            "payload_bytes": 252,
+            "payload_sha256": "4cf97022605e10c0abe81125c1e5680162ed9e31ec281f173fd108955b2ff358"
+          },
+          {
+            "name": "OUT3ENS3",
+            "id": 1098,
+            "payload_bytes": 252,
+            "payload_sha256": "0e5dda54643e1b09b932f747a0fe9c52e63cc49eab1bea404184e78610ad8c27"
+          },
+          {
+            "name": "OUT3ENS4",
+            "id": 1097,
+            "payload_bytes": 352,
+            "payload_sha256": "03f723f53c9e13187e9c443c476f1b4fdd47add1193a0fc42e4129de8ae1ec7b"
+          },
+          {
+            "name": "OUT3USR1",
+            "id": 1096,
+            "payload_bytes": 152,
+            "payload_sha256": "6ffbb6ef755fe4a5dc9bbe9429d10464977c128f2c785dcce7f954c04d936691"
+          },
+          {
+            "name": "OUT3PLT1",
+            "id": 1095,
+            "payload_bytes": 368,
+            "payload_sha256": "5e9f519525818bfa1ff119a454b9b838ae82e8b66574158dae20001507a41fdb"
+          },
+          {
+            "name": "OUT3MAP1",
+            "id": 1082,
+            "payload_bytes": 14768,
+            "payload_sha256": "759c5e2178012aa4e6ad0a55de520ce6c06bc5d5036ea5d656e9d64e2ca62893"
+          },
+          {
+            "name": "MW2_SHT1",
+            "id": 133,
+            "payload_bytes": 32168,
+            "payload_sha256": "cf903cb095afd6df0fe262d495dcf74f94b503fd68bb4b702411671dfcfc2cad"
+          },
+          {
+            "name": "OUT3WLD1",
+            "id": 1094,
+            "payload_bytes": 200,
+            "payload_sha256": "28991c089c7d34fb2ee5e969d9ecf512f5b8e8efa8d91d96803b5cf6fc3063e2"
+          },
+          {
+            "name": "MW2_XPL1",
+            "id": 132,
+            "payload_bytes": 13016,
+            "payload_sha256": "7f0b1a1916b631c9b5a17ce3aa2af48aeb6cee68fc194576e299e91a7ab4553a"
+          },
+          {
+            "name": "OUT3ST01",
+            "id": 1093,
+            "payload_bytes": 132,
+            "payload_sha256": "bd03a09d9422934984a89ba82989bf980164ed19ded551b95e884b895f18a3eb"
+          },
+          {
+            "name": "OUT3ST11",
+            "id": 1092,
+            "payload_bytes": 132,
+            "payload_sha256": "d9fdd81a73956fee76bd3e83fde1b173dd7eb521ef27cee87dfb8bc27bb3a957"
+          },
+          {
+            "name": "OUT3ST21",
+            "id": 1091,
+            "payload_bytes": 132,
+            "payload_sha256": "6aa2367a1acec02b99d50f2375da05cf0dcd7aa6ea9320466dc7330a26af9af9"
+          },
+          {
+            "name": "OUT3ST31",
+            "id": 1090,
+            "payload_bytes": 132,
+            "payload_sha256": "d24709c3ae90f25c88129f228e56648394374daadcda3002d7ed098d9b9b3e5e"
+          },
+          {
+            "name": "OUT3ST41",
+            "id": 1089,
+            "payload_bytes": 132,
+            "payload_sha256": "5b2047731761c03aacbdd00c9ecc9c63d70d7e8822f459cd1887d3308e05b05e"
+          },
+          {
+            "name": "OUT3ST51",
+            "id": 1088,
+            "payload_bytes": 132,
+            "payload_sha256": "aa89e37d28fa4dcca272729e6ead6cba62b357d601dd456cb2cacded220a21eb"
+          },
+          {
+            "name": "OUT3NAV1",
+            "id": 1087,
+            "payload_bytes": 132,
+            "payload_sha256": "403383bde6ae4303af31e8b3d8da4aa5595b4733f90b0d04084873535ce0bc0e"
+          },
+          {
+            "name": "OUT3GOU1",
+            "id": 1086,
+            "payload_bytes": 132,
+            "payload_sha256": "b83ed2f63d58fc860575a17457e843b153cf37a5b31e859baa6665221f4fc795"
+          },
+          {
+            "name": "OUT3GOU2",
+            "id": 1085,
+            "payload_bytes": 132,
+            "payload_sha256": "1c2beb1cc45e840256c467566213319c6a4a8927952d3d07f39aef38e8ce4101"
+          },
+          {
+            "name": "OUT3LVE1",
+            "id": 1084,
+            "payload_bytes": 132,
+            "payload_sha256": "fb2b4bbdc150ff2cbe6befcec9d2cf74d5a3b25919d47158983639a3c1970814"
+          },
+          {
+            "name": "OUT3LVE2",
+            "id": 1083,
+            "payload_bytes": 132,
+            "payload_sha256": "fee8de187c09a0ed781e615fa3a5229be67a597625435f935f82fb0dcdc21649"
+          },
+          {
+            "name": "GR0NPAL1",
+            "id": 1015,
+            "payload_bytes": 100,
+            "payload_sha256": "87c601f2d6eb456fde0cdfe7e23cffac6327094c169c22a61931144b024e6a99"
+          },
+          {
+            "name": "OUT3ARE1",
+            "id": 1081,
+            "payload_bytes": 22968,
+            "payload_sha256": "7faf70f440c42cfafe218fd41a27930b2f9b70bc38e38a1707d802a63e032b1b"
+          },
+          {
+            "name": "OUT3ARE3",
+            "id": 1080,
+            "payload_bytes": 512,
+            "payload_sha256": "9be2d925acbd17f823fb442982f58373f93420ebddde15ccdfce83cd65251fa6"
+          },
+          {
+            "name": "OUT3ARE5",
+            "id": 1079,
+            "payload_bytes": 168,
+            "payload_sha256": "738a3d8895ba7c266eec9a02fc7da808ac926ecd75752a2d3f5766533c9a2829"
+          }
+        ]
+      }
+    },
+    "3dfx": {
+      "MCC4CAM1": {
+        "campaign": {
+          "name": "MCC4CAM1",
+          "id": 2270,
+          "payload_bytes": 3236,
+          "payload_sha256": "5a1d6a3a75601c31c862e49c0c5979af5139a76774f97daba885de23f5c58161"
+        },
+        "scene": "MCC4SCN1",
+        "briefing_movie": "MCC4BRF1",
+        "kind": 2,
+        "orders_resource": {
+          "name": "MCC4BRF1",
+          "id": 937,
+          "payload_bytes": 2592,
+          "payload_sha256": "0893885de458019e538f3383abd7360f62caa2c2249a62abc65d1f49d510aade"
+        },
+        "header_string_44": "diz3",
+        "header_string_60": "diz4",
+        "successors": {
+          "SLST": [
+            "iva1cam1",
+            "masBcam1",
+            "ran7cam1"
+          ],
+          "FLST": [
+            "iva1cam1",
+            "masBcam1",
+            "ran7cam1"
+          ]
+        },
+        "cpgn_subchunks": [
+          {
+            "tag": "SLST",
+            "offset_in_bwd": 212,
+            "bytes": 56
+          },
+          {
+            "tag": "FLST",
+            "offset_in_bwd": 268,
+            "bytes": 56
+          },
+          {
+            "tag": "MHLT",
+            "offset_in_bwd": 324,
+            "bytes": 272
+          },
+          {
+            "tag": "NEWS",
+            "offset_in_bwd": 596,
+            "bytes": 1624
+          },
+          {
+            "tag": "PTLT",
+            "offset_in_bwd": 2220,
+            "bytes": 40
+          },
+          {
+            "tag": "THLT",
+            "offset_in_bwd": 2260,
+            "bytes": 24
+          },
+          {
+            "tag": "CTNT",
+            "offset_in_bwd": 2284,
+            "bytes": 136
+          },
+          {
+            "tag": "WNLT",
+            "offset_in_bwd": 2420,
+            "bytes": 308
+          },
+          {
+            "tag": "AMMO",
+            "offset_in_bwd": 2728,
+            "bytes": 168
+          },
+          {
+            "tag": "EQUP",
+            "offset_in_bwd": 2896,
+            "bytes": 248
+          },
+          {
+            "tag": "SWNL",
+            "offset_in_bwd": 3144,
+            "bytes": 56
+          },
+          {
+            "tag": "SMHL",
+            "offset_in_bwd": 3200,
+            "bytes": 36
+          }
+        ],
+        "salvage_mechs": [
+          {
+            "name": "PNT51STD",
+            "threshold": 30,
+            "value": 2400000,
+            "year": 3044
+          }
+        ],
+        "external_userstar_count": 0,
+        "players": [
+          {
+            "record": "MCC4STAR",
+            "chunk_offset": 52,
+            "mek_id": 140,
+            "skeleton_id": 78,
+            "table": 0,
+            "leader": 1,
+            "control": 0,
+            "skeleton": "stalker",
+            "loadout": "stk00std",
+            "display_name": "Raider1",
+            "pilot": "",
+            "flags": 1024,
+            "mek_source": {
+              "name": "STK00STD",
+              "id": 140,
+              "payload_bytes": 514,
+              "payload_sha256": "87c952ee6a89cedd48cf8c3b38efd42c9f663be996d69a9533b88524df6f1105"
+            }
+          }
+        ],
+        "include_edges": [
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4BRF1",
+            "id": 937,
+            "chunk_offset": 52
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4BRF2",
+            "id": 936,
+            "chunk_offset": 72
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4DBFF",
+            "id": 935,
+            "chunk_offset": 92
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4DBFS",
+            "id": 934,
+            "chunk_offset": 112
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4FRM1",
+            "id": 933,
+            "chunk_offset": 132
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "FORMATNS",
+            "id": 131,
+            "chunk_offset": 152
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4STAR",
+            "id": 932,
+            "chunk_offset": 9266
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4USR1",
+            "id": 931,
+            "chunk_offset": 9286
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4USR2",
+            "id": 930,
+            "chunk_offset": 9306
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4TAN1",
+            "id": 929,
+            "chunk_offset": 9326
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ENS1",
+            "id": 928,
+            "chunk_offset": 9346
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ENS2",
+            "id": 927,
+            "chunk_offset": 9366
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ENS3",
+            "id": 926,
+            "chunk_offset": 9386
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ENS4",
+            "id": 925,
+            "chunk_offset": 9406
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ENS5",
+            "id": 924,
+            "chunk_offset": 9426
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4PLT1",
+            "id": 923,
+            "chunk_offset": 9446
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4MAP1",
+            "id": 899,
+            "chunk_offset": 9466
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MW2_SHT1",
+            "id": 133,
+            "chunk_offset": 9486
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4WLD1",
+            "id": 922,
+            "chunk_offset": 9506
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MW2_XPL1",
+            "id": 132,
+            "chunk_offset": 9526
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST01",
+            "id": 921,
+            "chunk_offset": 9546
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST11",
+            "id": 920,
+            "chunk_offset": 9566
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST21",
+            "id": 919,
+            "chunk_offset": 9586
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST31",
+            "id": 918,
+            "chunk_offset": 9606
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST41",
+            "id": 917,
+            "chunk_offset": 9626
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST51",
+            "id": 916,
+            "chunk_offset": 9646
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST61",
+            "id": 915,
+            "chunk_offset": 9666
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST71",
+            "id": 914,
+            "chunk_offset": 9686
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST81",
+            "id": 913,
+            "chunk_offset": 9706
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4NAV1",
+            "id": 912,
+            "chunk_offset": 9726
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4NAV2",
+            "id": 911,
+            "chunk_offset": 9746
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOU1",
+            "id": 910,
+            "chunk_offset": 9766
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOU2",
+            "id": 909,
+            "chunk_offset": 9786
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOU3",
+            "id": 908,
+            "chunk_offset": 9806
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOU4",
+            "id": 907,
+            "chunk_offset": 9826
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOU5",
+            "id": 906,
+            "chunk_offset": 9846
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOU6",
+            "id": 905,
+            "chunk_offset": 9866
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOE1",
+            "id": 904,
+            "chunk_offset": 9886
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOE2",
+            "id": 903,
+            "chunk_offset": 9906
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOE3",
+            "id": 902,
+            "chunk_offset": 9926
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4LVE1",
+            "id": 901,
+            "chunk_offset": 9946
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4LVE2",
+            "id": 900,
+            "chunk_offset": 9966
+          },
+          {
+            "parent": "MCC4PLT1",
+            "child": "SKYDOME",
+            "id": 2562,
+            "chunk_offset": 232
+          },
+          {
+            "parent": "MCC4PLT1",
+            "child": "CY0NPAL1",
+            "id": 141,
+            "chunk_offset": 348
+          },
+          {
+            "parent": "MCC4PLT1",
+            "child": "BET3MAP1",
+            "id": 204,
+            "chunk_offset": 368
+          },
+          {
+            "parent": "MW2_SHT1",
+            "child": "MW2_XPL1",
+            "id": 132,
+            "chunk_offset": 60
+          },
+          {
+            "parent": "MCC4WLD1",
+            "child": "MCC4ARE1",
+            "id": 898,
+            "chunk_offset": 52
+          },
+          {
+            "parent": "MCC4WLD1",
+            "child": "MCC4ARE2",
+            "id": 897,
+            "chunk_offset": 72
+          },
+          {
+            "parent": "MCC4WLD1",
+            "child": "MCC4ARE4",
+            "id": 896,
+            "chunk_offset": 136
+          },
+          {
+            "parent": "MCC4WLD1",
+            "child": "MCC4ARE5",
+            "id": 895,
+            "chunk_offset": 200
+          }
+        ],
+        "traversed_records": [
+          {
+            "name": "MCC4SCN1",
+            "id": 938,
+            "payload_bytes": 9986,
+            "payload_sha256": "fb1c81a6d70eae722f2f5a0bf2d76f0ba4d1170b02c26c15902da300f5d21bb9"
+          },
+          {
+            "name": "MCC4BRF1",
+            "id": 937,
+            "payload_bytes": 2592,
+            "payload_sha256": "0893885de458019e538f3383abd7360f62caa2c2249a62abc65d1f49d510aade"
+          },
+          {
+            "name": "MCC4BRF2",
+            "id": 936,
+            "payload_bytes": 148,
+            "payload_sha256": "0648c0702040fd4f18f12983eaef7a29ed0cccb50e6be816b9fdc65f2ab96769"
+          },
+          {
+            "name": "MCC4DBFF",
+            "id": 935,
+            "payload_bytes": 1968,
+            "payload_sha256": "ec0af0e559bc491c0b7676f65f606def9cc476946cc24d77a90dfc2964aa783c"
+          },
+          {
+            "name": "MCC4DBFS",
+            "id": 934,
+            "payload_bytes": 2412,
+            "payload_sha256": "348c650fd6884cac4c76cf7b35fafec8db67b0d181b1804ccd75fc7945088749"
+          },
+          {
+            "name": "MCC4FRM1",
+            "id": 933,
+            "payload_bytes": 136,
+            "payload_sha256": "c5db19b6bf012deaea38c9571d0db556e7a1508e3db4fd67f57e90fadf3c6996"
+          },
+          {
+            "name": "FORMATNS",
+            "id": 131,
+            "payload_bytes": 892,
+            "payload_sha256": "29b67e37b652ddc6e7d6e5cc8d5619d830b0f6b312c7f1d1f183c4518fbbea82"
+          },
+          {
+            "name": "MCC4STAR",
+            "id": 932,
+            "payload_bytes": 152,
+            "payload_sha256": "87706eae26204d0c5a769763fda10e7f894e58b59ce3137e457fc9123102c2ad"
+          },
+          {
+            "name": "MCC4USR1",
+            "id": 931,
+            "payload_bytes": 252,
+            "payload_sha256": "1a538e7a88d0550159bae94ae8b5678d0264c2b54c1da5078379986ee745d551"
+          },
+          {
+            "name": "MCC4USR2",
+            "id": 930,
+            "payload_bytes": 152,
+            "payload_sha256": "36aa8c50c430b5a6e4da183565dabbce1a6ae466c063787a2ada8da9fd4fc8cd"
+          },
+          {
+            "name": "MCC4TAN1",
+            "id": 929,
+            "payload_bytes": 252,
+            "payload_sha256": "a2fe27f97be8798b5155dc0b98ea8dbb6e901c4ff953280e5c40fa6a41388f9f"
+          },
+          {
+            "name": "MCC4ENS1",
+            "id": 928,
+            "payload_bytes": 52,
+            "payload_sha256": "c9733dbc94b0cfeea9fff12229605db889d4fee8a6e85e00c14ad71662b86b11"
+          },
+          {
+            "name": "MCC4ENS2",
+            "id": 927,
+            "payload_bytes": 152,
+            "payload_sha256": "0ba38dcfa96408949671c46bdde81dfcbe609fd7a14102ddd0f28a75805fbd17"
+          },
+          {
+            "name": "MCC4ENS3",
+            "id": 926,
+            "payload_bytes": 152,
+            "payload_sha256": "5c1bce6fb99f39e6df252c26f623a2375077b293b51890e115ce7358c74c853f"
+          },
+          {
+            "name": "MCC4ENS4",
+            "id": 925,
+            "payload_bytes": 252,
+            "payload_sha256": "70307f80be41aab9d63141fea7dde091a1d8aac5e54f9b1d9683fcca2cd791e6"
+          },
+          {
+            "name": "MCC4ENS5",
+            "id": 924,
+            "payload_bytes": 252,
+            "payload_sha256": "8832989543fd19138467300ba706219d4d4d45421c568494f2b062cd9cd5ba42"
+          },
+          {
+            "name": "MCC4PLT1",
+            "id": 923,
+            "payload_bytes": 388,
+            "payload_sha256": "ad317aa3e5353337829d8cd7a5c54b46c5cd6a4b6ee3f8070d70e52e753c36b1"
+          },
+          {
+            "name": "MCC4MAP1",
+            "id": 899,
+            "payload_bytes": 6620,
+            "payload_sha256": "ec44744955feda25778c24778899642515ebbfd1670d51b926127cd54d7e7038"
+          },
+          {
+            "name": "MW2_SHT1",
+            "id": 133,
+            "payload_bytes": 32168,
+            "payload_sha256": "c78d16c07eb7c48010281f845d0b877d90944e2711ee0810119a9226901c4688"
+          },
+          {
+            "name": "MCC4WLD1",
+            "id": 922,
+            "payload_bytes": 220,
+            "payload_sha256": "a14f65610898df14d2788e5ba2fb8404a302f09dd9b5606c79f744ee09efbd4b"
+          },
+          {
+            "name": "MW2_XPL1",
+            "id": 132,
+            "payload_bytes": 13004,
+            "payload_sha256": "d81bdf81163722f449a52a95f7e9bf63d7c5e10029cab71e159757f32abc7475"
+          },
+          {
+            "name": "MCC4ST01",
+            "id": 921,
+            "payload_bytes": 132,
+            "payload_sha256": "c4f585955b34038ae6a56174a8aac95201d3a641cf3da2dcdd78a75f70926395"
+          },
+          {
+            "name": "MCC4ST11",
+            "id": 920,
+            "payload_bytes": 132,
+            "payload_sha256": "68b2d6f24a7adff5d13ad95a91615998bf3c3f82c0f3930182e909b178448191"
+          },
+          {
+            "name": "MCC4ST21",
+            "id": 919,
+            "payload_bytes": 132,
+            "payload_sha256": "ad1bd18ddc2b95977196f54e63d3f0489ecd9b4013c9b60f343125b33c46fd47"
+          },
+          {
+            "name": "MCC4ST31",
+            "id": 918,
+            "payload_bytes": 132,
+            "payload_sha256": "36d5d5f67f46ac7346396e43e5f8060d194d167ff14230c8db1a1c55f7c15162"
+          },
+          {
+            "name": "MCC4ST41",
+            "id": 917,
+            "payload_bytes": 132,
+            "payload_sha256": "dc9b9785ab7e1396e9d443ed598b6f118fc34c167a20cf7d29246a3799fde255"
+          },
+          {
+            "name": "MCC4ST51",
+            "id": 916,
+            "payload_bytes": 132,
+            "payload_sha256": "283eb23c26520c987fe17fce1180b0ebfdb1f7c0216878c44d0f9602774abcf2"
+          },
+          {
+            "name": "MCC4ST61",
+            "id": 915,
+            "payload_bytes": 132,
+            "payload_sha256": "e847dcd72b59cc4dfaa0b0c9f89da0890f09c56aad4f4294f2beb145f311d2f8"
+          },
+          {
+            "name": "MCC4ST71",
+            "id": 914,
+            "payload_bytes": 132,
+            "payload_sha256": "e87b3f5fc87ac6f57421a67ad2ab6f2d9f53268b9d9b30c83b6987d057f4b8a7"
+          },
+          {
+            "name": "MCC4ST81",
+            "id": 913,
+            "payload_bytes": 132,
+            "payload_sha256": "35f15d19cfd1fb4c599f6b4418b2db28546a076aa1ef19ac888761607fd9635d"
+          },
+          {
+            "name": "MCC4NAV1",
+            "id": 912,
+            "payload_bytes": 132,
+            "payload_sha256": "0138910d237f0737fb0f70beef075ae36915aca67ed3d1fdbc63d28340297785"
+          },
+          {
+            "name": "MCC4NAV2",
+            "id": 911,
+            "payload_bytes": 132,
+            "payload_sha256": "9bd698af016fe359d2b51b90ec521ed457eb7bbcb3520fb21cbba23781f2c94f"
+          },
+          {
+            "name": "MCC4GOU1",
+            "id": 910,
+            "payload_bytes": 132,
+            "payload_sha256": "44cc0e4409e9165698edc7c2cec09efc37e3186c449f0cfc517f5984a9de46ac"
+          },
+          {
+            "name": "MCC4GOU2",
+            "id": 909,
+            "payload_bytes": 132,
+            "payload_sha256": "859f1a2c3922dc067309bb46eac32f7339e2d4178338bf72f431f91f5cf95a53"
+          },
+          {
+            "name": "MCC4GOU3",
+            "id": 908,
+            "payload_bytes": 132,
+            "payload_sha256": "686083a8adb790aba959fa4fd3185905d79d0338bc7cb0361559ffc77691b1e6"
+          },
+          {
+            "name": "MCC4GOU4",
+            "id": 907,
+            "payload_bytes": 132,
+            "payload_sha256": "799384a24558ac5afe41413e14c6a1f23a8e64c818061932b55948d8f6c7dbd2"
+          },
+          {
+            "name": "MCC4GOU5",
+            "id": 906,
+            "payload_bytes": 132,
+            "payload_sha256": "230c91ab5f5c7e0aeba702f8172756134984e03c8a3b60343dc17e3e7ed0bf3e"
+          },
+          {
+            "name": "MCC4GOU6",
+            "id": 905,
+            "payload_bytes": 132,
+            "payload_sha256": "e8588c9d9e5ece24b12d5d1c2163444e44a966d1a4e12a3878f05c883573cfa1"
+          },
+          {
+            "name": "MCC4GOE1",
+            "id": 904,
+            "payload_bytes": 132,
+            "payload_sha256": "3fbec2fbd141d78d49117c6763c0975c863d41f12831e72a129c585f53290df8"
+          },
+          {
+            "name": "MCC4GOE2",
+            "id": 903,
+            "payload_bytes": 132,
+            "payload_sha256": "7795fced0a50a1cb02d5b284c889848f40a824e2a1c233f09f92ce48a5c417a9"
+          },
+          {
+            "name": "MCC4GOE3",
+            "id": 902,
+            "payload_bytes": 132,
+            "payload_sha256": "94552369dcf46ed3ca0ca3c83305dd7309349992e4c14a1311c5d359c643d615"
+          },
+          {
+            "name": "MCC4LVE1",
+            "id": 901,
+            "payload_bytes": 132,
+            "payload_sha256": "40a66009add8111915a2eee8f7f102b7fb99b5b93bcbb546b11c21353468d096"
+          },
+          {
+            "name": "MCC4LVE2",
+            "id": 900,
+            "payload_bytes": 132,
+            "payload_sha256": "2b4a1587451f1d2a9f4c305f6f3404e36622a9c9d11fd79a07489306fae7d0ea"
+          },
+          {
+            "name": "SKYDOME",
+            "id": 2562,
+            "payload_bytes": 168,
+            "payload_sha256": "33e07885241c873871b63ed53bbc09731a913d4586e21060d839f9b66ba7cc3c"
+          },
+          {
+            "name": "CY0NPAL1",
+            "id": 141,
+            "payload_bytes": 100,
+            "payload_sha256": "5e6c9984c3cdf6a52c0b502561deced7be09e90edf64b82ef79165ca323bae29"
+          },
+          {
+            "name": "BET3MAP1",
+            "id": 204,
+            "payload_bytes": 6556,
+            "payload_sha256": "fafb638c2a1ef9ccce5d07653c1b5efa980fb11567e2aa5eae6decd971bc36d4"
+          },
+          {
+            "name": "MCC4ARE1",
+            "id": 898,
+            "payload_bytes": 20212,
+            "payload_sha256": "d26566bf6797c2f503c2c6ac35a91d8ba5738f4b780aefef6aeed7f6135071d0"
+          },
+          {
+            "name": "MCC4ARE2",
+            "id": 897,
+            "payload_bytes": 1252,
+            "payload_sha256": "d2fc33668a6a022e71fa66a1fe134b3d3a61838c45ac3081074ffa447c6e9625"
+          },
+          {
+            "name": "MCC4ARE4",
+            "id": 896,
+            "payload_bytes": 836,
+            "payload_sha256": "bafc3fd8c2e15ff17d8078b3e785afb627831a2cd94f4b571b33da6448c0950b"
+          },
+          {
+            "name": "MCC4ARE5",
+            "id": 895,
+            "payload_bytes": 1104,
+            "payload_sha256": "058a23ed13cef5c92618089772477066578f3dfefde1802f5ade7da577a35a92"
+          }
+        ]
+      },
+      "SIG2CAM1": {
+        "campaign": {
+          "name": "SIG2CAM1",
+          "id": 2316,
+          "payload_bytes": 1632,
+          "payload_sha256": "f885bee9161fe8ca6ea913700b5ac534d1d3e2fe0071850fe21f524253f2dd63"
+        },
+        "scene": "SIG2SCN1",
+        "briefing_movie": "NODATA",
+        "kind": 1,
+        "orders_resource": {
+          "name": "SIG2BRF1",
+          "id": 1206,
+          "payload_bytes": 2580,
+          "payload_sha256": "c258d78b6a046323c7528bb20705078236dd02ab379c17cdad00d762b2d28255"
+        },
+        "header_string_44": "diz3",
+        "header_string_60": "diz4",
+        "successors": {
+          "SLST": [
+            "sig3cam1"
+          ],
+          "FLST": [
+            "DEATH"
+          ]
+        },
+        "cpgn_subchunks": [
+          {
+            "tag": "SLST",
+            "offset_in_bwd": 212,
+            "bytes": 24
+          },
+          {
+            "tag": "FLST",
+            "offset_in_bwd": 236,
+            "bytes": 24
+          },
+          {
+            "tag": "MHLT",
+            "offset_in_bwd": 260,
+            "bytes": 584
+          },
+          {
+            "tag": "NEWS",
+            "offset_in_bwd": 844,
+            "bytes": 80
+          },
+          {
+            "tag": "PTLT",
+            "offset_in_bwd": 924,
+            "bytes": 8
+          },
+          {
+            "tag": "THLT",
+            "offset_in_bwd": 932,
+            "bytes": 8
+          },
+          {
+            "tag": "CTNT",
+            "offset_in_bwd": 940,
+            "bytes": 136
+          },
+          {
+            "tag": "WNLT",
+            "offset_in_bwd": 1076,
+            "bytes": 212
+          },
+          {
+            "tag": "EQUP",
+            "offset_in_bwd": 1288,
+            "bytes": 328
+          },
+          {
+            "tag": "SWNL",
+            "offset_in_bwd": 1616,
+            "bytes": 8
+          },
+          {
+            "tag": "SMHL",
+            "offset_in_bwd": 1624,
+            "bytes": 8
+          }
+        ],
+        "salvage_mechs": [],
+        "external_userstar_count": 0,
+        "players": [
+          {
+            "record": "SIG2STAR",
+            "chunk_offset": 52,
+            "mek_id": 116,
+            "skeleton_id": 66,
+            "table": 0,
+            "leader": 1,
+            "control": 0,
+            "skeleton": "pegasus",
+            "loadout": "peg00std",
+            "display_name": "Escaping POW",
+            "pilot": "",
+            "flags": 1024,
+            "mek_source": {
+              "name": "PEG00STD",
+              "id": 116,
+              "payload_bytes": 434,
+              "payload_sha256": "4e46c11309e5c7735ebe4b0558c9e0ea5a215139ae058efcd350b23027bcc8ec"
+            }
+          }
+        ],
+        "include_edges": [
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2BRF1",
+            "id": 1206,
+            "chunk_offset": 52
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2BRF2",
+            "id": 1205,
+            "chunk_offset": 72
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2DBFF",
+            "id": 1204,
+            "chunk_offset": 92
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2DBFS",
+            "id": 1203,
+            "chunk_offset": 112
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "FORMATNS",
+            "id": 131,
+            "chunk_offset": 132
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2FRM1",
+            "id": 1202,
+            "chunk_offset": 152
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2STAR",
+            "id": 1201,
+            "chunk_offset": 7605
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ENS1",
+            "id": 1200,
+            "chunk_offset": 7625
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ENS2",
+            "id": 1199,
+            "chunk_offset": 7645
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ENS3",
+            "id": 1198,
+            "chunk_offset": 7665
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ENS4",
+            "id": 1197,
+            "chunk_offset": 7685
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ENS5",
+            "id": 1196,
+            "chunk_offset": 7705
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NUK1",
+            "id": 1195,
+            "chunk_offset": 7725
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NUK2",
+            "id": 1194,
+            "chunk_offset": 7745
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2TUR1",
+            "id": 1193,
+            "chunk_offset": 7765
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2PLT1",
+            "id": 1192,
+            "chunk_offset": 7785
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2MAP1",
+            "id": 1171,
+            "chunk_offset": 7805
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "MW2_SHT1",
+            "id": 133,
+            "chunk_offset": 7825
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2WLD1",
+            "id": 1191,
+            "chunk_offset": 7845
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "MW2_XPL1",
+            "id": 132,
+            "chunk_offset": 7865
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST01",
+            "id": 1190,
+            "chunk_offset": 7885
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST11",
+            "id": 1189,
+            "chunk_offset": 7905
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST21",
+            "id": 1188,
+            "chunk_offset": 7925
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST31",
+            "id": 1187,
+            "chunk_offset": 7945
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST41",
+            "id": 1186,
+            "chunk_offset": 7965
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST51",
+            "id": 1185,
+            "chunk_offset": 7985
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST61",
+            "id": 1184,
+            "chunk_offset": 8005
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST71",
+            "id": 1183,
+            "chunk_offset": 8025
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST81",
+            "id": 1182,
+            "chunk_offset": 8045
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NAV1",
+            "id": 1181,
+            "chunk_offset": 8065
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NAV2",
+            "id": 1180,
+            "chunk_offset": 8085
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NAV3",
+            "id": 1179,
+            "chunk_offset": 8105
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NAV4",
+            "id": 1178,
+            "chunk_offset": 8125
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NAV5",
+            "id": 1177,
+            "chunk_offset": 8145
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2GOU1",
+            "id": 1176,
+            "chunk_offset": 8165
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2GOU2",
+            "id": 1175,
+            "chunk_offset": 8185
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2GOU3",
+            "id": 1174,
+            "chunk_offset": 8205
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2LVE1",
+            "id": 1173,
+            "chunk_offset": 8225
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2LVE2",
+            "id": 1172,
+            "chunk_offset": 8245
+          },
+          {
+            "parent": "SIG2PLT1",
+            "child": "BR0NPAL1",
+            "id": 829,
+            "chunk_offset": 328
+          },
+          {
+            "parent": "SIG2PLT1",
+            "child": "SIG2MAP1",
+            "id": 1171,
+            "chunk_offset": 348
+          },
+          {
+            "parent": "SIG2PLT1",
+            "child": "SKYDOME",
+            "id": 2562,
+            "chunk_offset": 368
+          },
+          {
+            "parent": "MW2_SHT1",
+            "child": "MW2_XPL1",
+            "id": 132,
+            "chunk_offset": 60
+          },
+          {
+            "parent": "SIG2WLD1",
+            "child": "SIG2ARE1",
+            "id": 1170,
+            "chunk_offset": 52
+          },
+          {
+            "parent": "SIG2WLD1",
+            "child": "SIG2ARE2",
+            "id": 1169,
+            "chunk_offset": 116
+          }
+        ],
+        "traversed_records": [
+          {
+            "name": "SIG2SCN1",
+            "id": 1207,
+            "payload_bytes": 8265,
+            "payload_sha256": "cbcd04b57e65d3741a1b2041ed65ec5e171b19354abe0f2f35b23a6fd2f8c540"
+          },
+          {
+            "name": "SIG2BRF1",
+            "id": 1206,
+            "payload_bytes": 2580,
+            "payload_sha256": "c258d78b6a046323c7528bb20705078236dd02ab379c17cdad00d762b2d28255"
+          },
+          {
+            "name": "SIG2BRF2",
+            "id": 1205,
+            "payload_bytes": 148,
+            "payload_sha256": "cdd17134547932d947610cc23f665681535a1fc27573e9052b9b2cc82f1ad1d4"
+          },
+          {
+            "name": "SIG2DBFF",
+            "id": 1204,
+            "payload_bytes": 456,
+            "payload_sha256": "62946d575663c1b0d9f8feec866b0346a2d6ffbfbe2af97f69db35d52a83e1fa"
+          },
+          {
+            "name": "SIG2DBFS",
+            "id": 1203,
+            "payload_bytes": 672,
+            "payload_sha256": "f7c51a2faecfd3b554b3cf96a2ed1d9c22b21780c89676fc8ebea6b0a451bcc2"
+          },
+          {
+            "name": "FORMATNS",
+            "id": 131,
+            "payload_bytes": 892,
+            "payload_sha256": "29b67e37b652ddc6e7d6e5cc8d5619d830b0f6b312c7f1d1f183c4518fbbea82"
+          },
+          {
+            "name": "SIG2FRM1",
+            "id": 1202,
+            "payload_bytes": 220,
+            "payload_sha256": "5f3fd2bb408158b3d22080d8323eb92f070e5c77e0f82e3d5a1e96ed464682b7"
+          },
+          {
+            "name": "SIG2STAR",
+            "id": 1201,
+            "payload_bytes": 252,
+            "payload_sha256": "ffe033130c1b10498a8d4109e35dbcbac839c6efdc7cc8ed31e75135fce7919e"
+          },
+          {
+            "name": "SIG2ENS1",
+            "id": 1200,
+            "payload_bytes": 152,
+            "payload_sha256": "1ec3f661d5b2cc783354adf1e2175b1203b5143b383f9e58c0359a8ef55f5f50"
+          },
+          {
+            "name": "SIG2ENS2",
+            "id": 1199,
+            "payload_bytes": 152,
+            "payload_sha256": "53a71bbc29c350b9a2237f48a0bec0ba32733ad385cfa79094db7a625d92d61d"
+          },
+          {
+            "name": "SIG2ENS3",
+            "id": 1198,
+            "payload_bytes": 52,
+            "payload_sha256": "c9733dbc94b0cfeea9fff12229605db889d4fee8a6e85e00c14ad71662b86b11"
+          },
+          {
+            "name": "SIG2ENS4",
+            "id": 1197,
+            "payload_bytes": 152,
+            "payload_sha256": "86e8b1f03c54d9d9e60605d36f536d2a1873f25f057371fd5be0695c755aa63e"
+          },
+          {
+            "name": "SIG2ENS5",
+            "id": 1196,
+            "payload_bytes": 152,
+            "payload_sha256": "90e4d9e90c33e8b580633b7725075e69fc867b138c90df9b3da1dbe5c14fdd5d"
+          },
+          {
+            "name": "SIG2NUK1",
+            "id": 1195,
+            "payload_bytes": 252,
+            "payload_sha256": "26d2ee4c1cffa36c39b8e1cba9a06dbf75147634bbad3e5f62151638e30766b2"
+          },
+          {
+            "name": "SIG2NUK2",
+            "id": 1194,
+            "payload_bytes": 252,
+            "payload_sha256": "670705eee4c27180062ace3e5e31252faad3751fb12ce1129a705d139f50e841"
+          },
+          {
+            "name": "SIG2TUR1",
+            "id": 1193,
+            "payload_bytes": 252,
+            "payload_sha256": "90fa5f10f16a26f1159013e684cf214dc2f90eef9e4c4ad8ba33c471e2d908fa"
+          },
+          {
+            "name": "SIG2PLT1",
+            "id": 1192,
+            "payload_bytes": 388,
+            "payload_sha256": "fa991daf3ea779771e5c8a7c171442d86ebab6eb3ec418b91b704587b4bb967a"
+          },
+          {
+            "name": "SIG2MAP1",
+            "id": 1171,
+            "payload_bytes": 6620,
+            "payload_sha256": "0c69bab2e0e099d37e23764624dc97347188e3249032a00a091326e43c624a26"
+          },
+          {
+            "name": "MW2_SHT1",
+            "id": 133,
+            "payload_bytes": 32168,
+            "payload_sha256": "c78d16c07eb7c48010281f845d0b877d90944e2711ee0810119a9226901c4688"
+          },
+          {
+            "name": "SIG2WLD1",
+            "id": 1191,
+            "payload_bytes": 136,
+            "payload_sha256": "1bf507bf48a4af9ce60d9b58798a00d167ef4cdd4f69093291c4281fd32503a8"
+          },
+          {
+            "name": "MW2_XPL1",
+            "id": 132,
+            "payload_bytes": 13004,
+            "payload_sha256": "d81bdf81163722f449a52a95f7e9bf63d7c5e10029cab71e159757f32abc7475"
+          },
+          {
+            "name": "SIG2ST01",
+            "id": 1190,
+            "payload_bytes": 132,
+            "payload_sha256": "c2e72003bedc22664d68d29d299a605dbe61cdb87b5d6f3effc217948644702b"
+          },
+          {
+            "name": "SIG2ST11",
+            "id": 1189,
+            "payload_bytes": 132,
+            "payload_sha256": "9dadd9ecd7ad87cdbc7389519107522114ccb288b0decfe3292b3925b8def9b5"
+          },
+          {
+            "name": "SIG2ST21",
+            "id": 1188,
+            "payload_bytes": 132,
+            "payload_sha256": "e2a0c2b5ffec97ccdfc71370150504e53d15c50bbdd5528ddf8966f1176a42ec"
+          },
+          {
+            "name": "SIG2ST31",
+            "id": 1187,
+            "payload_bytes": 132,
+            "payload_sha256": "9a7a84e51f17554cead0b13a53312854a68900c5281e5b34106b2a996ae77de0"
+          },
+          {
+            "name": "SIG2ST41",
+            "id": 1186,
+            "payload_bytes": 132,
+            "payload_sha256": "c19422ebbec5c9d6346fadb6f71cd3beb1b54f3998c2b3475fb19e24618674cc"
+          },
+          {
+            "name": "SIG2ST51",
+            "id": 1185,
+            "payload_bytes": 132,
+            "payload_sha256": "c80c76284b04112857d47c98fe58084a6ab9830f1f492b5b62e28d53acb38536"
+          },
+          {
+            "name": "SIG2ST61",
+            "id": 1184,
+            "payload_bytes": 132,
+            "payload_sha256": "99d44b8e4298ca149709f068ae7e56280a0c913ab2a2afacac0c3957aea64818"
+          },
+          {
+            "name": "SIG2ST71",
+            "id": 1183,
+            "payload_bytes": 132,
+            "payload_sha256": "4bb5c8326ace9a7a8b330a63814c4bb6748f5e37c5bae6b9f020c83e5f31d514"
+          },
+          {
+            "name": "SIG2ST81",
+            "id": 1182,
+            "payload_bytes": 132,
+            "payload_sha256": "50d9329b6ed37b9c30c5d44525627c1b599c1f4546570149237b12d4749ad5b7"
+          },
+          {
+            "name": "SIG2NAV1",
+            "id": 1181,
+            "payload_bytes": 132,
+            "payload_sha256": "402022cf9ec38a1635559219dd806a003b2e67b229cd1ecd8c221a5996bec18a"
+          },
+          {
+            "name": "SIG2NAV2",
+            "id": 1180,
+            "payload_bytes": 132,
+            "payload_sha256": "a9de49582715637ef2ecd24c4116cb3909701e843aa8d77d281097f1f611c9bb"
+          },
+          {
+            "name": "SIG2NAV3",
+            "id": 1179,
+            "payload_bytes": 132,
+            "payload_sha256": "ceae5bcfce6eb81a61633c7f9b7296c746373fb319db62ca77083570e59d0f31"
+          },
+          {
+            "name": "SIG2NAV4",
+            "id": 1178,
+            "payload_bytes": 132,
+            "payload_sha256": "18f3227ddbee0358e2d0bd5626b35cf7bcaab50b50ad12c9eac0d3e9a3917f6d"
+          },
+          {
+            "name": "SIG2NAV5",
+            "id": 1177,
+            "payload_bytes": 132,
+            "payload_sha256": "9931729203026527fbb58d6ec4079fd93c80332ee1c09a8bff02722fe26ed3a0"
+          },
+          {
+            "name": "SIG2GOU1",
+            "id": 1176,
+            "payload_bytes": 132,
+            "payload_sha256": "3d6280ed955672c5ceaa485f7fd9023ecc3a62d1422c3c29507e16b6f784e847"
+          },
+          {
+            "name": "SIG2GOU2",
+            "id": 1175,
+            "payload_bytes": 132,
+            "payload_sha256": "3af4f115e0259e2deebd9de67d54f4ba82437da3b8f4af4a2063e4ee6fa92849"
+          },
+          {
+            "name": "SIG2GOU3",
+            "id": 1174,
+            "payload_bytes": 132,
+            "payload_sha256": "2aaf0907d2485797fc375ee9f52f2c976cec2c8aa1a17ceeaf5d46b92423b363"
+          },
+          {
+            "name": "SIG2LVE1",
+            "id": 1173,
+            "payload_bytes": 132,
+            "payload_sha256": "40a66009add8111915a2eee8f7f102b7fb99b5b93bcbb546b11c21353468d096"
+          },
+          {
+            "name": "SIG2LVE2",
+            "id": 1172,
+            "payload_bytes": 132,
+            "payload_sha256": "2b4a1587451f1d2a9f4c305f6f3404e36622a9c9d11fd79a07489306fae7d0ea"
+          },
+          {
+            "name": "BR0NPAL1",
+            "id": 829,
+            "payload_bytes": 100,
+            "payload_sha256": "9814a25d2f971cbb27f9a5896cec83505ea5cfb084e99a028408a50b9517f200"
+          },
+          {
+            "name": "SKYDOME",
+            "id": 2562,
+            "payload_bytes": 168,
+            "payload_sha256": "33e07885241c873871b63ed53bbc09731a913d4586e21060d839f9b66ba7cc3c"
+          },
+          {
+            "name": "SIG2ARE1",
+            "id": 1170,
+            "payload_bytes": 10396,
+            "payload_sha256": "9acf6b3f8e5f8d62ca815d1c87c3c58c52e96e7e17453cc33124cae5b36a747f"
+          },
+          {
+            "name": "SIG2ARE2",
+            "id": 1169,
+            "payload_bytes": 1224,
+            "payload_sha256": "61da5229c95f7add915973441471bb3ee34f4f5ba13fa521dadbefc181c86f41"
+          }
+        ]
+      },
+      "OUT3CAM1": {
+        "campaign": {
+          "name": "OUT3CAM1",
+          "id": 2279,
+          "payload_bytes": 3780,
+          "payload_sha256": "7cce8d1650e2f053ab11c85278b500c6321f4d06e11647e996e0da4af4722b3e"
+        },
+        "scene": "OUT3SCN1",
+        "briefing_movie": "OUT3BRF1",
+        "kind": 2,
+        "orders_resource": {
+          "name": "OUT3BRF1",
+          "id": 1105,
+          "payload_bytes": 2112,
+          "payload_sha256": "da9a6c63045848f6a653738caea6a5c44890eabcaf5cac85dfe48372018a30e4"
+        },
+        "header_string_44": "diz3",
+        "header_string_60": "diz4",
+        "successors": {
+          "SLST": [
+            "lut1cam1"
+          ],
+          "FLST": [
+            "lut1cam1"
+          ]
+        },
+        "cpgn_subchunks": [
+          {
+            "tag": "SLST",
+            "offset_in_bwd": 212,
+            "bytes": 24
+          },
+          {
+            "tag": "FLST",
+            "offset_in_bwd": 236,
+            "bytes": 24
+          },
+          {
+            "tag": "MHLT",
+            "offset_in_bwd": 260,
+            "bytes": 272
+          },
+          {
+            "tag": "NEWS",
+            "offset_in_bwd": 532,
+            "bytes": 1772
+          },
+          {
+            "tag": "PTLT",
+            "offset_in_bwd": 2304,
+            "bytes": 40
+          },
+          {
+            "tag": "THLT",
+            "offset_in_bwd": 2344,
+            "bytes": 24
+          },
+          {
+            "tag": "CTNT",
+            "offset_in_bwd": 2368,
+            "bytes": 136
+          },
+          {
+            "tag": "WNLT",
+            "offset_in_bwd": 2504,
+            "bytes": 596
+          },
+          {
+            "tag": "AMMO",
+            "offset_in_bwd": 3100,
+            "bytes": 248
+          },
+          {
+            "tag": "EQUP",
+            "offset_in_bwd": 3348,
+            "bytes": 388
+          },
+          {
+            "tag": "SWNL",
+            "offset_in_bwd": 3736,
+            "bytes": 8
+          },
+          {
+            "tag": "SMHL",
+            "offset_in_bwd": 3744,
+            "bytes": 36
+          }
+        ],
+        "salvage_mechs": [
+          {
+            "name": "KDK00STD",
+            "threshold": 100,
+            "value": 15000000,
+            "year": 3050
+          }
+        ],
+        "external_userstar_count": 0,
+        "players": [
+          {
+            "record": "OUT3USER",
+            "chunk_offset": 52,
+            "mek_id": 82,
+            "skeleton_id": 56,
+            "table": 0,
+            "leader": 1,
+            "control": 0,
+            "skeleton": "kodiak",
+            "loadout": "kdk00std",
+            "display_name": "Raider1",
+            "pilot": "",
+            "flags": 1024,
+            "mek_source": {
+              "name": "KDK00STD",
+              "id": 82,
+              "payload_bytes": 530,
+              "payload_sha256": "6b0048e548e924c230e0e3af6a2ba49491dbf07d10ea99e3f69fa22fab875d95"
+            }
+          }
+        ],
+        "include_edges": [
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3BRF1",
+            "id": 1105,
+            "chunk_offset": 52
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3BRF2",
+            "id": 1104,
+            "chunk_offset": 72
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3DBFF",
+            "id": 1103,
+            "chunk_offset": 92
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3DBFS",
+            "id": 1102,
+            "chunk_offset": 112
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "FORMATNS",
+            "id": 131,
+            "chunk_offset": 132
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3USER",
+            "id": 1101,
+            "chunk_offset": 4530
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ENS1",
+            "id": 1100,
+            "chunk_offset": 4550
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ENS2",
+            "id": 1099,
+            "chunk_offset": 4570
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ENS3",
+            "id": 1098,
+            "chunk_offset": 4590
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ENS4",
+            "id": 1097,
+            "chunk_offset": 4610
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3USR1",
+            "id": 1096,
+            "chunk_offset": 4630
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3PLT1",
+            "id": 1095,
+            "chunk_offset": 4650
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3MAP1",
+            "id": 1082,
+            "chunk_offset": 4670
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "MW2_SHT1",
+            "id": 133,
+            "chunk_offset": 4690
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3WLD1",
+            "id": 1094,
+            "chunk_offset": 4710
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "MW2_XPL1",
+            "id": 132,
+            "chunk_offset": 4730
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ST01",
+            "id": 1093,
+            "chunk_offset": 4750
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ST11",
+            "id": 1092,
+            "chunk_offset": 4770
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ST21",
+            "id": 1091,
+            "chunk_offset": 4790
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ST31",
+            "id": 1090,
+            "chunk_offset": 4810
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ST41",
+            "id": 1089,
+            "chunk_offset": 4830
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ST51",
+            "id": 1088,
+            "chunk_offset": 4850
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3NAV1",
+            "id": 1087,
+            "chunk_offset": 4870
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3GOU1",
+            "id": 1086,
+            "chunk_offset": 4890
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3GOU2",
+            "id": 1085,
+            "chunk_offset": 4910
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3LVE1",
+            "id": 1084,
+            "chunk_offset": 4930
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3LVE2",
+            "id": 1083,
+            "chunk_offset": 4950
+          },
+          {
+            "parent": "OUT3PLT1",
+            "child": "GR0NPAL1",
+            "id": 1015,
+            "chunk_offset": 328
+          },
+          {
+            "parent": "OUT3PLT1",
+            "child": "OUT3MAP1",
+            "id": 1082,
+            "chunk_offset": 348
+          },
+          {
+            "parent": "OUT3PLT1",
+            "child": "SKYDOME",
+            "id": 2562,
+            "chunk_offset": 368
+          },
+          {
+            "parent": "MW2_SHT1",
+            "child": "MW2_XPL1",
+            "id": 132,
+            "chunk_offset": 60
+          },
+          {
+            "parent": "OUT3WLD1",
+            "child": "OUT3ARE1",
+            "id": 1081,
+            "chunk_offset": 52
+          },
+          {
+            "parent": "OUT3WLD1",
+            "child": "OUT3ARE3",
+            "id": 1080,
+            "chunk_offset": 116
+          },
+          {
+            "parent": "OUT3WLD1",
+            "child": "OUT3ARE5",
+            "id": 1079,
+            "chunk_offset": 180
+          }
+        ],
+        "traversed_records": [
+          {
+            "name": "OUT3SCN1",
+            "id": 1106,
+            "payload_bytes": 4970,
+            "payload_sha256": "48381a7a5096610febe4dec8e85457530b4245d67975780fce8fe5c1429d5500"
+          },
+          {
+            "name": "OUT3BRF1",
+            "id": 1105,
+            "payload_bytes": 2112,
+            "payload_sha256": "da9a6c63045848f6a653738caea6a5c44890eabcaf5cac85dfe48372018a30e4"
+          },
+          {
+            "name": "OUT3BRF2",
+            "id": 1104,
+            "payload_bytes": 148,
+            "payload_sha256": "cdd17134547932d947610cc23f665681535a1fc27573e9052b9b2cc82f1ad1d4"
+          },
+          {
+            "name": "OUT3DBFF",
+            "id": 1103,
+            "payload_bytes": 548,
+            "payload_sha256": "d61e22fe453b3aa1e4b090f212a8ef371c7f39125ea00bc8f4d01f05a8dd7240"
+          },
+          {
+            "name": "OUT3DBFS",
+            "id": 1102,
+            "payload_bytes": 760,
+            "payload_sha256": "7b1ab18ae8bb86ede697150f7722a57c07b19ac9f6574b0403e6f95d6cb090f2"
+          },
+          {
+            "name": "FORMATNS",
+            "id": 131,
+            "payload_bytes": 892,
+            "payload_sha256": "29b67e37b652ddc6e7d6e5cc8d5619d830b0f6b312c7f1d1f183c4518fbbea82"
+          },
+          {
+            "name": "OUT3USER",
+            "id": 1101,
+            "payload_bytes": 152,
+            "payload_sha256": "e1db01aa781a05c1fa0e9d9fefdc2402743ff001757ac166db289411ba99ed91"
+          },
+          {
+            "name": "OUT3ENS1",
+            "id": 1100,
+            "payload_bytes": 252,
+            "payload_sha256": "45b2b9c762d712c1f211b2221433914d624504e0a9e54d1d720ba5315264ee9e"
+          },
+          {
+            "name": "OUT3ENS2",
+            "id": 1099,
+            "payload_bytes": 252,
+            "payload_sha256": "11a0f19e54663a6b07d3d7c9c49ba81c43ad39427a40bd182b986ff4a7859d9e"
+          },
+          {
+            "name": "OUT3ENS3",
+            "id": 1098,
+            "payload_bytes": 252,
+            "payload_sha256": "b37573deac67ea838a1b7c677bb9f9db63a1f7defd4ed51b7d677128c78d1886"
+          },
+          {
+            "name": "OUT3ENS4",
+            "id": 1097,
+            "payload_bytes": 352,
+            "payload_sha256": "0ec882178f144c2c3c900cc85209448727fef2a418b9e32bd665c6eb2eb53e16"
+          },
+          {
+            "name": "OUT3USR1",
+            "id": 1096,
+            "payload_bytes": 152,
+            "payload_sha256": "6ffbb6ef755fe4a5dc9bbe9429d10464977c128f2c785dcce7f954c04d936691"
+          },
+          {
+            "name": "OUT3PLT1",
+            "id": 1095,
+            "payload_bytes": 388,
+            "payload_sha256": "655e5eb84771c66c2924be9eed0fd18e78e7c465d787b5d5809ff7d3cd792360"
+          },
+          {
+            "name": "OUT3MAP1",
+            "id": 1082,
+            "payload_bytes": 6524,
+            "payload_sha256": "6eeea656f050bb442e00a54bb0a85e1ef904c0776384f8e61ea4b10c304fbda8"
+          },
+          {
+            "name": "MW2_SHT1",
+            "id": 133,
+            "payload_bytes": 32168,
+            "payload_sha256": "c78d16c07eb7c48010281f845d0b877d90944e2711ee0810119a9226901c4688"
+          },
+          {
+            "name": "OUT3WLD1",
+            "id": 1094,
+            "payload_bytes": 200,
+            "payload_sha256": "28991c089c7d34fb2ee5e969d9ecf512f5b8e8efa8d91d96803b5cf6fc3063e2"
+          },
+          {
+            "name": "MW2_XPL1",
+            "id": 132,
+            "payload_bytes": 13004,
+            "payload_sha256": "d81bdf81163722f449a52a95f7e9bf63d7c5e10029cab71e159757f32abc7475"
+          },
+          {
+            "name": "OUT3ST01",
+            "id": 1093,
+            "payload_bytes": 132,
+            "payload_sha256": "bd03a09d9422934984a89ba82989bf980164ed19ded551b95e884b895f18a3eb"
+          },
+          {
+            "name": "OUT3ST11",
+            "id": 1092,
+            "payload_bytes": 132,
+            "payload_sha256": "d9fdd81a73956fee76bd3e83fde1b173dd7eb521ef27cee87dfb8bc27bb3a957"
+          },
+          {
+            "name": "OUT3ST21",
+            "id": 1091,
+            "payload_bytes": 132,
+            "payload_sha256": "6aa2367a1acec02b99d50f2375da05cf0dcd7aa6ea9320466dc7330a26af9af9"
+          },
+          {
+            "name": "OUT3ST31",
+            "id": 1090,
+            "payload_bytes": 132,
+            "payload_sha256": "d24709c3ae90f25c88129f228e56648394374daadcda3002d7ed098d9b9b3e5e"
+          },
+          {
+            "name": "OUT3ST41",
+            "id": 1089,
+            "payload_bytes": 132,
+            "payload_sha256": "5b2047731761c03aacbdd00c9ecc9c63d70d7e8822f459cd1887d3308e05b05e"
+          },
+          {
+            "name": "OUT3ST51",
+            "id": 1088,
+            "payload_bytes": 132,
+            "payload_sha256": "aa89e37d28fa4dcca272729e6ead6cba62b357d601dd456cb2cacded220a21eb"
+          },
+          {
+            "name": "OUT3NAV1",
+            "id": 1087,
+            "payload_bytes": 132,
+            "payload_sha256": "403383bde6ae4303af31e8b3d8da4aa5595b4733f90b0d04084873535ce0bc0e"
+          },
+          {
+            "name": "OUT3GOU1",
+            "id": 1086,
+            "payload_bytes": 132,
+            "payload_sha256": "b83ed2f63d58fc860575a17457e843b153cf37a5b31e859baa6665221f4fc795"
+          },
+          {
+            "name": "OUT3GOU2",
+            "id": 1085,
+            "payload_bytes": 132,
+            "payload_sha256": "1c2beb1cc45e840256c467566213319c6a4a8927952d3d07f39aef38e8ce4101"
+          },
+          {
+            "name": "OUT3LVE1",
+            "id": 1084,
+            "payload_bytes": 132,
+            "payload_sha256": "60aa402224ac0fa6fe000c7e78237747f6d5e045a4c19fa4383fa997644a894b"
+          },
+          {
+            "name": "OUT3LVE2",
+            "id": 1083,
+            "payload_bytes": 132,
+            "payload_sha256": "9396a7cfe454ec0b0b4b64d7779fa07c8ace62351c0dde1f0009ae5137a23805"
+          },
+          {
+            "name": "GR0NPAL1",
+            "id": 1015,
+            "payload_bytes": 100,
+            "payload_sha256": "87c601f2d6eb456fde0cdfe7e23cffac6327094c169c22a61931144b024e6a99"
+          },
+          {
+            "name": "SKYDOME",
+            "id": 2562,
+            "payload_bytes": 168,
+            "payload_sha256": "33e07885241c873871b63ed53bbc09731a913d4586e21060d839f9b66ba7cc3c"
+          },
+          {
+            "name": "OUT3ARE1",
+            "id": 1081,
+            "payload_bytes": 22968,
+            "payload_sha256": "7faf70f440c42cfafe218fd41a27930b2f9b70bc38e38a1707d802a63e032b1b"
+          },
+          {
+            "name": "OUT3ARE3",
+            "id": 1080,
+            "payload_bytes": 512,
+            "payload_sha256": "9be2d925acbd17f823fb442982f58373f93420ebddde15ccdfce83cd65251fa6"
+          },
+          {
+            "name": "OUT3ARE5",
+            "id": 1079,
+            "payload_bytes": 168,
+            "payload_sha256": "738a3d8895ba7c266eec9a02fc7da808ac926ecd75752a2d3f5766533c9a2829"
+          }
+        ]
+      }
+    },
+    "direct3d": {
+      "MCC4CAM1": {
+        "campaign": {
+          "name": "MCC4CAM1",
+          "id": 2270,
+          "payload_bytes": 3236,
+          "payload_sha256": "5a1d6a3a75601c31c862e49c0c5979af5139a76774f97daba885de23f5c58161"
+        },
+        "scene": "MCC4SCN1",
+        "briefing_movie": "MCC4BRF1",
+        "kind": 2,
+        "orders_resource": {
+          "name": "MCC4BRF1",
+          "id": 937,
+          "payload_bytes": 2592,
+          "payload_sha256": "0893885de458019e538f3383abd7360f62caa2c2249a62abc65d1f49d510aade"
+        },
+        "header_string_44": "diz3",
+        "header_string_60": "diz4",
+        "successors": {
+          "SLST": [
+            "iva1cam1",
+            "masBcam1",
+            "ran7cam1"
+          ],
+          "FLST": [
+            "iva1cam1",
+            "masBcam1",
+            "ran7cam1"
+          ]
+        },
+        "cpgn_subchunks": [
+          {
+            "tag": "SLST",
+            "offset_in_bwd": 212,
+            "bytes": 56
+          },
+          {
+            "tag": "FLST",
+            "offset_in_bwd": 268,
+            "bytes": 56
+          },
+          {
+            "tag": "MHLT",
+            "offset_in_bwd": 324,
+            "bytes": 272
+          },
+          {
+            "tag": "NEWS",
+            "offset_in_bwd": 596,
+            "bytes": 1624
+          },
+          {
+            "tag": "PTLT",
+            "offset_in_bwd": 2220,
+            "bytes": 40
+          },
+          {
+            "tag": "THLT",
+            "offset_in_bwd": 2260,
+            "bytes": 24
+          },
+          {
+            "tag": "CTNT",
+            "offset_in_bwd": 2284,
+            "bytes": 136
+          },
+          {
+            "tag": "WNLT",
+            "offset_in_bwd": 2420,
+            "bytes": 308
+          },
+          {
+            "tag": "AMMO",
+            "offset_in_bwd": 2728,
+            "bytes": 168
+          },
+          {
+            "tag": "EQUP",
+            "offset_in_bwd": 2896,
+            "bytes": 248
+          },
+          {
+            "tag": "SWNL",
+            "offset_in_bwd": 3144,
+            "bytes": 56
+          },
+          {
+            "tag": "SMHL",
+            "offset_in_bwd": 3200,
+            "bytes": 36
+          }
+        ],
+        "salvage_mechs": [
+          {
+            "name": "PNT51STD",
+            "threshold": 30,
+            "value": 2400000,
+            "year": 3044
+          }
+        ],
+        "external_userstar_count": 0,
+        "players": [
+          {
+            "record": "MCC4STAR",
+            "chunk_offset": 52,
+            "mek_id": 140,
+            "skeleton_id": 78,
+            "table": 0,
+            "leader": 1,
+            "control": 0,
+            "skeleton": "stalker",
+            "loadout": "stk00std",
+            "display_name": "Raider1",
+            "pilot": "",
+            "flags": 1024,
+            "mek_source": {
+              "name": "STK00STD",
+              "id": 140,
+              "payload_bytes": 514,
+              "payload_sha256": "87c952ee6a89cedd48cf8c3b38efd42c9f663be996d69a9533b88524df6f1105"
+            }
+          }
+        ],
+        "include_edges": [
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4BRF1",
+            "id": 937,
+            "chunk_offset": 52
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4BRF2",
+            "id": 936,
+            "chunk_offset": 72
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4DBFF",
+            "id": 935,
+            "chunk_offset": 92
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4DBFS",
+            "id": 934,
+            "chunk_offset": 112
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4FRM1",
+            "id": 933,
+            "chunk_offset": 132
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "FORMATNS",
+            "id": 131,
+            "chunk_offset": 152
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4STAR",
+            "id": 932,
+            "chunk_offset": 9266
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4USR1",
+            "id": 931,
+            "chunk_offset": 9286
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4USR2",
+            "id": 930,
+            "chunk_offset": 9306
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4TAN1",
+            "id": 929,
+            "chunk_offset": 9326
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ENS1",
+            "id": 928,
+            "chunk_offset": 9346
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ENS2",
+            "id": 927,
+            "chunk_offset": 9366
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ENS3",
+            "id": 926,
+            "chunk_offset": 9386
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ENS4",
+            "id": 925,
+            "chunk_offset": 9406
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ENS5",
+            "id": 924,
+            "chunk_offset": 9426
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4PLT1",
+            "id": 923,
+            "chunk_offset": 9446
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4MAP1",
+            "id": 899,
+            "chunk_offset": 9466
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MW2_SHT1",
+            "id": 133,
+            "chunk_offset": 9486
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4WLD1",
+            "id": 922,
+            "chunk_offset": 9506
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MW2_XPL1",
+            "id": 132,
+            "chunk_offset": 9526
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST01",
+            "id": 921,
+            "chunk_offset": 9546
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST11",
+            "id": 920,
+            "chunk_offset": 9566
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST21",
+            "id": 919,
+            "chunk_offset": 9586
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST31",
+            "id": 918,
+            "chunk_offset": 9606
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST41",
+            "id": 917,
+            "chunk_offset": 9626
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST51",
+            "id": 916,
+            "chunk_offset": 9646
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST61",
+            "id": 915,
+            "chunk_offset": 9666
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST71",
+            "id": 914,
+            "chunk_offset": 9686
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4ST81",
+            "id": 913,
+            "chunk_offset": 9706
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4NAV1",
+            "id": 912,
+            "chunk_offset": 9726
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4NAV2",
+            "id": 911,
+            "chunk_offset": 9746
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOU1",
+            "id": 910,
+            "chunk_offset": 9766
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOU2",
+            "id": 909,
+            "chunk_offset": 9786
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOU3",
+            "id": 908,
+            "chunk_offset": 9806
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOU4",
+            "id": 907,
+            "chunk_offset": 9826
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOU5",
+            "id": 906,
+            "chunk_offset": 9846
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOU6",
+            "id": 905,
+            "chunk_offset": 9866
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOE1",
+            "id": 904,
+            "chunk_offset": 9886
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOE2",
+            "id": 903,
+            "chunk_offset": 9906
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4GOE3",
+            "id": 902,
+            "chunk_offset": 9926
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4LVE1",
+            "id": 901,
+            "chunk_offset": 9946
+          },
+          {
+            "parent": "MCC4SCN1",
+            "child": "MCC4LVE2",
+            "id": 900,
+            "chunk_offset": 9966
+          },
+          {
+            "parent": "MCC4PLT1",
+            "child": "SKYDOME",
+            "id": 2562,
+            "chunk_offset": 232
+          },
+          {
+            "parent": "MCC4PLT1",
+            "child": "CY0NPAL1",
+            "id": 141,
+            "chunk_offset": 348
+          },
+          {
+            "parent": "MCC4PLT1",
+            "child": "BET3MAP1",
+            "id": 204,
+            "chunk_offset": 368
+          },
+          {
+            "parent": "MW2_SHT1",
+            "child": "MW2_XPL1",
+            "id": 132,
+            "chunk_offset": 60
+          },
+          {
+            "parent": "MCC4WLD1",
+            "child": "MCC4ARE1",
+            "id": 898,
+            "chunk_offset": 52
+          },
+          {
+            "parent": "MCC4WLD1",
+            "child": "MCC4ARE2",
+            "id": 897,
+            "chunk_offset": 72
+          },
+          {
+            "parent": "MCC4WLD1",
+            "child": "MCC4ARE4",
+            "id": 896,
+            "chunk_offset": 136
+          },
+          {
+            "parent": "MCC4WLD1",
+            "child": "MCC4ARE5",
+            "id": 895,
+            "chunk_offset": 200
+          }
+        ],
+        "traversed_records": [
+          {
+            "name": "MCC4SCN1",
+            "id": 938,
+            "payload_bytes": 9986,
+            "payload_sha256": "fb1c81a6d70eae722f2f5a0bf2d76f0ba4d1170b02c26c15902da300f5d21bb9"
+          },
+          {
+            "name": "MCC4BRF1",
+            "id": 937,
+            "payload_bytes": 2592,
+            "payload_sha256": "0893885de458019e538f3383abd7360f62caa2c2249a62abc65d1f49d510aade"
+          },
+          {
+            "name": "MCC4BRF2",
+            "id": 936,
+            "payload_bytes": 148,
+            "payload_sha256": "0648c0702040fd4f18f12983eaef7a29ed0cccb50e6be816b9fdc65f2ab96769"
+          },
+          {
+            "name": "MCC4DBFF",
+            "id": 935,
+            "payload_bytes": 1968,
+            "payload_sha256": "ec0af0e559bc491c0b7676f65f606def9cc476946cc24d77a90dfc2964aa783c"
+          },
+          {
+            "name": "MCC4DBFS",
+            "id": 934,
+            "payload_bytes": 2412,
+            "payload_sha256": "348c650fd6884cac4c76cf7b35fafec8db67b0d181b1804ccd75fc7945088749"
+          },
+          {
+            "name": "MCC4FRM1",
+            "id": 933,
+            "payload_bytes": 136,
+            "payload_sha256": "c5db19b6bf012deaea38c9571d0db556e7a1508e3db4fd67f57e90fadf3c6996"
+          },
+          {
+            "name": "FORMATNS",
+            "id": 131,
+            "payload_bytes": 892,
+            "payload_sha256": "29b67e37b652ddc6e7d6e5cc8d5619d830b0f6b312c7f1d1f183c4518fbbea82"
+          },
+          {
+            "name": "MCC4STAR",
+            "id": 932,
+            "payload_bytes": 152,
+            "payload_sha256": "87706eae26204d0c5a769763fda10e7f894e58b59ce3137e457fc9123102c2ad"
+          },
+          {
+            "name": "MCC4USR1",
+            "id": 931,
+            "payload_bytes": 252,
+            "payload_sha256": "1a538e7a88d0550159bae94ae8b5678d0264c2b54c1da5078379986ee745d551"
+          },
+          {
+            "name": "MCC4USR2",
+            "id": 930,
+            "payload_bytes": 152,
+            "payload_sha256": "36aa8c50c430b5a6e4da183565dabbce1a6ae466c063787a2ada8da9fd4fc8cd"
+          },
+          {
+            "name": "MCC4TAN1",
+            "id": 929,
+            "payload_bytes": 252,
+            "payload_sha256": "a2fe27f97be8798b5155dc0b98ea8dbb6e901c4ff953280e5c40fa6a41388f9f"
+          },
+          {
+            "name": "MCC4ENS1",
+            "id": 928,
+            "payload_bytes": 52,
+            "payload_sha256": "c9733dbc94b0cfeea9fff12229605db889d4fee8a6e85e00c14ad71662b86b11"
+          },
+          {
+            "name": "MCC4ENS2",
+            "id": 927,
+            "payload_bytes": 152,
+            "payload_sha256": "0ba38dcfa96408949671c46bdde81dfcbe609fd7a14102ddd0f28a75805fbd17"
+          },
+          {
+            "name": "MCC4ENS3",
+            "id": 926,
+            "payload_bytes": 152,
+            "payload_sha256": "5c1bce6fb99f39e6df252c26f623a2375077b293b51890e115ce7358c74c853f"
+          },
+          {
+            "name": "MCC4ENS4",
+            "id": 925,
+            "payload_bytes": 252,
+            "payload_sha256": "70307f80be41aab9d63141fea7dde091a1d8aac5e54f9b1d9683fcca2cd791e6"
+          },
+          {
+            "name": "MCC4ENS5",
+            "id": 924,
+            "payload_bytes": 252,
+            "payload_sha256": "8832989543fd19138467300ba706219d4d4d45421c568494f2b062cd9cd5ba42"
+          },
+          {
+            "name": "MCC4PLT1",
+            "id": 923,
+            "payload_bytes": 388,
+            "payload_sha256": "ad317aa3e5353337829d8cd7a5c54b46c5cd6a4b6ee3f8070d70e52e753c36b1"
+          },
+          {
+            "name": "MCC4MAP1",
+            "id": 899,
+            "payload_bytes": 6620,
+            "payload_sha256": "ec44744955feda25778c24778899642515ebbfd1670d51b926127cd54d7e7038"
+          },
+          {
+            "name": "MW2_SHT1",
+            "id": 133,
+            "payload_bytes": 32168,
+            "payload_sha256": "c78d16c07eb7c48010281f845d0b877d90944e2711ee0810119a9226901c4688"
+          },
+          {
+            "name": "MCC4WLD1",
+            "id": 922,
+            "payload_bytes": 220,
+            "payload_sha256": "a14f65610898df14d2788e5ba2fb8404a302f09dd9b5606c79f744ee09efbd4b"
+          },
+          {
+            "name": "MW2_XPL1",
+            "id": 132,
+            "payload_bytes": 13004,
+            "payload_sha256": "d81bdf81163722f449a52a95f7e9bf63d7c5e10029cab71e159757f32abc7475"
+          },
+          {
+            "name": "MCC4ST01",
+            "id": 921,
+            "payload_bytes": 132,
+            "payload_sha256": "c4f585955b34038ae6a56174a8aac95201d3a641cf3da2dcdd78a75f70926395"
+          },
+          {
+            "name": "MCC4ST11",
+            "id": 920,
+            "payload_bytes": 132,
+            "payload_sha256": "68b2d6f24a7adff5d13ad95a91615998bf3c3f82c0f3930182e909b178448191"
+          },
+          {
+            "name": "MCC4ST21",
+            "id": 919,
+            "payload_bytes": 132,
+            "payload_sha256": "ad1bd18ddc2b95977196f54e63d3f0489ecd9b4013c9b60f343125b33c46fd47"
+          },
+          {
+            "name": "MCC4ST31",
+            "id": 918,
+            "payload_bytes": 132,
+            "payload_sha256": "36d5d5f67f46ac7346396e43e5f8060d194d167ff14230c8db1a1c55f7c15162"
+          },
+          {
+            "name": "MCC4ST41",
+            "id": 917,
+            "payload_bytes": 132,
+            "payload_sha256": "dc9b9785ab7e1396e9d443ed598b6f118fc34c167a20cf7d29246a3799fde255"
+          },
+          {
+            "name": "MCC4ST51",
+            "id": 916,
+            "payload_bytes": 132,
+            "payload_sha256": "283eb23c26520c987fe17fce1180b0ebfdb1f7c0216878c44d0f9602774abcf2"
+          },
+          {
+            "name": "MCC4ST61",
+            "id": 915,
+            "payload_bytes": 132,
+            "payload_sha256": "e847dcd72b59cc4dfaa0b0c9f89da0890f09c56aad4f4294f2beb145f311d2f8"
+          },
+          {
+            "name": "MCC4ST71",
+            "id": 914,
+            "payload_bytes": 132,
+            "payload_sha256": "e87b3f5fc87ac6f57421a67ad2ab6f2d9f53268b9d9b30c83b6987d057f4b8a7"
+          },
+          {
+            "name": "MCC4ST81",
+            "id": 913,
+            "payload_bytes": 132,
+            "payload_sha256": "35f15d19cfd1fb4c599f6b4418b2db28546a076aa1ef19ac888761607fd9635d"
+          },
+          {
+            "name": "MCC4NAV1",
+            "id": 912,
+            "payload_bytes": 132,
+            "payload_sha256": "0138910d237f0737fb0f70beef075ae36915aca67ed3d1fdbc63d28340297785"
+          },
+          {
+            "name": "MCC4NAV2",
+            "id": 911,
+            "payload_bytes": 132,
+            "payload_sha256": "9bd698af016fe359d2b51b90ec521ed457eb7bbcb3520fb21cbba23781f2c94f"
+          },
+          {
+            "name": "MCC4GOU1",
+            "id": 910,
+            "payload_bytes": 132,
+            "payload_sha256": "44cc0e4409e9165698edc7c2cec09efc37e3186c449f0cfc517f5984a9de46ac"
+          },
+          {
+            "name": "MCC4GOU2",
+            "id": 909,
+            "payload_bytes": 132,
+            "payload_sha256": "859f1a2c3922dc067309bb46eac32f7339e2d4178338bf72f431f91f5cf95a53"
+          },
+          {
+            "name": "MCC4GOU3",
+            "id": 908,
+            "payload_bytes": 132,
+            "payload_sha256": "686083a8adb790aba959fa4fd3185905d79d0338bc7cb0361559ffc77691b1e6"
+          },
+          {
+            "name": "MCC4GOU4",
+            "id": 907,
+            "payload_bytes": 132,
+            "payload_sha256": "799384a24558ac5afe41413e14c6a1f23a8e64c818061932b55948d8f6c7dbd2"
+          },
+          {
+            "name": "MCC4GOU5",
+            "id": 906,
+            "payload_bytes": 132,
+            "payload_sha256": "230c91ab5f5c7e0aeba702f8172756134984e03c8a3b60343dc17e3e7ed0bf3e"
+          },
+          {
+            "name": "MCC4GOU6",
+            "id": 905,
+            "payload_bytes": 132,
+            "payload_sha256": "e8588c9d9e5ece24b12d5d1c2163444e44a966d1a4e12a3878f05c883573cfa1"
+          },
+          {
+            "name": "MCC4GOE1",
+            "id": 904,
+            "payload_bytes": 132,
+            "payload_sha256": "3fbec2fbd141d78d49117c6763c0975c863d41f12831e72a129c585f53290df8"
+          },
+          {
+            "name": "MCC4GOE2",
+            "id": 903,
+            "payload_bytes": 132,
+            "payload_sha256": "7795fced0a50a1cb02d5b284c889848f40a824e2a1c233f09f92ce48a5c417a9"
+          },
+          {
+            "name": "MCC4GOE3",
+            "id": 902,
+            "payload_bytes": 132,
+            "payload_sha256": "94552369dcf46ed3ca0ca3c83305dd7309349992e4c14a1311c5d359c643d615"
+          },
+          {
+            "name": "MCC4LVE1",
+            "id": 901,
+            "payload_bytes": 132,
+            "payload_sha256": "40a66009add8111915a2eee8f7f102b7fb99b5b93bcbb546b11c21353468d096"
+          },
+          {
+            "name": "MCC4LVE2",
+            "id": 900,
+            "payload_bytes": 132,
+            "payload_sha256": "2b4a1587451f1d2a9f4c305f6f3404e36622a9c9d11fd79a07489306fae7d0ea"
+          },
+          {
+            "name": "SKYDOME",
+            "id": 2562,
+            "payload_bytes": 168,
+            "payload_sha256": "33e07885241c873871b63ed53bbc09731a913d4586e21060d839f9b66ba7cc3c"
+          },
+          {
+            "name": "CY0NPAL1",
+            "id": 141,
+            "payload_bytes": 100,
+            "payload_sha256": "5e6c9984c3cdf6a52c0b502561deced7be09e90edf64b82ef79165ca323bae29"
+          },
+          {
+            "name": "BET3MAP1",
+            "id": 204,
+            "payload_bytes": 6556,
+            "payload_sha256": "fafb638c2a1ef9ccce5d07653c1b5efa980fb11567e2aa5eae6decd971bc36d4"
+          },
+          {
+            "name": "MCC4ARE1",
+            "id": 898,
+            "payload_bytes": 20212,
+            "payload_sha256": "d26566bf6797c2f503c2c6ac35a91d8ba5738f4b780aefef6aeed7f6135071d0"
+          },
+          {
+            "name": "MCC4ARE2",
+            "id": 897,
+            "payload_bytes": 1252,
+            "payload_sha256": "d2fc33668a6a022e71fa66a1fe134b3d3a61838c45ac3081074ffa447c6e9625"
+          },
+          {
+            "name": "MCC4ARE4",
+            "id": 896,
+            "payload_bytes": 836,
+            "payload_sha256": "bafc3fd8c2e15ff17d8078b3e785afb627831a2cd94f4b571b33da6448c0950b"
+          },
+          {
+            "name": "MCC4ARE5",
+            "id": 895,
+            "payload_bytes": 1104,
+            "payload_sha256": "058a23ed13cef5c92618089772477066578f3dfefde1802f5ade7da577a35a92"
+          }
+        ]
+      },
+      "SIG2CAM1": {
+        "campaign": {
+          "name": "SIG2CAM1",
+          "id": 2316,
+          "payload_bytes": 1632,
+          "payload_sha256": "f885bee9161fe8ca6ea913700b5ac534d1d3e2fe0071850fe21f524253f2dd63"
+        },
+        "scene": "SIG2SCN1",
+        "briefing_movie": "NODATA",
+        "kind": 1,
+        "orders_resource": {
+          "name": "SIG2BRF1",
+          "id": 1206,
+          "payload_bytes": 2580,
+          "payload_sha256": "c258d78b6a046323c7528bb20705078236dd02ab379c17cdad00d762b2d28255"
+        },
+        "header_string_44": "diz3",
+        "header_string_60": "diz4",
+        "successors": {
+          "SLST": [
+            "sig3cam1"
+          ],
+          "FLST": [
+            "DEATH"
+          ]
+        },
+        "cpgn_subchunks": [
+          {
+            "tag": "SLST",
+            "offset_in_bwd": 212,
+            "bytes": 24
+          },
+          {
+            "tag": "FLST",
+            "offset_in_bwd": 236,
+            "bytes": 24
+          },
+          {
+            "tag": "MHLT",
+            "offset_in_bwd": 260,
+            "bytes": 584
+          },
+          {
+            "tag": "NEWS",
+            "offset_in_bwd": 844,
+            "bytes": 80
+          },
+          {
+            "tag": "PTLT",
+            "offset_in_bwd": 924,
+            "bytes": 8
+          },
+          {
+            "tag": "THLT",
+            "offset_in_bwd": 932,
+            "bytes": 8
+          },
+          {
+            "tag": "CTNT",
+            "offset_in_bwd": 940,
+            "bytes": 136
+          },
+          {
+            "tag": "WNLT",
+            "offset_in_bwd": 1076,
+            "bytes": 212
+          },
+          {
+            "tag": "EQUP",
+            "offset_in_bwd": 1288,
+            "bytes": 328
+          },
+          {
+            "tag": "SWNL",
+            "offset_in_bwd": 1616,
+            "bytes": 8
+          },
+          {
+            "tag": "SMHL",
+            "offset_in_bwd": 1624,
+            "bytes": 8
+          }
+        ],
+        "salvage_mechs": [],
+        "external_userstar_count": 0,
+        "players": [
+          {
+            "record": "SIG2STAR",
+            "chunk_offset": 52,
+            "mek_id": 116,
+            "skeleton_id": 66,
+            "table": 0,
+            "leader": 1,
+            "control": 0,
+            "skeleton": "pegasus",
+            "loadout": "peg00std",
+            "display_name": "Escaping POW",
+            "pilot": "",
+            "flags": 1024,
+            "mek_source": {
+              "name": "PEG00STD",
+              "id": 116,
+              "payload_bytes": 434,
+              "payload_sha256": "4e46c11309e5c7735ebe4b0558c9e0ea5a215139ae058efcd350b23027bcc8ec"
+            }
+          }
+        ],
+        "include_edges": [
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2BRF1",
+            "id": 1206,
+            "chunk_offset": 52
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2BRF2",
+            "id": 1205,
+            "chunk_offset": 72
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2DBFF",
+            "id": 1204,
+            "chunk_offset": 92
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2DBFS",
+            "id": 1203,
+            "chunk_offset": 112
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "FORMATNS",
+            "id": 131,
+            "chunk_offset": 132
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2FRM1",
+            "id": 1202,
+            "chunk_offset": 152
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2STAR",
+            "id": 1201,
+            "chunk_offset": 7605
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ENS1",
+            "id": 1200,
+            "chunk_offset": 7625
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ENS2",
+            "id": 1199,
+            "chunk_offset": 7645
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ENS3",
+            "id": 1198,
+            "chunk_offset": 7665
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ENS4",
+            "id": 1197,
+            "chunk_offset": 7685
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ENS5",
+            "id": 1196,
+            "chunk_offset": 7705
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NUK1",
+            "id": 1195,
+            "chunk_offset": 7725
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NUK2",
+            "id": 1194,
+            "chunk_offset": 7745
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2TUR1",
+            "id": 1193,
+            "chunk_offset": 7765
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2PLT1",
+            "id": 1192,
+            "chunk_offset": 7785
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2MAP1",
+            "id": 1171,
+            "chunk_offset": 7805
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "MW2_SHT1",
+            "id": 133,
+            "chunk_offset": 7825
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2WLD1",
+            "id": 1191,
+            "chunk_offset": 7845
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "MW2_XPL1",
+            "id": 132,
+            "chunk_offset": 7865
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST01",
+            "id": 1190,
+            "chunk_offset": 7885
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST11",
+            "id": 1189,
+            "chunk_offset": 7905
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST21",
+            "id": 1188,
+            "chunk_offset": 7925
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST31",
+            "id": 1187,
+            "chunk_offset": 7945
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST41",
+            "id": 1186,
+            "chunk_offset": 7965
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST51",
+            "id": 1185,
+            "chunk_offset": 7985
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST61",
+            "id": 1184,
+            "chunk_offset": 8005
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST71",
+            "id": 1183,
+            "chunk_offset": 8025
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2ST81",
+            "id": 1182,
+            "chunk_offset": 8045
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NAV1",
+            "id": 1181,
+            "chunk_offset": 8065
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NAV2",
+            "id": 1180,
+            "chunk_offset": 8085
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NAV3",
+            "id": 1179,
+            "chunk_offset": 8105
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NAV4",
+            "id": 1178,
+            "chunk_offset": 8125
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2NAV5",
+            "id": 1177,
+            "chunk_offset": 8145
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2GOU1",
+            "id": 1176,
+            "chunk_offset": 8165
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2GOU2",
+            "id": 1175,
+            "chunk_offset": 8185
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2GOU3",
+            "id": 1174,
+            "chunk_offset": 8205
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2LVE1",
+            "id": 1173,
+            "chunk_offset": 8225
+          },
+          {
+            "parent": "SIG2SCN1",
+            "child": "SIG2LVE2",
+            "id": 1172,
+            "chunk_offset": 8245
+          },
+          {
+            "parent": "SIG2PLT1",
+            "child": "BR0NPAL1",
+            "id": 829,
+            "chunk_offset": 328
+          },
+          {
+            "parent": "SIG2PLT1",
+            "child": "SIG2MAP1",
+            "id": 1171,
+            "chunk_offset": 348
+          },
+          {
+            "parent": "SIG2PLT1",
+            "child": "SKYDOME",
+            "id": 2562,
+            "chunk_offset": 368
+          },
+          {
+            "parent": "MW2_SHT1",
+            "child": "MW2_XPL1",
+            "id": 132,
+            "chunk_offset": 60
+          },
+          {
+            "parent": "SIG2WLD1",
+            "child": "SIG2ARE1",
+            "id": 1170,
+            "chunk_offset": 52
+          },
+          {
+            "parent": "SIG2WLD1",
+            "child": "SIG2ARE2",
+            "id": 1169,
+            "chunk_offset": 116
+          }
+        ],
+        "traversed_records": [
+          {
+            "name": "SIG2SCN1",
+            "id": 1207,
+            "payload_bytes": 8265,
+            "payload_sha256": "cbcd04b57e65d3741a1b2041ed65ec5e171b19354abe0f2f35b23a6fd2f8c540"
+          },
+          {
+            "name": "SIG2BRF1",
+            "id": 1206,
+            "payload_bytes": 2580,
+            "payload_sha256": "c258d78b6a046323c7528bb20705078236dd02ab379c17cdad00d762b2d28255"
+          },
+          {
+            "name": "SIG2BRF2",
+            "id": 1205,
+            "payload_bytes": 148,
+            "payload_sha256": "cdd17134547932d947610cc23f665681535a1fc27573e9052b9b2cc82f1ad1d4"
+          },
+          {
+            "name": "SIG2DBFF",
+            "id": 1204,
+            "payload_bytes": 456,
+            "payload_sha256": "62946d575663c1b0d9f8feec866b0346a2d6ffbfbe2af97f69db35d52a83e1fa"
+          },
+          {
+            "name": "SIG2DBFS",
+            "id": 1203,
+            "payload_bytes": 672,
+            "payload_sha256": "f7c51a2faecfd3b554b3cf96a2ed1d9c22b21780c89676fc8ebea6b0a451bcc2"
+          },
+          {
+            "name": "FORMATNS",
+            "id": 131,
+            "payload_bytes": 892,
+            "payload_sha256": "29b67e37b652ddc6e7d6e5cc8d5619d830b0f6b312c7f1d1f183c4518fbbea82"
+          },
+          {
+            "name": "SIG2FRM1",
+            "id": 1202,
+            "payload_bytes": 220,
+            "payload_sha256": "5f3fd2bb408158b3d22080d8323eb92f070e5c77e0f82e3d5a1e96ed464682b7"
+          },
+          {
+            "name": "SIG2STAR",
+            "id": 1201,
+            "payload_bytes": 252,
+            "payload_sha256": "ffe033130c1b10498a8d4109e35dbcbac839c6efdc7cc8ed31e75135fce7919e"
+          },
+          {
+            "name": "SIG2ENS1",
+            "id": 1200,
+            "payload_bytes": 152,
+            "payload_sha256": "1ec3f661d5b2cc783354adf1e2175b1203b5143b383f9e58c0359a8ef55f5f50"
+          },
+          {
+            "name": "SIG2ENS2",
+            "id": 1199,
+            "payload_bytes": 152,
+            "payload_sha256": "53a71bbc29c350b9a2237f48a0bec0ba32733ad385cfa79094db7a625d92d61d"
+          },
+          {
+            "name": "SIG2ENS3",
+            "id": 1198,
+            "payload_bytes": 52,
+            "payload_sha256": "c9733dbc94b0cfeea9fff12229605db889d4fee8a6e85e00c14ad71662b86b11"
+          },
+          {
+            "name": "SIG2ENS4",
+            "id": 1197,
+            "payload_bytes": 152,
+            "payload_sha256": "86e8b1f03c54d9d9e60605d36f536d2a1873f25f057371fd5be0695c755aa63e"
+          },
+          {
+            "name": "SIG2ENS5",
+            "id": 1196,
+            "payload_bytes": 152,
+            "payload_sha256": "90e4d9e90c33e8b580633b7725075e69fc867b138c90df9b3da1dbe5c14fdd5d"
+          },
+          {
+            "name": "SIG2NUK1",
+            "id": 1195,
+            "payload_bytes": 252,
+            "payload_sha256": "26d2ee4c1cffa36c39b8e1cba9a06dbf75147634bbad3e5f62151638e30766b2"
+          },
+          {
+            "name": "SIG2NUK2",
+            "id": 1194,
+            "payload_bytes": 252,
+            "payload_sha256": "670705eee4c27180062ace3e5e31252faad3751fb12ce1129a705d139f50e841"
+          },
+          {
+            "name": "SIG2TUR1",
+            "id": 1193,
+            "payload_bytes": 252,
+            "payload_sha256": "90fa5f10f16a26f1159013e684cf214dc2f90eef9e4c4ad8ba33c471e2d908fa"
+          },
+          {
+            "name": "SIG2PLT1",
+            "id": 1192,
+            "payload_bytes": 388,
+            "payload_sha256": "fa991daf3ea779771e5c8a7c171442d86ebab6eb3ec418b91b704587b4bb967a"
+          },
+          {
+            "name": "SIG2MAP1",
+            "id": 1171,
+            "payload_bytes": 6620,
+            "payload_sha256": "0c69bab2e0e099d37e23764624dc97347188e3249032a00a091326e43c624a26"
+          },
+          {
+            "name": "MW2_SHT1",
+            "id": 133,
+            "payload_bytes": 32168,
+            "payload_sha256": "c78d16c07eb7c48010281f845d0b877d90944e2711ee0810119a9226901c4688"
+          },
+          {
+            "name": "SIG2WLD1",
+            "id": 1191,
+            "payload_bytes": 136,
+            "payload_sha256": "1bf507bf48a4af9ce60d9b58798a00d167ef4cdd4f69093291c4281fd32503a8"
+          },
+          {
+            "name": "MW2_XPL1",
+            "id": 132,
+            "payload_bytes": 13004,
+            "payload_sha256": "d81bdf81163722f449a52a95f7e9bf63d7c5e10029cab71e159757f32abc7475"
+          },
+          {
+            "name": "SIG2ST01",
+            "id": 1190,
+            "payload_bytes": 132,
+            "payload_sha256": "c2e72003bedc22664d68d29d299a605dbe61cdb87b5d6f3effc217948644702b"
+          },
+          {
+            "name": "SIG2ST11",
+            "id": 1189,
+            "payload_bytes": 132,
+            "payload_sha256": "9dadd9ecd7ad87cdbc7389519107522114ccb288b0decfe3292b3925b8def9b5"
+          },
+          {
+            "name": "SIG2ST21",
+            "id": 1188,
+            "payload_bytes": 132,
+            "payload_sha256": "e2a0c2b5ffec97ccdfc71370150504e53d15c50bbdd5528ddf8966f1176a42ec"
+          },
+          {
+            "name": "SIG2ST31",
+            "id": 1187,
+            "payload_bytes": 132,
+            "payload_sha256": "9a7a84e51f17554cead0b13a53312854a68900c5281e5b34106b2a996ae77de0"
+          },
+          {
+            "name": "SIG2ST41",
+            "id": 1186,
+            "payload_bytes": 132,
+            "payload_sha256": "c19422ebbec5c9d6346fadb6f71cd3beb1b54f3998c2b3475fb19e24618674cc"
+          },
+          {
+            "name": "SIG2ST51",
+            "id": 1185,
+            "payload_bytes": 132,
+            "payload_sha256": "c80c76284b04112857d47c98fe58084a6ab9830f1f492b5b62e28d53acb38536"
+          },
+          {
+            "name": "SIG2ST61",
+            "id": 1184,
+            "payload_bytes": 132,
+            "payload_sha256": "99d44b8e4298ca149709f068ae7e56280a0c913ab2a2afacac0c3957aea64818"
+          },
+          {
+            "name": "SIG2ST71",
+            "id": 1183,
+            "payload_bytes": 132,
+            "payload_sha256": "4bb5c8326ace9a7a8b330a63814c4bb6748f5e37c5bae6b9f020c83e5f31d514"
+          },
+          {
+            "name": "SIG2ST81",
+            "id": 1182,
+            "payload_bytes": 132,
+            "payload_sha256": "50d9329b6ed37b9c30c5d44525627c1b599c1f4546570149237b12d4749ad5b7"
+          },
+          {
+            "name": "SIG2NAV1",
+            "id": 1181,
+            "payload_bytes": 132,
+            "payload_sha256": "402022cf9ec38a1635559219dd806a003b2e67b229cd1ecd8c221a5996bec18a"
+          },
+          {
+            "name": "SIG2NAV2",
+            "id": 1180,
+            "payload_bytes": 132,
+            "payload_sha256": "a9de49582715637ef2ecd24c4116cb3909701e843aa8d77d281097f1f611c9bb"
+          },
+          {
+            "name": "SIG2NAV3",
+            "id": 1179,
+            "payload_bytes": 132,
+            "payload_sha256": "ceae5bcfce6eb81a61633c7f9b7296c746373fb319db62ca77083570e59d0f31"
+          },
+          {
+            "name": "SIG2NAV4",
+            "id": 1178,
+            "payload_bytes": 132,
+            "payload_sha256": "18f3227ddbee0358e2d0bd5626b35cf7bcaab50b50ad12c9eac0d3e9a3917f6d"
+          },
+          {
+            "name": "SIG2NAV5",
+            "id": 1177,
+            "payload_bytes": 132,
+            "payload_sha256": "9931729203026527fbb58d6ec4079fd93c80332ee1c09a8bff02722fe26ed3a0"
+          },
+          {
+            "name": "SIG2GOU1",
+            "id": 1176,
+            "payload_bytes": 132,
+            "payload_sha256": "3d6280ed955672c5ceaa485f7fd9023ecc3a62d1422c3c29507e16b6f784e847"
+          },
+          {
+            "name": "SIG2GOU2",
+            "id": 1175,
+            "payload_bytes": 132,
+            "payload_sha256": "3af4f115e0259e2deebd9de67d54f4ba82437da3b8f4af4a2063e4ee6fa92849"
+          },
+          {
+            "name": "SIG2GOU3",
+            "id": 1174,
+            "payload_bytes": 132,
+            "payload_sha256": "2aaf0907d2485797fc375ee9f52f2c976cec2c8aa1a17ceeaf5d46b92423b363"
+          },
+          {
+            "name": "SIG2LVE1",
+            "id": 1173,
+            "payload_bytes": 132,
+            "payload_sha256": "40a66009add8111915a2eee8f7f102b7fb99b5b93bcbb546b11c21353468d096"
+          },
+          {
+            "name": "SIG2LVE2",
+            "id": 1172,
+            "payload_bytes": 132,
+            "payload_sha256": "2b4a1587451f1d2a9f4c305f6f3404e36622a9c9d11fd79a07489306fae7d0ea"
+          },
+          {
+            "name": "BR0NPAL1",
+            "id": 829,
+            "payload_bytes": 100,
+            "payload_sha256": "9814a25d2f971cbb27f9a5896cec83505ea5cfb084e99a028408a50b9517f200"
+          },
+          {
+            "name": "SKYDOME",
+            "id": 2562,
+            "payload_bytes": 168,
+            "payload_sha256": "33e07885241c873871b63ed53bbc09731a913d4586e21060d839f9b66ba7cc3c"
+          },
+          {
+            "name": "SIG2ARE1",
+            "id": 1170,
+            "payload_bytes": 10396,
+            "payload_sha256": "9acf6b3f8e5f8d62ca815d1c87c3c58c52e96e7e17453cc33124cae5b36a747f"
+          },
+          {
+            "name": "SIG2ARE2",
+            "id": 1169,
+            "payload_bytes": 1224,
+            "payload_sha256": "61da5229c95f7add915973441471bb3ee34f4f5ba13fa521dadbefc181c86f41"
+          }
+        ]
+      },
+      "OUT3CAM1": {
+        "campaign": {
+          "name": "OUT3CAM1",
+          "id": 2279,
+          "payload_bytes": 3780,
+          "payload_sha256": "7cce8d1650e2f053ab11c85278b500c6321f4d06e11647e996e0da4af4722b3e"
+        },
+        "scene": "OUT3SCN1",
+        "briefing_movie": "OUT3BRF1",
+        "kind": 2,
+        "orders_resource": {
+          "name": "OUT3BRF1",
+          "id": 1105,
+          "payload_bytes": 2112,
+          "payload_sha256": "da9a6c63045848f6a653738caea6a5c44890eabcaf5cac85dfe48372018a30e4"
+        },
+        "header_string_44": "diz3",
+        "header_string_60": "diz4",
+        "successors": {
+          "SLST": [
+            "lut1cam1"
+          ],
+          "FLST": [
+            "lut1cam1"
+          ]
+        },
+        "cpgn_subchunks": [
+          {
+            "tag": "SLST",
+            "offset_in_bwd": 212,
+            "bytes": 24
+          },
+          {
+            "tag": "FLST",
+            "offset_in_bwd": 236,
+            "bytes": 24
+          },
+          {
+            "tag": "MHLT",
+            "offset_in_bwd": 260,
+            "bytes": 272
+          },
+          {
+            "tag": "NEWS",
+            "offset_in_bwd": 532,
+            "bytes": 1772
+          },
+          {
+            "tag": "PTLT",
+            "offset_in_bwd": 2304,
+            "bytes": 40
+          },
+          {
+            "tag": "THLT",
+            "offset_in_bwd": 2344,
+            "bytes": 24
+          },
+          {
+            "tag": "CTNT",
+            "offset_in_bwd": 2368,
+            "bytes": 136
+          },
+          {
+            "tag": "WNLT",
+            "offset_in_bwd": 2504,
+            "bytes": 596
+          },
+          {
+            "tag": "AMMO",
+            "offset_in_bwd": 3100,
+            "bytes": 248
+          },
+          {
+            "tag": "EQUP",
+            "offset_in_bwd": 3348,
+            "bytes": 388
+          },
+          {
+            "tag": "SWNL",
+            "offset_in_bwd": 3736,
+            "bytes": 8
+          },
+          {
+            "tag": "SMHL",
+            "offset_in_bwd": 3744,
+            "bytes": 36
+          }
+        ],
+        "salvage_mechs": [
+          {
+            "name": "KDK00STD",
+            "threshold": 100,
+            "value": 15000000,
+            "year": 3050
+          }
+        ],
+        "external_userstar_count": 0,
+        "players": [
+          {
+            "record": "OUT3USER",
+            "chunk_offset": 52,
+            "mek_id": 82,
+            "skeleton_id": 56,
+            "table": 0,
+            "leader": 1,
+            "control": 0,
+            "skeleton": "kodiak",
+            "loadout": "kdk00std",
+            "display_name": "Raider1",
+            "pilot": "",
+            "flags": 1024,
+            "mek_source": {
+              "name": "KDK00STD",
+              "id": 82,
+              "payload_bytes": 530,
+              "payload_sha256": "6b0048e548e924c230e0e3af6a2ba49491dbf07d10ea99e3f69fa22fab875d95"
+            }
+          }
+        ],
+        "include_edges": [
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3BRF1",
+            "id": 1105,
+            "chunk_offset": 52
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3BRF2",
+            "id": 1104,
+            "chunk_offset": 72
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3DBFF",
+            "id": 1103,
+            "chunk_offset": 92
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3DBFS",
+            "id": 1102,
+            "chunk_offset": 112
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "FORMATNS",
+            "id": 131,
+            "chunk_offset": 132
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3USER",
+            "id": 1101,
+            "chunk_offset": 4530
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ENS1",
+            "id": 1100,
+            "chunk_offset": 4550
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ENS2",
+            "id": 1099,
+            "chunk_offset": 4570
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ENS3",
+            "id": 1098,
+            "chunk_offset": 4590
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ENS4",
+            "id": 1097,
+            "chunk_offset": 4610
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3USR1",
+            "id": 1096,
+            "chunk_offset": 4630
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3PLT1",
+            "id": 1095,
+            "chunk_offset": 4650
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3MAP1",
+            "id": 1082,
+            "chunk_offset": 4670
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "MW2_SHT1",
+            "id": 133,
+            "chunk_offset": 4690
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3WLD1",
+            "id": 1094,
+            "chunk_offset": 4710
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "MW2_XPL1",
+            "id": 132,
+            "chunk_offset": 4730
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ST01",
+            "id": 1093,
+            "chunk_offset": 4750
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ST11",
+            "id": 1092,
+            "chunk_offset": 4770
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ST21",
+            "id": 1091,
+            "chunk_offset": 4790
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ST31",
+            "id": 1090,
+            "chunk_offset": 4810
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ST41",
+            "id": 1089,
+            "chunk_offset": 4830
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3ST51",
+            "id": 1088,
+            "chunk_offset": 4850
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3NAV1",
+            "id": 1087,
+            "chunk_offset": 4870
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3GOU1",
+            "id": 1086,
+            "chunk_offset": 4890
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3GOU2",
+            "id": 1085,
+            "chunk_offset": 4910
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3LVE1",
+            "id": 1084,
+            "chunk_offset": 4930
+          },
+          {
+            "parent": "OUT3SCN1",
+            "child": "OUT3LVE2",
+            "id": 1083,
+            "chunk_offset": 4950
+          },
+          {
+            "parent": "OUT3PLT1",
+            "child": "GR0NPAL1",
+            "id": 1015,
+            "chunk_offset": 328
+          },
+          {
+            "parent": "OUT3PLT1",
+            "child": "OUT3MAP1",
+            "id": 1082,
+            "chunk_offset": 348
+          },
+          {
+            "parent": "OUT3PLT1",
+            "child": "SKYDOME",
+            "id": 2562,
+            "chunk_offset": 368
+          },
+          {
+            "parent": "MW2_SHT1",
+            "child": "MW2_XPL1",
+            "id": 132,
+            "chunk_offset": 60
+          },
+          {
+            "parent": "OUT3WLD1",
+            "child": "OUT3ARE1",
+            "id": 1081,
+            "chunk_offset": 52
+          },
+          {
+            "parent": "OUT3WLD1",
+            "child": "OUT3ARE3",
+            "id": 1080,
+            "chunk_offset": 116
+          },
+          {
+            "parent": "OUT3WLD1",
+            "child": "OUT3ARE5",
+            "id": 1079,
+            "chunk_offset": 180
+          }
+        ],
+        "traversed_records": [
+          {
+            "name": "OUT3SCN1",
+            "id": 1106,
+            "payload_bytes": 4970,
+            "payload_sha256": "48381a7a5096610febe4dec8e85457530b4245d67975780fce8fe5c1429d5500"
+          },
+          {
+            "name": "OUT3BRF1",
+            "id": 1105,
+            "payload_bytes": 2112,
+            "payload_sha256": "da9a6c63045848f6a653738caea6a5c44890eabcaf5cac85dfe48372018a30e4"
+          },
+          {
+            "name": "OUT3BRF2",
+            "id": 1104,
+            "payload_bytes": 148,
+            "payload_sha256": "cdd17134547932d947610cc23f665681535a1fc27573e9052b9b2cc82f1ad1d4"
+          },
+          {
+            "name": "OUT3DBFF",
+            "id": 1103,
+            "payload_bytes": 548,
+            "payload_sha256": "d61e22fe453b3aa1e4b090f212a8ef371c7f39125ea00bc8f4d01f05a8dd7240"
+          },
+          {
+            "name": "OUT3DBFS",
+            "id": 1102,
+            "payload_bytes": 760,
+            "payload_sha256": "7b1ab18ae8bb86ede697150f7722a57c07b19ac9f6574b0403e6f95d6cb090f2"
+          },
+          {
+            "name": "FORMATNS",
+            "id": 131,
+            "payload_bytes": 892,
+            "payload_sha256": "29b67e37b652ddc6e7d6e5cc8d5619d830b0f6b312c7f1d1f183c4518fbbea82"
+          },
+          {
+            "name": "OUT3USER",
+            "id": 1101,
+            "payload_bytes": 152,
+            "payload_sha256": "e1db01aa781a05c1fa0e9d9fefdc2402743ff001757ac166db289411ba99ed91"
+          },
+          {
+            "name": "OUT3ENS1",
+            "id": 1100,
+            "payload_bytes": 252,
+            "payload_sha256": "45b2b9c762d712c1f211b2221433914d624504e0a9e54d1d720ba5315264ee9e"
+          },
+          {
+            "name": "OUT3ENS2",
+            "id": 1099,
+            "payload_bytes": 252,
+            "payload_sha256": "11a0f19e54663a6b07d3d7c9c49ba81c43ad39427a40bd182b986ff4a7859d9e"
+          },
+          {
+            "name": "OUT3ENS3",
+            "id": 1098,
+            "payload_bytes": 252,
+            "payload_sha256": "b37573deac67ea838a1b7c677bb9f9db63a1f7defd4ed51b7d677128c78d1886"
+          },
+          {
+            "name": "OUT3ENS4",
+            "id": 1097,
+            "payload_bytes": 352,
+            "payload_sha256": "0ec882178f144c2c3c900cc85209448727fef2a418b9e32bd665c6eb2eb53e16"
+          },
+          {
+            "name": "OUT3USR1",
+            "id": 1096,
+            "payload_bytes": 152,
+            "payload_sha256": "6ffbb6ef755fe4a5dc9bbe9429d10464977c128f2c785dcce7f954c04d936691"
+          },
+          {
+            "name": "OUT3PLT1",
+            "id": 1095,
+            "payload_bytes": 388,
+            "payload_sha256": "655e5eb84771c66c2924be9eed0fd18e78e7c465d787b5d5809ff7d3cd792360"
+          },
+          {
+            "name": "OUT3MAP1",
+            "id": 1082,
+            "payload_bytes": 6524,
+            "payload_sha256": "6eeea656f050bb442e00a54bb0a85e1ef904c0776384f8e61ea4b10c304fbda8"
+          },
+          {
+            "name": "MW2_SHT1",
+            "id": 133,
+            "payload_bytes": 32168,
+            "payload_sha256": "c78d16c07eb7c48010281f845d0b877d90944e2711ee0810119a9226901c4688"
+          },
+          {
+            "name": "OUT3WLD1",
+            "id": 1094,
+            "payload_bytes": 200,
+            "payload_sha256": "28991c089c7d34fb2ee5e969d9ecf512f5b8e8efa8d91d96803b5cf6fc3063e2"
+          },
+          {
+            "name": "MW2_XPL1",
+            "id": 132,
+            "payload_bytes": 13004,
+            "payload_sha256": "d81bdf81163722f449a52a95f7e9bf63d7c5e10029cab71e159757f32abc7475"
+          },
+          {
+            "name": "OUT3ST01",
+            "id": 1093,
+            "payload_bytes": 132,
+            "payload_sha256": "bd03a09d9422934984a89ba82989bf980164ed19ded551b95e884b895f18a3eb"
+          },
+          {
+            "name": "OUT3ST11",
+            "id": 1092,
+            "payload_bytes": 132,
+            "payload_sha256": "d9fdd81a73956fee76bd3e83fde1b173dd7eb521ef27cee87dfb8bc27bb3a957"
+          },
+          {
+            "name": "OUT3ST21",
+            "id": 1091,
+            "payload_bytes": 132,
+            "payload_sha256": "6aa2367a1acec02b99d50f2375da05cf0dcd7aa6ea9320466dc7330a26af9af9"
+          },
+          {
+            "name": "OUT3ST31",
+            "id": 1090,
+            "payload_bytes": 132,
+            "payload_sha256": "d24709c3ae90f25c88129f228e56648394374daadcda3002d7ed098d9b9b3e5e"
+          },
+          {
+            "name": "OUT3ST41",
+            "id": 1089,
+            "payload_bytes": 132,
+            "payload_sha256": "5b2047731761c03aacbdd00c9ecc9c63d70d7e8822f459cd1887d3308e05b05e"
+          },
+          {
+            "name": "OUT3ST51",
+            "id": 1088,
+            "payload_bytes": 132,
+            "payload_sha256": "aa89e37d28fa4dcca272729e6ead6cba62b357d601dd456cb2cacded220a21eb"
+          },
+          {
+            "name": "OUT3NAV1",
+            "id": 1087,
+            "payload_bytes": 132,
+            "payload_sha256": "403383bde6ae4303af31e8b3d8da4aa5595b4733f90b0d04084873535ce0bc0e"
+          },
+          {
+            "name": "OUT3GOU1",
+            "id": 1086,
+            "payload_bytes": 132,
+            "payload_sha256": "b83ed2f63d58fc860575a17457e843b153cf37a5b31e859baa6665221f4fc795"
+          },
+          {
+            "name": "OUT3GOU2",
+            "id": 1085,
+            "payload_bytes": 132,
+            "payload_sha256": "1c2beb1cc45e840256c467566213319c6a4a8927952d3d07f39aef38e8ce4101"
+          },
+          {
+            "name": "OUT3LVE1",
+            "id": 1084,
+            "payload_bytes": 132,
+            "payload_sha256": "60aa402224ac0fa6fe000c7e78237747f6d5e045a4c19fa4383fa997644a894b"
+          },
+          {
+            "name": "OUT3LVE2",
+            "id": 1083,
+            "payload_bytes": 132,
+            "payload_sha256": "9396a7cfe454ec0b0b4b64d7779fa07c8ace62351c0dde1f0009ae5137a23805"
+          },
+          {
+            "name": "GR0NPAL1",
+            "id": 1015,
+            "payload_bytes": 100,
+            "payload_sha256": "87c601f2d6eb456fde0cdfe7e23cffac6327094c169c22a61931144b024e6a99"
+          },
+          {
+            "name": "SKYDOME",
+            "id": 2562,
+            "payload_bytes": 168,
+            "payload_sha256": "33e07885241c873871b63ed53bbc09731a913d4586e21060d839f9b66ba7cc3c"
+          },
+          {
+            "name": "OUT3ARE1",
+            "id": 1081,
+            "payload_bytes": 22968,
+            "payload_sha256": "7faf70f440c42cfafe218fd41a27930b2f9b70bc38e38a1707d802a63e032b1b"
+          },
+          {
+            "name": "OUT3ARE3",
+            "id": 1080,
+            "payload_bytes": 512,
+            "payload_sha256": "9be2d925acbd17f823fb442982f58373f93420ebddde15ccdfce83cd65251fa6"
+          },
+          {
+            "name": "OUT3ARE5",
+            "id": 1079,
+            "payload_bytes": 168,
+            "payload_sha256": "738a3d8895ba7c266eec9a02fc7da808ac926ecd75752a2d3f5766533c9a2829"
+          }
+        ]
+      }
+    }
+  },
+  "selection_slices": {
+    "dos": [
+      "0x5f1ad",
+      "0x5f3cb"
+    ],
+    "windows": [
+      "0x1000aa41",
+      "0x1000adc8"
+    ]
+  },
+  "resource_service_contract": "Existing archive ID returns a declared MEK buffer; external control returns declared available stream. Selection stops before parsing.",
+  "fixed_player_selection_and_return": [
+    {
+      "campaign": "MCC4CAM1",
+      "outputs": {
+        "dos": {
+          "input_name": "stk00std",
+          "normalized_name": "stk00STD",
+          "archive_id": 140,
+          "controller_flags": 0,
+          "return_filename": "",
+          "lookup_events": [
+            {
+              "operation": "archive_mek_lookup",
+              "id": 140
+            }
+          ],
+          "return_opens": [],
+          "return_writes": []
+        },
+        "windows": {
+          "input_name": "stk00std",
+          "normalized_name": "stk00STD",
+          "archive_id": 140,
+          "controller_flags": 0,
+          "return_filename": "",
+          "lookup_events": [
+            {
+              "operation": "archive_mek_lookup",
+              "id": 140
+            }
+          ],
+          "return_opens": [],
+          "return_writes": []
+        }
+      },
+      "dos_windows_same": true
+    },
+    {
+      "campaign": "SIG2CAM1",
+      "outputs": {
+        "dos": {
+          "input_name": "peg00std",
+          "normalized_name": "peg00STD",
+          "archive_id": 116,
+          "controller_flags": 0,
+          "return_filename": "",
+          "lookup_events": [
+            {
+              "operation": "archive_mek_lookup",
+              "id": 116
+            }
+          ],
+          "return_opens": [],
+          "return_writes": []
+        },
+        "windows": {
+          "input_name": "peg00std",
+          "normalized_name": "peg00STD",
+          "archive_id": 116,
+          "controller_flags": 0,
+          "return_filename": "",
+          "lookup_events": [
+            {
+              "operation": "archive_mek_lookup",
+              "id": 116
+            }
+          ],
+          "return_opens": [],
+          "return_writes": []
+        }
+      },
+      "dos_windows_same": true
+    },
+    {
+      "campaign": "OUT3CAM1",
+      "outputs": {
+        "dos": {
+          "input_name": "kdk00std",
+          "normalized_name": "kdk00STD",
+          "archive_id": 82,
+          "controller_flags": 0,
+          "return_filename": "",
+          "lookup_events": [
+            {
+              "operation": "archive_mek_lookup",
+              "id": 82
+            }
+          ],
+          "return_opens": [],
+          "return_writes": []
+        },
+        "windows": {
+          "input_name": "kdk00std",
+          "normalized_name": "kdk00STD",
+          "archive_id": 82,
+          "controller_flags": 0,
+          "return_filename": "",
+          "lookup_events": [
+            {
+              "operation": "archive_mek_lookup",
+              "id": 82
+            }
+          ],
+          "return_opens": [],
+          "return_writes": []
+        }
+      },
+      "dos_windows_same": true
+    }
+  ],
+  "external_owned_control": {
+    "dos": {
+      "input_name": "DRA07MER",
+      "normalized_name": "DRA07MER",
+      "archive_id": 65534,
+      "controller_flags": 2,
+      "return_filename": "DRA07MER",
+      "lookup_events": [
+        {
+          "operation": "external_mek_lookup",
+          "name": "mek\\DRA07MER.mek"
+        }
+      ],
+      "return_opens": [
+        [
+          "mek\\DRA07MER.mek",
+          "rb"
+        ],
+        [
+          "mek\\DRA07MER.mek",
+          "wb"
+        ]
+      ],
+      "return_writes": [
+        {
+          "name": "mek\\DRA07MER.mek",
+          "bytes": 418,
+          "sha256": "db71f83a13806c6d927e46b500dcaa89738199e57ea7c95d9d817111b96c484d"
+        }
+      ]
+    },
+    "windows": {
+      "input_name": "DRA07MER",
+      "normalized_name": "DRA07MER",
+      "archive_id": 65534,
+      "controller_flags": 2,
+      "return_filename": "DRA07MER",
+      "lookup_events": [
+        {
+          "operation": "external_mek_lookup",
+          "name": "mek\\DRA07MER.mek"
+        }
+      ],
+      "return_opens": [
+        [
+          "mek\\DRA07MER.mek",
+          "rb"
+        ],
+        [
+          "mek\\DRA07MER.mek",
+          "wb"
+        ]
+      ],
+      "return_writes": [
+        {
+          "name": "mek\\DRA07MER.mek",
+          "bytes": 418,
+          "sha256": "db71f83a13806c6d927e46b500dcaa89738199e57ea7c95d9d817111b96c484d"
+        }
+      ]
+    }
+  },
+  "ejection_death": [
+    {
+      "scene": "MCC4SCN1",
+      "mode": 0,
+      "status": 2,
+      "outputs": {
+        "dos": {
+          "mode": 0,
+          "status": 2,
+          "scene": "MCC4SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "meject",
+              "event": 49162
+            }
+          ],
+          "owned_count": 1,
+          "reference_count": 1,
+          "player_assignment": 17
+        },
+        "windows": {
+          "mode": 0,
+          "status": 2,
+          "scene": "MCC4SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "meject",
+              "event": 49162
+            }
+          ],
+          "owned_count": 1,
+          "reference_count": 1,
+          "player_assignment": 17
+        }
+      }
+    },
+    {
+      "scene": "MCC4SCN1",
+      "mode": 1,
+      "status": 2,
+      "outputs": {
+        "dos": {
+          "mode": 1,
+          "status": 2,
+          "scene": "MCC4SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "meject",
+              "event": 49162
+            },
+            {
+              "operation": "remove",
+              "list_index": 0,
+              "name": "DRA07MER.MEK",
+              "instance": 17,
+              "free": 1
+            },
+            {
+              "operation": "remove",
+              "list_index": 1,
+              "name": "DRA07MER.MEK",
+              "instance": 17,
+              "free": 1
+            }
+          ],
+          "owned_count": 0,
+          "reference_count": 0,
+          "player_assignment": -1
+        },
+        "windows": {
+          "mode": 1,
+          "status": 2,
+          "scene": "MCC4SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "meject",
+              "event": 49162
+            },
+            {
+              "operation": "remove",
+              "list_index": 0,
+              "name": "DRA07MER.MEK",
+              "instance": 17,
+              "free": 1
+            },
+            {
+              "operation": "remove",
+              "list_index": 1,
+              "name": "DRA07MER.MEK",
+              "instance": 17,
+              "free": 1
+            }
+          ],
+          "owned_count": 0,
+          "reference_count": 0,
+          "player_assignment": -1
+        }
+      }
+    },
+    {
+      "scene": "MCC4SCN1",
+      "mode": 0,
+      "status": 4,
+      "outputs": {
+        "dos": {
+          "mode": 0,
+          "status": 4,
+          "scene": "MCC4SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "mdeath",
+              "event": 49162
+            }
+          ],
+          "owned_count": 1,
+          "reference_count": 1,
+          "player_assignment": 17
+        },
+        "windows": {
+          "mode": 0,
+          "status": 4,
+          "scene": "MCC4SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "mdeath",
+              "event": 49162
+            }
+          ],
+          "owned_count": 1,
+          "reference_count": 1,
+          "player_assignment": 17
+        }
+      }
+    },
+    {
+      "scene": "MCC4SCN1",
+      "mode": 1,
+      "status": 4,
+      "outputs": {
+        "dos": {
+          "mode": 1,
+          "status": 4,
+          "scene": "MCC4SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "mdeath",
+              "event": 49162
+            },
+            {
+              "operation": "career_end"
+            }
+          ],
+          "owned_count": 1,
+          "reference_count": 1,
+          "player_assignment": 17
+        },
+        "windows": {
+          "mode": 1,
+          "status": 4,
+          "scene": "MCC4SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "mdeath",
+              "event": 49195
+            }
+          ],
+          "owned_count": 1,
+          "reference_count": 1,
+          "player_assignment": 17
+        }
+      }
+    },
+    {
+      "scene": "SIG2SCN1",
+      "mode": 0,
+      "status": 2,
+      "outputs": {
+        "dos": {
+          "mode": 0,
+          "status": 2,
+          "scene": "SIG2SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "meject",
+              "event": 49162
+            }
+          ],
+          "owned_count": 1,
+          "reference_count": 1,
+          "player_assignment": 17
+        },
+        "windows": {
+          "mode": 0,
+          "status": 2,
+          "scene": "SIG2SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "meject",
+              "event": 49162
+            }
+          ],
+          "owned_count": 1,
+          "reference_count": 1,
+          "player_assignment": 17
+        }
+      }
+    },
+    {
+      "scene": "SIG2SCN1",
+      "mode": 1,
+      "status": 2,
+      "outputs": {
+        "dos": {
+          "mode": 1,
+          "status": 2,
+          "scene": "SIG2SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "meject",
+              "event": 49162
+            },
+            {
+              "operation": "remove",
+              "list_index": 0,
+              "name": "DRA07MER.MEK",
+              "instance": 17,
+              "free": 1
+            },
+            {
+              "operation": "remove",
+              "list_index": 1,
+              "name": "DRA07MER.MEK",
+              "instance": 17,
+              "free": 1
+            }
+          ],
+          "owned_count": 0,
+          "reference_count": 0,
+          "player_assignment": -1
+        },
+        "windows": {
+          "mode": 1,
+          "status": 2,
+          "scene": "SIG2SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "meject",
+              "event": 49162
+            },
+            {
+              "operation": "remove",
+              "list_index": 0,
+              "name": "DRA07MER.MEK",
+              "instance": 17,
+              "free": 1
+            },
+            {
+              "operation": "remove",
+              "list_index": 1,
+              "name": "DRA07MER.MEK",
+              "instance": 17,
+              "free": 1
+            }
+          ],
+          "owned_count": 0,
+          "reference_count": 0,
+          "player_assignment": -1
+        }
+      }
+    },
+    {
+      "scene": "SIG2SCN1",
+      "mode": 0,
+      "status": 4,
+      "outputs": {
+        "dos": {
+          "mode": 0,
+          "status": 4,
+          "scene": "SIG2SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "mdeath",
+              "event": 49162
+            }
+          ],
+          "owned_count": 1,
+          "reference_count": 1,
+          "player_assignment": 17
+        },
+        "windows": {
+          "mode": 0,
+          "status": 4,
+          "scene": "SIG2SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "mdeath",
+              "event": 49162
+            }
+          ],
+          "owned_count": 1,
+          "reference_count": 1,
+          "player_assignment": 17
+        }
+      }
+    },
+    {
+      "scene": "SIG2SCN1",
+      "mode": 1,
+      "status": 4,
+      "outputs": {
+        "dos": {
+          "mode": 1,
+          "status": 4,
+          "scene": "SIG2SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "mdeath",
+              "event": 49162
+            },
+            {
+              "operation": "career_end"
+            }
+          ],
+          "owned_count": 1,
+          "reference_count": 1,
+          "player_assignment": 17
+        },
+        "windows": {
+          "mode": 1,
+          "status": 4,
+          "scene": "SIG2SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "mdeath",
+              "event": 49195
+            }
+          ],
+          "owned_count": 1,
+          "reference_count": 1,
+          "player_assignment": 17
+        }
+      }
+    },
+    {
+      "scene": "OUT3SCN1",
+      "mode": 0,
+      "status": 2,
+      "outputs": {
+        "dos": {
+          "mode": 0,
+          "status": 2,
+          "scene": "OUT3SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "meject",
+              "event": 49162
+            }
+          ],
+          "owned_count": 1,
+          "reference_count": 1,
+          "player_assignment": 17
+        },
+        "windows": {
+          "mode": 0,
+          "status": 2,
+          "scene": "OUT3SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "meject",
+              "event": 49162
+            }
+          ],
+          "owned_count": 1,
+          "reference_count": 1,
+          "player_assignment": 17
+        }
+      }
+    },
+    {
+      "scene": "OUT3SCN1",
+      "mode": 1,
+      "status": 2,
+      "outputs": {
+        "dos": {
+          "mode": 1,
+          "status": 2,
+          "scene": "OUT3SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "meject",
+              "event": 49162
+            },
+            {
+              "operation": "remove",
+              "list_index": 0,
+              "name": "DRA07MER.MEK",
+              "instance": 17,
+              "free": 1
+            },
+            {
+              "operation": "remove",
+              "list_index": 1,
+              "name": "DRA07MER.MEK",
+              "instance": 17,
+              "free": 1
+            }
+          ],
+          "owned_count": 0,
+          "reference_count": 0,
+          "player_assignment": -1
+        },
+        "windows": {
+          "mode": 1,
+          "status": 2,
+          "scene": "OUT3SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "meject",
+              "event": 49162
+            },
+            {
+              "operation": "remove",
+              "list_index": 0,
+              "name": "DRA07MER.MEK",
+              "instance": 17,
+              "free": 1
+            },
+            {
+              "operation": "remove",
+              "list_index": 1,
+              "name": "DRA07MER.MEK",
+              "instance": 17,
+              "free": 1
+            }
+          ],
+          "owned_count": 0,
+          "reference_count": 0,
+          "player_assignment": -1
+        }
+      }
+    },
+    {
+      "scene": "OUT3SCN1",
+      "mode": 0,
+      "status": 4,
+      "outputs": {
+        "dos": {
+          "mode": 0,
+          "status": 4,
+          "scene": "OUT3SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "mdeath",
+              "event": 49162
+            }
+          ],
+          "owned_count": 1,
+          "reference_count": 1,
+          "player_assignment": 17
+        },
+        "windows": {
+          "mode": 0,
+          "status": 4,
+          "scene": "OUT3SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "mdeath",
+              "event": 49162
+            }
+          ],
+          "owned_count": 1,
+          "reference_count": 1,
+          "player_assignment": 17
+        }
+      }
+    },
+    {
+      "scene": "OUT3SCN1",
+      "mode": 1,
+      "status": 4,
+      "outputs": {
+        "dos": {
+          "mode": 1,
+          "status": 4,
+          "scene": "OUT3SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "mdeath",
+              "event": 49162
+            },
+            {
+              "operation": "career_end"
+            }
+          ],
+          "owned_count": 1,
+          "reference_count": 1,
+          "player_assignment": 17
+        },
+        "windows": {
+          "mode": 1,
+          "status": 4,
+          "scene": "OUT3SCN1",
+          "events": [
+            {
+              "operation": "movie",
+              "name": "mdeath",
+              "event": 49195
+            }
+          ],
+          "owned_count": 1,
+          "reference_count": 1,
+          "player_assignment": 17
+        }
+      }
+    }
+  ],
+  "unused_owned_deployment_import": {
+    "dos": {
+      "deployment_bytes": 466,
+      "deployment_sha256": "79d26b0249dd34f78620c4f3a40927edc8fa0e7427ebcc6699b350146a9a403d",
+      "current_before_sha256": "6ccf458884963fe8c4912b7a38ddca7f71a4669fc051c6c06c42e35020248411",
+      "current_after_sha256": "5963cd8743b7d2929b10b6663511ad8e41ef8b72f72dfcf8edce90f01c1e3d96",
+      "changed_offsets": [
+        "0x204",
+        "0x205",
+        "0x208",
+        "0x250",
+        "0x258",
+        "0x25c",
+        "0x84b"
+      ],
+      "marker_before": 1,
+      "marker_after": 0,
+      "name_before": "DRA07MER.MEK",
+      "name_after": "DRA07MER.MEK",
+      "events": [
+        {
+          "operation": "load_returned_mech",
+          "name": "DRA07MER.MEK",
+          "available": true
+        },
+        {
+          "operation": "merge"
+        },
+        {
+          "operation": "recalculate",
+          "index": 0
+        },
+        {
+          "operation": "recalculate",
+          "index": 1
+        },
+        {
+          "operation": "recalculate",
+          "index": 2
+        },
+        {
+          "operation": "recalculate",
+          "index": 3
+        },
+        {
+          "operation": "recalculate",
+          "index": 4
+        },
+        {
+          "operation": "release_loaded_record"
+        },
+        {
+          "operation": "request_delete",
+          "name": "mek\\DRA07MER.MEK"
+        }
+      ],
+      "damage_equipment_regions_unchanged": true
+    },
+    "windows": {
+      "deployment_bytes": 466,
+      "deployment_sha256": "79d26b0249dd34f78620c4f3a40927edc8fa0e7427ebcc6699b350146a9a403d",
+      "current_before_sha256": "6ccf458884963fe8c4912b7a38ddca7f71a4669fc051c6c06c42e35020248411",
+      "current_after_sha256": "5963cd8743b7d2929b10b6663511ad8e41ef8b72f72dfcf8edce90f01c1e3d96",
+      "changed_offsets": [
+        "0x204",
+        "0x205",
+        "0x208",
+        "0x250",
+        "0x258",
+        "0x25c",
+        "0x84b"
+      ],
+      "marker_before": 1,
+      "marker_after": 0,
+      "name_before": "DRA07MER.MEK",
+      "name_after": "DRA07MER.MEK",
+      "events": [
+        {
+          "operation": "load_returned_mech",
+          "name": "DRA07MER.MEK",
+          "available": true
+        },
+        {
+          "operation": "merge"
+        },
+        {
+          "operation": "recalculate",
+          "index": 0
+        },
+        {
+          "operation": "recalculate",
+          "index": 1
+        },
+        {
+          "operation": "recalculate",
+          "index": 2
+        },
+        {
+          "operation": "recalculate",
+          "index": 3
+        },
+        {
+          "operation": "recalculate",
+          "index": 4
+        },
+        {
+          "operation": "release_loaded_record"
+        },
+        {
+          "operation": "request_delete",
+          "name": "mek\\DRA07MER.MEK"
+        }
+      ],
+      "damage_equipment_regions_unchanged": true
+    }
+  },
+  "orders_names": [
+    {
+      "scene": "MCC4SCN1",
+      "expected": "MCC4BRF1",
+      "outputs": {
+        "dos": {
+          "scene": "MCC4SCN1",
+          "orders": "MCC4BRF1",
+          "slice": [
+            "0x622d8",
+            "0x62357"
+          ]
+        },
+        "windows": {
+          "scene": "MCC4SCN1",
+          "orders": "MCC4BRF1",
+          "slice": [
+            "0x10013802",
+            "0x1001387e"
+          ]
+        }
+      }
+    },
+    {
+      "scene": "SIG2SCN1",
+      "expected": "SIG2BRF1",
+      "outputs": {
+        "dos": {
+          "scene": "SIG2SCN1",
+          "orders": "SIG2BRF1",
+          "slice": [
+            "0x622d8",
+            "0x62357"
+          ]
+        },
+        "windows": {
+          "scene": "SIG2SCN1",
+          "orders": "SIG2BRF1",
+          "slice": [
+            "0x10013802",
+            "0x1001387e"
+          ]
+        }
+      }
+    },
+    {
+      "scene": "OUT3SCN1",
+      "expected": "OUT3BRF1",
+      "outputs": {
+        "dos": {
+          "scene": "OUT3SCN1",
+          "orders": "OUT3BRF1",
+          "slice": [
+            "0x622d8",
+            "0x62357"
+          ]
+        },
+        "windows": {
+          "scene": "OUT3SCN1",
+          "orders": "OUT3BRF1",
+          "slice": [
+            "0x10013802",
+            "0x1001387e"
+          ]
+        }
+      }
+    },
+    {
+      "scene": "A.BWD",
+      "expected": "A___BRF1",
+      "outputs": {
+        "dos": {
+          "scene": "A.BWD",
+          "orders": "A___BRF1",
+          "slice": [
+            "0x622d8",
+            "0x62357"
+          ]
+        },
+        "windows": {
+          "scene": "A.BWD",
+          "orders": "A___BRF1",
+          "slice": [
+            "0x10013802",
+            "0x1001387e"
+          ]
+        }
+      }
+    }
+  ],
+  "original_static_launch": {
+    "dos_caller": [
+      "0x5641b",
+      "0x56429"
+    ],
+    "dos_prepare": "0x3e9b4",
+    "windows_caller": [
+      "0x10014dc9",
+      "0x10014dda"
+    ],
+    "windows_prepare": "0x1001d650",
+    "guard": "Only career mode 2 skips normal owned deployment. No mission name or embedded-player branch."
+  },
+  "script_sha256": "9c40a49d4f731d2bba50b2fca22309761e28cfbb60c65f9239159c4e9d68fec6"
+}

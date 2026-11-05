@@ -1,0 +1,157 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SDL3
+        run: brew install sdl3 pkgconf
+
+      - name: Build
+        run: make mercs
+
+      - name: Build .app bundle
+        run: sh scripts/macos_mercs_app.sh
+
+      - name: Package
+        run: |
+          mkdir -p dist
+          zip -r dist/Mercs-Port-${{ github.ref_name }}-macos-arm64.zip Mercenaries.app README.md FOLDER_SETUP.md THIRD_PARTY.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: dist/*.zip
+
+  build-linux:
+    runs-on: ubuntu-22.04   # build against the older glibc for the portable tarball
+    env:
+      SDL3_VERSION: 3.4.18
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake pkg-config \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev \
+            libwayland-dev wayland-protocols libdecor-0-dev \
+            libasound2-dev libpulse-dev libpipewire-0.3-dev libdbus-1-dev libudev-dev
+
+      # SDL loads Vulkan at runtime. Generated shaders are already checked in;
+      # the release build needs neither shader compilers nor OpenGL development libraries.
+      - name: Build SDL3 without OpenGL
+        run: |
+          curl -sSfL -o sdl3.tar.gz https://github.com/libsdl-org/SDL/releases/download/release-${SDL3_VERSION}/SDL3-${SDL3_VERSION}.tar.gz
+          tar xzf sdl3.tar.gz
+          cmake -S SDL3-${SDL3_VERSION} -B sdl3-build -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$PWD/sdl3" -DCMAKE_INSTALL_LIBDIR=lib \
+            -DSDL_TESTS=OFF -DSDL_EXAMPLES=OFF -DSDL_STATIC=OFF \
+            -DSDL_OPENGL=OFF -DSDL_OPENGLES=OFF -DSDL_VULKAN=ON -DSDL_RENDER_VULKAN=ON
+          cmake --build sdl3-build -j$(nproc)
+          cmake --install sdl3-build
+          echo "SDL3_DIR=$PWD/sdl3" >> "$GITHUB_ENV"
+
+      - name: Build
+        # Make consumes $$, then the recipe shell consumes the backslash:
+        # the resulting ELF RUNPATH is literally $ORIGIN.
+        run: make mercs SDL3_DIR="$SDL3_DIR" SDL3_LIBS="-L$SDL3_DIR/lib -lSDL3 "'-Wl,-rpath,\$$ORIGIN'
+
+      - name: Package
+        run: |
+          mkdir -p dist/Mercs-Port
+          readelf -d mercs | grep -q 'RUNPATH.*\$ORIGIN'
+          if readelf -d mercs | grep -Eq 'NEEDED.*lib(GL|OpenGL|GLES|EGL)'; then
+            echo 'The Mercs executable unexpectedly links an OpenGL library.' >&2
+            exit 1
+          fi
+          cp mercs dist/Mercs-Port/
+          cp -L "$SDL3_DIR/lib/libSDL3.so.0" dist/Mercs-Port/
+          cp -r assets dist/Mercs-Port/
+          cp README.md FOLDER_SETUP.md THIRD_PARTY.md dist/Mercs-Port/
+          cd dist && tar czf Mercs-Port-${{ github.ref_name }}-linux-x86_64.tar.gz Mercs-Port
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: dist/*.tar.gz
+
+  build-fedora:
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Install build deps
+        run: dnf install -y git rpm-build rpmdevtools gcc gcc-c++ make pkgconf-pkg-config SDL3-devel
+
+      - uses: actions/checkout@v4
+
+      - name: Build RPM
+        run: |
+          MERCS_VERSION=${GITHUB_REF_NAME#v}
+          rpmbuild -bb packaging/mw2port.spec \
+            --define "_sourcedir $PWD" \
+            --define "_topdir $PWD/rpmbuild" \
+            --define "_version $MERCS_VERSION"
+          mkdir -p dist
+          cp rpmbuild/RPMS/x86_64/*.rpm dist/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fedora
+          path: dist/*.rpm
+
+  build-windows:
+    runs-on: ubuntu-24.04   # cross-compiled with MinGW-w64; ships SDL3.dll beside mercs.exe
+    env:
+      SDL3_VERSION: 3.4.18
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install MinGW-w64 and SDL3 (MinGW development package)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mingw-w64 g++-mingw-w64-x86-64 pkg-config zip
+          curl -sSfL -o sdl3.tar.gz https://github.com/libsdl-org/SDL/releases/download/release-${SDL3_VERSION}/SDL3-devel-${SDL3_VERSION}-mingw.tar.gz
+          tar xzf sdl3.tar.gz
+          echo "SDL3_DIR=$PWD/SDL3-${SDL3_VERSION}/x86_64-w64-mingw32" >> "$GITHUB_ENV"
+
+      - name: Build
+        run: make mercs WINDOWS=1 CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ AR=x86_64-w64-mingw32-ar SDL3_DIR="$SDL3_DIR"
+
+      - name: Package
+        run: |
+          mkdir -p dist/Mercs-Port
+          if x86_64-w64-mingw32-objdump -p mercs.exe | grep -qi 'DLL Name:.*opengl32'; then
+            echo 'The Mercs executable unexpectedly imports OpenGL.' >&2
+            exit 1
+          fi
+          cp mercs.exe "$SDL3_DIR/bin/SDL3.dll" dist/Mercs-Port/
+          cp -r assets dist/Mercs-Port/
+          cp README.md FOLDER_SETUP.md THIRD_PARTY.md dist/Mercs-Port/
+          cd dist && zip -r Mercs-Port-${{ github.ref_name }}-windows-x64.zip Mercs-Port
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/*.zip
+
+  release:
+    needs: [build-macos, build-linux, build-fedora, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*

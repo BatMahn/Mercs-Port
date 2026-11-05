@@ -1,0 +1,1742 @@
+{
+  "scope": "Bounded original Mercs near clipping and world fog execution.\n\nSupply the hash-checked dedicated MERCSW.DLL. Synthetic fixtures execute the\noriginal crossing-edge clip routine 0x1001fee0, with its allocator replaced by\nprivate mapped memory. All arithmetic and interpolation execute unchanged.\nThe polygon near-clip loop 0x100207aa..0x100208ae also executes unchanged;\nits projection callback is intercepted to capture emitted vertices in order.\nThe single-vertex conversion/fog segment 0x100030fa..0x10003248 executes before\nhardware submission, including the original quarter-depth conversion and\nfloat-to-integer helper. There is no graphics driver, full-frame oracle or\noriginal archive I/O in this probe.\n\nOptional --titanium-dll adds execution of the actual Mercs Titanium parser's\npost-scan Z multiplier, camera-height factor and world packet fog calculation.\nTitanium execution stops immediately before its imported MSVCRT _ftol call;\nthe float before that import is original output. The separately named\nstandard_ftol_byte is Python truncation of that float, not a claim to execute\nthe absent Windows CRT. Dedicated _ftol is embedded and executes unchanged.\n\nOptional --world-json accepts a private export from probe_world_assets.c and\nadds the TRA1 TLADUNM polygons identified by the native ID pass. Those vertices\nare read at runtime; no original mesh or executable bytes are embedded here.\nThe camera and near distance in those fixtures are the native capture's,\nnot a claim to have reproduced the complete original camera setup.\n",
+  "dll_sha256": "3fe19af50d7f9b7dfab221ee3d4c38e1d1d72454633ef2aee8d6c6c3b0cce383",
+  "clip_routine": "0x1001fee0",
+  "allocator_stub": "0x10051a00",
+  "polygon_clip_segment": "0x100207aa..0x100208ae",
+  "projection_capture_stub": "0x1009f26c -> synthetic callback",
+  "conversion_fog_segment": "0x100030fa..0x10003248",
+  "float_to_int": "0x100733e0",
+  "camera_height_cases": [
+    {
+      "density_y": 0,
+      "density_min": 0,
+      "camera_y_cm": -100,
+      "dedicated_original_factor": 1.0,
+      "titanium_original_factor": 1.0
+    },
+    {
+      "density_y": 0,
+      "density_min": 0,
+      "camera_y_cm": 0,
+      "dedicated_original_factor": 1.0,
+      "titanium_original_factor": 1.0
+    },
+    {
+      "density_y": 0,
+      "density_min": 0,
+      "camera_y_cm": 50,
+      "dedicated_original_factor": 1.0,
+      "titanium_original_factor": 1.0
+    },
+    {
+      "density_y": 0,
+      "density_min": 0,
+      "camera_y_cm": 1796,
+      "dedicated_original_factor": 1.0,
+      "titanium_original_factor": 1.0
+    },
+    {
+      "density_y": 0,
+      "density_min": 0,
+      "camera_y_cm": 3000,
+      "dedicated_original_factor": 1.0,
+      "titanium_original_factor": 1.0
+    },
+    {
+      "density_y": 0,
+      "density_min": 0,
+      "camera_y_cm": 10000,
+      "dedicated_original_factor": 1.0,
+      "titanium_original_factor": 1.0
+    },
+    {
+      "density_y": 2000,
+      "density_min": 0,
+      "camera_y_cm": -100,
+      "dedicated_original_factor": 1.0,
+      "titanium_original_factor": 1.0
+    },
+    {
+      "density_y": 2000,
+      "density_min": 0,
+      "camera_y_cm": 0,
+      "dedicated_original_factor": 1.0,
+      "titanium_original_factor": 1.0
+    },
+    {
+      "density_y": 2000,
+      "density_min": 0,
+      "camera_y_cm": 50,
+      "dedicated_original_factor": 1.0,
+      "titanium_original_factor": 1.0
+    },
+    {
+      "density_y": 2000,
+      "density_min": 0,
+      "camera_y_cm": 1796,
+      "dedicated_original_factor": 1.0,
+      "titanium_original_factor": 1.0
+    },
+    {
+      "density_y": 2000,
+      "density_min": 0,
+      "camera_y_cm": 3000,
+      "dedicated_original_factor": 0.6666666865348816,
+      "titanium_original_factor": 0.6666666865348816
+    },
+    {
+      "density_y": 2000,
+      "density_min": 0,
+      "camera_y_cm": 10000,
+      "dedicated_original_factor": 0.20000000298023224,
+      "titanium_original_factor": 0.20000000298023224
+    },
+    {
+      "density_y": 2000,
+      "density_min": 0.25,
+      "camera_y_cm": -100,
+      "dedicated_original_factor": 1.0,
+      "titanium_original_factor": 1.0
+    },
+    {
+      "density_y": 2000,
+      "density_min": 0.25,
+      "camera_y_cm": 0,
+      "dedicated_original_factor": 1.0,
+      "titanium_original_factor": 1.0
+    },
+    {
+      "density_y": 2000,
+      "density_min": 0.25,
+      "camera_y_cm": 50,
+      "dedicated_original_factor": 1.0,
+      "titanium_original_factor": 1.0
+    },
+    {
+      "density_y": 2000,
+      "density_min": 0.25,
+      "camera_y_cm": 1796,
+      "dedicated_original_factor": 1.0,
+      "titanium_original_factor": 1.0
+    },
+    {
+      "density_y": 2000,
+      "density_min": 0.25,
+      "camera_y_cm": 3000,
+      "dedicated_original_factor": 0.6666666865348816,
+      "titanium_original_factor": 0.6666666865348816
+    },
+    {
+      "density_y": 2000,
+      "density_min": 0.25,
+      "camera_y_cm": 10000,
+      "dedicated_original_factor": 0.25,
+      "titanium_original_factor": 0.25
+    },
+    {
+      "density_y": -0.005,
+      "density_min": 0.1,
+      "camera_y_cm": -100,
+      "dedicated_original_factor": 0.10000000149011612,
+      "titanium_original_factor": 0.10000000149011612
+    },
+    {
+      "density_y": -0.005,
+      "density_min": 0.1,
+      "camera_y_cm": 0,
+      "dedicated_original_factor": 0.10000000149011612,
+      "titanium_original_factor": 0.10000000149011612
+    },
+    {
+      "density_y": -0.005,
+      "density_min": 0.1,
+      "camera_y_cm": 50,
+      "dedicated_original_factor": 0.25,
+      "titanium_original_factor": 0.25
+    },
+    {
+      "density_y": -0.005,
+      "density_min": 0.1,
+      "camera_y_cm": 1796,
+      "dedicated_original_factor": 1.0,
+      "titanium_original_factor": 1.0
+    },
+    {
+      "density_y": -0.005,
+      "density_min": 0.1,
+      "camera_y_cm": 3000,
+      "dedicated_original_factor": 1.0,
+      "titanium_original_factor": 1.0
+    },
+    {
+      "density_y": -0.005,
+      "density_min": 0.1,
+      "camera_y_cm": 10000,
+      "dedicated_original_factor": 1.0,
+      "titanium_original_factor": 1.0
+    }
+  ],
+  "synthetic_fog": [
+    {
+      "name": "no-fog",
+      "density": [
+        0,
+        0,
+        0
+      ],
+      "camera_factor": 1,
+      "valid_after_near_clip": false,
+      "quarter_depth": -4000,
+      "tl_depth_cm": -1000.0,
+      "world_y_cm": 0,
+      "visibility_byte": 255,
+      "fog_fraction": 0.0
+    },
+    {
+      "name": "no-fog",
+      "density": [
+        0,
+        0,
+        0
+      ],
+      "camera_factor": 1,
+      "valid_after_near_clip": true,
+      "quarter_depth": 240,
+      "tl_depth_cm": 60.0,
+      "world_y_cm": 0,
+      "visibility_byte": 255,
+      "fog_fraction": 0.0
+    },
+    {
+      "name": "no-fog",
+      "density": [
+        0,
+        0,
+        0
+      ],
+      "camera_factor": 1,
+      "valid_after_near_clip": true,
+      "quarter_depth": 4000,
+      "tl_depth_cm": 1000.0,
+      "world_y_cm": 100,
+      "visibility_byte": 255,
+      "fog_fraction": 0.0
+    },
+    {
+      "name": "no-fog",
+      "density": [
+        0,
+        0,
+        0
+      ],
+      "camera_factor": 1,
+      "valid_after_near_clip": true,
+      "quarter_depth": 8000,
+      "tl_depth_cm": 2000.0,
+      "world_y_cm": 3000,
+      "visibility_byte": 255,
+      "fog_fraction": 0.0
+    },
+    {
+      "name": "no-fog",
+      "density": [
+        0,
+        0,
+        0
+      ],
+      "camera_factor": 1,
+      "valid_after_near_clip": true,
+      "quarter_depth": 16000,
+      "tl_depth_cm": 4000.0,
+      "world_y_cm": 10000,
+      "visibility_byte": 255,
+      "fog_fraction": 0.0
+    },
+    {
+      "name": "distance",
+      "density": [
+        0,
+        0,
+        1000
+      ],
+      "camera_factor": 1,
+      "valid_after_near_clip": false,
+      "quarter_depth": -4000,
+      "tl_depth_cm": -1000.0,
+      "world_y_cm": 0,
+      "visibility_byte": 1,
+      "fog_fraction": 0.996078431372549
+    },
+    {
+      "name": "distance",
+      "density": [
+        0,
+        0,
+        1000
+      ],
+      "camera_factor": 1,
+      "valid_after_near_clip": true,
+      "quarter_depth": 240,
+      "tl_depth_cm": 60.0,
+      "world_y_cm": 0,
+      "visibility_byte": 255,
+      "fog_fraction": 0.0
+    },
+    {
+      "name": "distance",
+      "density": [
+        0,
+        0,
+        1000
+      ],
+      "camera_factor": 1,
+      "valid_after_near_clip": true,
+      "quarter_depth": 4000,
+      "tl_depth_cm": 1000.0,
+      "world_y_cm": 100,
+      "visibility_byte": 255,
+      "fog_fraction": 0.0
+    },
+    {
+      "name": "distance",
+      "density": [
+        0,
+        0,
+        1000
+      ],
+      "camera_factor": 1,
+      "valid_after_near_clip": true,
+      "quarter_depth": 8000,
+      "tl_depth_cm": 2000.0,
+      "world_y_cm": 3000,
+      "visibility_byte": 127,
+      "fog_fraction": 0.5019607843137255
+    },
+    {
+      "name": "distance",
+      "density": [
+        0,
+        0,
+        1000
+      ],
+      "camera_factor": 1,
+      "valid_after_near_clip": true,
+      "quarter_depth": 16000,
+      "tl_depth_cm": 4000.0,
+      "world_y_cm": 10000,
+      "visibility_byte": 63,
+      "fog_fraction": 0.7529411764705882
+    },
+    {
+      "name": "positive-height",
+      "density": [
+        2000,
+        0,
+        128000
+      ],
+      "camera_factor": 1,
+      "valid_after_near_clip": false,
+      "quarter_depth": -4000,
+      "tl_depth_cm": -1000.0,
+      "world_y_cm": 0,
+      "visibility_byte": 128,
+      "fog_fraction": 0.4980392156862745
+    },
+    {
+      "name": "positive-height",
+      "density": [
+        2000,
+        0,
+        128000
+      ],
+      "camera_factor": 1,
+      "valid_after_near_clip": true,
+      "quarter_depth": 240,
+      "tl_depth_cm": 60.0,
+      "world_y_cm": 0,
+      "visibility_byte": 255,
+      "fog_fraction": 0.0
+    },
+    {
+      "name": "positive-height",
+      "density": [
+        2000,
+        0,
+        128000
+      ],
+      "camera_factor": 1,
+      "valid_after_near_clip": true,
+      "quarter_depth": 4000,
+      "tl_depth_cm": 1000.0,
+      "world_y_cm": 100,
+      "visibility_byte": 255,
+      "fog_fraction": 0.0
+    },
+    {
+      "name": "positive-height",
+      "density": [
+        2000,
+        0,
+        128000
+      ],
+      "camera_factor": 1,
+      "valid_after_near_clip": true,
+      "quarter_depth": 8000,
+      "tl_depth_cm": 2000.0,
+      "world_y_cm": 3000,
+      "visibility_byte": 170,
+      "fog_fraction": 0.33333333333333337
+    },
+    {
+      "name": "positive-height",
+      "density": [
+        2000,
+        0,
+        128000
+      ],
+      "camera_factor": 1,
+      "valid_after_near_clip": true,
+      "quarter_depth": 16000,
+      "tl_depth_cm": 4000.0,
+      "world_y_cm": 10000,
+      "visibility_byte": 51,
+      "fog_fraction": 0.8
+    },
+    {
+      "name": "negative-height",
+      "density": [
+        -0.005,
+        0.1,
+        0
+      ],
+      "camera_factor": 1,
+      "valid_after_near_clip": false,
+      "quarter_depth": -4000,
+      "tl_depth_cm": -1000.0,
+      "world_y_cm": 0,
+      "visibility_byte": 25,
+      "fog_fraction": 0.9019607843137255
+    },
+    {
+      "name": "negative-height",
+      "density": [
+        -0.005,
+        0.1,
+        0
+      ],
+      "camera_factor": 1,
+      "valid_after_near_clip": true,
+      "quarter_depth": 240,
+      "tl_depth_cm": 60.0,
+      "world_y_cm": 0,
+      "visibility_byte": 25,
+      "fog_fraction": 0.9019607843137255
+    },
+    {
+      "name": "negative-height",
+      "density": [
+        -0.005,
+        0.1,
+        0
+      ],
+      "camera_factor": 1,
+      "valid_after_near_clip": true,
+      "quarter_depth": 4000,
+      "tl_depth_cm": 1000.0,
+      "world_y_cm": 100,
+      "visibility_byte": 127,
+      "fog_fraction": 0.5019607843137255
+    },
+    {
+      "name": "negative-height",
+      "density": [
+        -0.005,
+        0.1,
+        0
+      ],
+      "camera_factor": 1,
+      "valid_after_near_clip": true,
+      "quarter_depth": 8000,
+      "tl_depth_cm": 2000.0,
+      "world_y_cm": 3000,
+      "visibility_byte": 255,
+      "fog_fraction": 0.0
+    },
+    {
+      "name": "negative-height",
+      "density": [
+        -0.005,
+        0.1,
+        0
+      ],
+      "camera_factor": 1,
+      "valid_after_near_clip": true,
+      "quarter_depth": 16000,
+      "tl_depth_cm": 4000.0,
+      "world_y_cm": 10000,
+      "visibility_byte": 255,
+      "fog_fraction": 0.0
+    },
+    {
+      "name": "camera-factor",
+      "density": [
+        0,
+        0,
+        1000
+      ],
+      "camera_factor": 0.5,
+      "valid_after_near_clip": false,
+      "quarter_depth": -4000,
+      "tl_depth_cm": -1000.0,
+      "world_y_cm": 0,
+      "visibility_byte": 129,
+      "fog_fraction": 0.49411764705882355
+    },
+    {
+      "name": "camera-factor",
+      "density": [
+        0,
+        0,
+        1000
+      ],
+      "camera_factor": 0.5,
+      "valid_after_near_clip": true,
+      "quarter_depth": 240,
+      "tl_depth_cm": 60.0,
+      "world_y_cm": 0,
+      "visibility_byte": 127,
+      "fog_fraction": 0.5019607843137255
+    },
+    {
+      "name": "camera-factor",
+      "density": [
+        0,
+        0,
+        1000
+      ],
+      "camera_factor": 0.5,
+      "valid_after_near_clip": true,
+      "quarter_depth": 4000,
+      "tl_depth_cm": 1000.0,
+      "world_y_cm": 100,
+      "visibility_byte": 127,
+      "fog_fraction": 0.5019607843137255
+    },
+    {
+      "name": "camera-factor",
+      "density": [
+        0,
+        0,
+        1000
+      ],
+      "camera_factor": 0.5,
+      "valid_after_near_clip": true,
+      "quarter_depth": 8000,
+      "tl_depth_cm": 2000.0,
+      "world_y_cm": 3000,
+      "visibility_byte": 63,
+      "fog_fraction": 0.7529411764705882
+    },
+    {
+      "name": "camera-factor",
+      "density": [
+        0,
+        0,
+        1000
+      ],
+      "camera_factor": 0.5,
+      "valid_after_near_clip": true,
+      "quarter_depth": 16000,
+      "tl_depth_cm": 4000.0,
+      "world_y_cm": 10000,
+      "visibility_byte": 31,
+      "fog_fraction": 0.8784313725490196
+    }
+  ],
+  "dedicated_height_byte_cases": [
+    {
+      "density": [
+        2000,
+        0,
+        0
+      ],
+      "camera_factor": 1,
+      "expected_byte": 255,
+      "quarter_depth": 4000,
+      "tl_depth_cm": 1000.0,
+      "world_y_cm": 1000,
+      "visibility_byte": 255,
+      "fog_fraction": 0.0
+    },
+    {
+      "density": [
+        2000,
+        0,
+        0
+      ],
+      "camera_factor": 1,
+      "expected_byte": 170,
+      "quarter_depth": 4000,
+      "tl_depth_cm": 1000.0,
+      "world_y_cm": 3000,
+      "visibility_byte": 170,
+      "fog_fraction": 0.33333333333333337
+    },
+    {
+      "density": [
+        2000,
+        0,
+        0
+      ],
+      "camera_factor": 1,
+      "expected_byte": 51,
+      "quarter_depth": 4000,
+      "tl_depth_cm": 1000.0,
+      "world_y_cm": 10000,
+      "visibility_byte": 51,
+      "fog_fraction": 0.8
+    },
+    {
+      "density": [
+        2000,
+        0.25,
+        0
+      ],
+      "camera_factor": 1,
+      "expected_byte": 63,
+      "quarter_depth": 4000,
+      "tl_depth_cm": 1000.0,
+      "world_y_cm": 10000,
+      "visibility_byte": 63,
+      "fog_fraction": 0.7529411764705882
+    },
+    {
+      "density": [
+        2000,
+        1.5,
+        0
+      ],
+      "camera_factor": 1,
+      "expected_byte": 126,
+      "quarter_depth": 4000,
+      "tl_depth_cm": 1000.0,
+      "world_y_cm": 3000,
+      "visibility_byte": 126,
+      "fog_fraction": 0.5058823529411764
+    },
+    {
+      "density": [
+        2000,
+        2,
+        0
+      ],
+      "camera_factor": 1,
+      "expected_byte": 254,
+      "quarter_depth": 4000,
+      "tl_depth_cm": 1000.0,
+      "world_y_cm": 3000,
+      "visibility_byte": 254,
+      "fog_fraction": 0.0039215686274509665
+    },
+    {
+      "density": [
+        2000,
+        1.5,
+        0
+      ],
+      "camera_factor": 1.5,
+      "expected_byte": 61,
+      "quarter_depth": 4000,
+      "tl_depth_cm": 1000.0,
+      "world_y_cm": 3000,
+      "visibility_byte": 61,
+      "fog_fraction": 0.7607843137254902
+    },
+    {
+      "density": [
+        -0.005,
+        0.1,
+        0
+      ],
+      "camera_factor": 1,
+      "expected_byte": 25,
+      "quarter_depth": 4000,
+      "tl_depth_cm": 1000.0,
+      "world_y_cm": 0,
+      "visibility_byte": 25,
+      "fog_fraction": 0.9019607843137255
+    },
+    {
+      "density": [
+        -0.005,
+        0.1,
+        0
+      ],
+      "camera_factor": 1,
+      "expected_byte": 63,
+      "quarter_depth": 4000,
+      "tl_depth_cm": 1000.0,
+      "world_y_cm": 50,
+      "visibility_byte": 63,
+      "fog_fraction": 0.7529411764705882
+    },
+    {
+      "density": [
+        -0.005,
+        1.5,
+        0
+      ],
+      "camera_factor": 1,
+      "expected_byte": 126,
+      "quarter_depth": 4000,
+      "tl_depth_cm": 1000.0,
+      "world_y_cm": 0,
+      "visibility_byte": 126,
+      "fog_fraction": 0.5058823529411764
+    }
+  ],
+  "synthetic_clip": [
+    {
+      "name": "behind-to-front",
+      "a": [
+        -800,
+        -400,
+        -4000,
+        6553600,
+        13107200,
+        0,
+        536870912,
+        0,
+        0
+      ],
+      "b": [
+        400,
+        100,
+        8000,
+        6553600,
+        13107200,
+        0,
+        536870912,
+        0,
+        3000
+      ],
+      "near_quarter_cm": 240,
+      "clipped": [
+        -376,
+        -224,
+        240,
+        6553600,
+        13107200,
+        0,
+        536870912,
+        0,
+        1060
+      ],
+      "fog": {
+        "quarter_depth": 240,
+        "tl_depth_cm": 60.0,
+        "world_y_cm": 1060,
+        "visibility_byte": 255,
+        "fog_fraction": 0.0
+      }
+    },
+    {
+      "name": "front-to-behind",
+      "a": [
+        400,
+        100,
+        8000,
+        6553600,
+        13107200,
+        0,
+        536870912,
+        0,
+        3000
+      ],
+      "b": [
+        -800,
+        -400,
+        -4000,
+        6553600,
+        13107200,
+        0,
+        536870912,
+        0,
+        0
+      ],
+      "near_quarter_cm": 240,
+      "clipped": [
+        -376,
+        -224,
+        240,
+        6553600,
+        13107200,
+        0,
+        536870912,
+        0,
+        1060
+      ],
+      "fog": {
+        "quarter_depth": 240,
+        "tl_depth_cm": 60.0,
+        "world_y_cm": 1060,
+        "visibility_byte": 255,
+        "fog_fraction": 0.0
+      }
+    },
+    {
+      "name": "exact-near",
+      "a": [
+        1,
+        2,
+        240,
+        6553600,
+        13107200,
+        0,
+        536870912,
+        0,
+        50
+      ],
+      "b": [
+        401,
+        402,
+        4000,
+        6553600,
+        13107200,
+        0,
+        536870912,
+        0,
+        600
+      ],
+      "near_quarter_cm": 240,
+      "clipped": [
+        1,
+        2,
+        240,
+        6553600,
+        13107200,
+        0,
+        536870912,
+        0,
+        50
+      ],
+      "fog": {
+        "quarter_depth": 240,
+        "tl_depth_cm": 60.0,
+        "world_y_cm": 50,
+        "visibility_byte": 255,
+        "fog_fraction": 0.0
+      }
+    },
+    {
+      "name": "near-straddle",
+      "a": [
+        -2,
+        -4,
+        239,
+        6553600,
+        13107200,
+        0,
+        536870912,
+        0,
+        49
+      ],
+      "b": [
+        2,
+        4,
+        241,
+        6553600,
+        13107200,
+        0,
+        536870912,
+        0,
+        51
+      ],
+      "near_quarter_cm": 240,
+      "clipped": [
+        0,
+        0,
+        240,
+        6553600,
+        13107200,
+        0,
+        536870912,
+        0,
+        50
+      ],
+      "fog": {
+        "quarter_depth": 240,
+        "tl_depth_cm": 60.0,
+        "world_y_cm": 50,
+        "visibility_byte": 255,
+        "fog_fraction": 0.0
+      }
+    }
+  ],
+  "synthetic_polygon_clip": [
+    {
+      "name": "two-behind",
+      "source": [
+        [
+          -800,
+          -400,
+          -4000,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          0
+        ],
+        [
+          400,
+          100,
+          8000,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          3000
+        ],
+        [
+          0,
+          200,
+          -1000,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          800
+        ]
+      ],
+      "original_emitted": [
+        [
+          -376,
+          -224,
+          240,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          1060
+        ],
+        [
+          400,
+          100,
+          8000,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          3000
+        ],
+        [
+          55,
+          187,
+          240,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          1103
+        ]
+      ]
+    },
+    {
+      "name": "one-behind",
+      "source": [
+        [
+          -400,
+          100,
+          8000,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          0
+        ],
+        [
+          400,
+          100,
+          8000,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          3000
+        ],
+        [
+          0,
+          200,
+          -4000,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          800
+        ]
+      ],
+      "original_emitted": [
+        [
+          -400,
+          100,
+          8000,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          0
+        ],
+        [
+          400,
+          100,
+          8000,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          3000
+        ],
+        [
+          141,
+          165,
+          240,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          1577
+        ],
+        [
+          -141,
+          165,
+          240,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          518
+        ]
+      ]
+    },
+    {
+      "name": "at-near",
+      "source": [
+        [
+          -400,
+          100,
+          240,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          0
+        ],
+        [
+          400,
+          100,
+          240,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          3000
+        ],
+        [
+          0,
+          200,
+          8000,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          800
+        ]
+      ],
+      "original_emitted": [
+        [
+          -400,
+          100,
+          240,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          0
+        ],
+        [
+          400,
+          100,
+          240,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          3000
+        ],
+        [
+          0,
+          200,
+          8000,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          800
+        ]
+      ]
+    },
+    {
+      "name": "all-behind",
+      "source": [
+        [
+          -400,
+          100,
+          -240,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          0
+        ],
+        [
+          400,
+          100,
+          -240,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          3000
+        ],
+        [
+          0,
+          200,
+          -8000,
+          6553600,
+          13107200,
+          0,
+          536870912,
+          0,
+          800
+        ]
+      ],
+      "original_emitted": []
+    }
+  ],
+  "asset_input_sha256": "2598a4e4f83f58e8c06556fb9e9e28840ba2ece1b22a5d1409935143226a6a3f",
+  "asset_polygons": [
+    {
+      "model": "TLADUNM",
+      "object": 0,
+      "polygon": 22,
+      "material": "0x5d4a",
+      "eye": [
+        -59961,
+        1796,
+        164967
+      ],
+      "yaw_degrees": 130,
+      "near_cm": 60,
+      "source_depths_quarter_cm": [
+        6294,
+        10643,
+        -8888
+      ],
+      "original_emission_order": [
+        "v17",
+        "v31",
+        "clip31-29",
+        "clip29-17"
+      ],
+      "clipped_vertex_count": 4,
+      "source_fog_diagnostic": [
+        {
+          "quarter_depth": 6294,
+          "tl_depth_cm": 1573.5,
+          "world_y_cm": 385,
+          "visibility_byte": 255,
+          "fog_fraction": 0.0
+        },
+        {
+          "quarter_depth": 10643,
+          "tl_depth_cm": 2660.75,
+          "world_y_cm": 1110,
+          "visibility_byte": 255,
+          "fog_fraction": 0.0
+        },
+        {
+          "quarter_depth": -8888,
+          "tl_depth_cm": -2222.0,
+          "world_y_cm": 0,
+          "visibility_byte": 159,
+          "fog_fraction": 0.3764705882352941
+        }
+      ],
+      "clipped_fog": [
+        {
+          "quarter_depth": 6294,
+          "tl_depth_cm": 1573.5,
+          "world_y_cm": 385,
+          "visibility_byte": 255,
+          "fog_fraction": 0.0
+        },
+        {
+          "quarter_depth": 10643,
+          "tl_depth_cm": 2660.75,
+          "world_y_cm": 1110,
+          "visibility_byte": 255,
+          "fog_fraction": 0.0
+        },
+        {
+          "quarter_depth": 240,
+          "tl_depth_cm": 60.0,
+          "world_y_cm": 518,
+          "visibility_byte": 255,
+          "fog_fraction": 0.0
+        },
+        {
+          "quarter_depth": 240,
+          "tl_depth_cm": 60.0,
+          "world_y_cm": 231,
+          "visibility_byte": 255,
+          "fog_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "model": "TLADUNM",
+      "object": 0,
+      "polygon": 31,
+      "material": "0x5d4a",
+      "eye": [
+        -59961,
+        1796,
+        164967
+      ],
+      "yaw_degrees": 130,
+      "near_cm": 60,
+      "source_depths_quarter_cm": [
+        -8888,
+        10643,
+        -3778
+      ],
+      "original_emission_order": [
+        "clip29-31",
+        "v31",
+        "clip31-39"
+      ],
+      "clipped_vertex_count": 3,
+      "source_fog_diagnostic": [
+        {
+          "quarter_depth": -8888,
+          "tl_depth_cm": -2222.0,
+          "world_y_cm": 0,
+          "visibility_byte": 159,
+          "fog_fraction": 0.3764705882352941
+        },
+        {
+          "quarter_depth": 10643,
+          "tl_depth_cm": 2660.75,
+          "world_y_cm": 1110,
+          "visibility_byte": 255,
+          "fog_fraction": 0.0
+        },
+        {
+          "quarter_depth": -3778,
+          "tl_depth_cm": -944.5,
+          "world_y_cm": 3270,
+          "visibility_byte": 112,
+          "fog_fraction": 0.5607843137254902
+        }
+      ],
+      "clipped_fog": [
+        {
+          "quarter_depth": 240,
+          "tl_depth_cm": 60.0,
+          "world_y_cm": 518,
+          "visibility_byte": 255,
+          "fog_fraction": 0.0
+        },
+        {
+          "quarter_depth": 10643,
+          "tl_depth_cm": 2660.75,
+          "world_y_cm": 1110,
+          "visibility_byte": 255,
+          "fog_fraction": 0.0
+        },
+        {
+          "quarter_depth": 240,
+          "tl_depth_cm": 60.0,
+          "world_y_cm": 2669,
+          "visibility_byte": 191,
+          "fog_fraction": 0.25098039215686274
+        }
+      ]
+    },
+    {
+      "model": "TLADUNM",
+      "object": 0,
+      "polygon": 34,
+      "material": "0x5d4a",
+      "eye": [
+        -59961,
+        1796,
+        164967
+      ],
+      "yaw_degrees": 130,
+      "near_cm": 60,
+      "source_depths_quarter_cm": [
+        10643,
+        14781,
+        -3778
+      ],
+      "original_emission_order": [
+        "v31",
+        "v40",
+        "clip40-39",
+        "clip39-31"
+      ],
+      "clipped_vertex_count": 4,
+      "source_fog_diagnostic": [
+        {
+          "quarter_depth": 10643,
+          "tl_depth_cm": 2660.75,
+          "world_y_cm": 1110,
+          "visibility_byte": 255,
+          "fog_fraction": 0.0
+        },
+        {
+          "quarter_depth": 14781,
+          "tl_depth_cm": 3695.25,
+          "world_y_cm": 4065,
+          "visibility_byte": 125,
+          "fog_fraction": 0.5098039215686274
+        },
+        {
+          "quarter_depth": -3778,
+          "tl_depth_cm": -944.5,
+          "world_y_cm": 3270,
+          "visibility_byte": 112,
+          "fog_fraction": 0.5607843137254902
+        }
+      ],
+      "clipped_fog": [
+        {
+          "quarter_depth": 10643,
+          "tl_depth_cm": 2660.75,
+          "world_y_cm": 1110,
+          "visibility_byte": 255,
+          "fog_fraction": 0.0
+        },
+        {
+          "quarter_depth": 14781,
+          "tl_depth_cm": 3695.25,
+          "world_y_cm": 4065,
+          "visibility_byte": 125,
+          "fog_fraction": 0.5098039215686274
+        },
+        {
+          "quarter_depth": 240,
+          "tl_depth_cm": 60.0,
+          "world_y_cm": 3442,
+          "visibility_byte": 148,
+          "fog_fraction": 0.41960784313725485
+        },
+        {
+          "quarter_depth": 240,
+          "tl_depth_cm": 60.0,
+          "world_y_cm": 2669,
+          "visibility_byte": 191,
+          "fog_fraction": 0.25098039215686274
+        }
+      ]
+    }
+  ],
+  "titanium": {
+    "dll_sha256": "0e3d7cccb004eb7dc9ff8f6e9935ae1a9a71dee3a69e52dbfd1cf42543662376",
+    "z_scale_segment": "0x10053adc..0x10053aee",
+    "camera_height_segment": "0x1006a594..0x1006a660",
+    "world_fog_segment": "0x10056575..0x100565e4",
+    "crt_import_not_executed": "MSVCRT.dll!_ftol at 0x100865dc",
+    "z_scale": [
+      {
+        "raw_z": 0,
+        "original_effective_z": 0.0
+      },
+      {
+        "raw_z": 1000,
+        "original_effective_z": 2000.0
+      },
+      {
+        "raw_z": 4000,
+        "original_effective_z": 8000.0
+      },
+      {
+        "raw_z": 128000,
+        "original_effective_z": 256000.0
+      }
+    ],
+    "synthetic_world_fog": [
+      {
+        "depth_cm": 60,
+        "effective_density": [
+          0,
+          0,
+          4000
+        ],
+        "camera_factor": 1,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 251.1750030517578,
+        "standard_ftol_byte": 251,
+        "standard_ftol_fog_fraction": 0.015686274509803977
+      },
+      {
+        "depth_cm": 1000,
+        "effective_density": [
+          0,
+          0,
+          4000
+        ],
+        "camera_factor": 1,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 191.25,
+        "standard_ftol_byte": 191,
+        "standard_ftol_fog_fraction": 0.25098039215686274
+      },
+      {
+        "depth_cm": 2000,
+        "effective_density": [
+          0,
+          0,
+          4000
+        ],
+        "camera_factor": 1,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 127.5,
+        "standard_ftol_byte": 127,
+        "standard_ftol_fog_fraction": 0.5019607843137255
+      },
+      {
+        "depth_cm": 4000,
+        "effective_density": [
+          0,
+          0,
+          4000
+        ],
+        "camera_factor": 1,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 0.0,
+        "standard_ftol_byte": 0,
+        "standard_ftol_fog_fraction": 1.0
+      },
+      {
+        "depth_cm": 8000,
+        "effective_density": [
+          0,
+          0,
+          4000
+        ],
+        "camera_factor": 1,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 0.0,
+        "standard_ftol_byte": 0,
+        "standard_ftol_fog_fraction": 1.0
+      },
+      {
+        "depth_cm": 60,
+        "effective_density": [
+          2000,
+          0,
+          4000
+        ],
+        "camera_factor": 1,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 251.1750030517578,
+        "standard_ftol_byte": 251,
+        "standard_ftol_fog_fraction": 0.015686274509803977
+      },
+      {
+        "depth_cm": 1000,
+        "effective_density": [
+          2000,
+          0,
+          4000
+        ],
+        "camera_factor": 1,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 191.25,
+        "standard_ftol_byte": 191,
+        "standard_ftol_fog_fraction": 0.25098039215686274
+      },
+      {
+        "depth_cm": 2000,
+        "effective_density": [
+          2000,
+          0,
+          4000
+        ],
+        "camera_factor": 1,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 127.5,
+        "standard_ftol_byte": 127,
+        "standard_ftol_fog_fraction": 0.5019607843137255
+      },
+      {
+        "depth_cm": 4000,
+        "effective_density": [
+          2000,
+          0,
+          4000
+        ],
+        "camera_factor": 1,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 0.0,
+        "standard_ftol_byte": 0,
+        "standard_ftol_fog_fraction": 1.0
+      },
+      {
+        "depth_cm": 8000,
+        "effective_density": [
+          2000,
+          0,
+          4000
+        ],
+        "camera_factor": 1,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 0.0,
+        "standard_ftol_byte": 0,
+        "standard_ftol_fog_fraction": 1.0
+      },
+      {
+        "depth_cm": 60,
+        "effective_density": [
+          -0.005,
+          0.1,
+          4000
+        ],
+        "camera_factor": 1,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 251.1750030517578,
+        "standard_ftol_byte": 251,
+        "standard_ftol_fog_fraction": 0.015686274509803977
+      },
+      {
+        "depth_cm": 1000,
+        "effective_density": [
+          -0.005,
+          0.1,
+          4000
+        ],
+        "camera_factor": 1,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 191.25,
+        "standard_ftol_byte": 191,
+        "standard_ftol_fog_fraction": 0.25098039215686274
+      },
+      {
+        "depth_cm": 2000,
+        "effective_density": [
+          -0.005,
+          0.1,
+          4000
+        ],
+        "camera_factor": 1,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 127.5,
+        "standard_ftol_byte": 127,
+        "standard_ftol_fog_fraction": 0.5019607843137255
+      },
+      {
+        "depth_cm": 4000,
+        "effective_density": [
+          -0.005,
+          0.1,
+          4000
+        ],
+        "camera_factor": 1,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 0.0,
+        "standard_ftol_byte": 0,
+        "standard_ftol_fog_fraction": 1.0
+      },
+      {
+        "depth_cm": 8000,
+        "effective_density": [
+          -0.005,
+          0.1,
+          4000
+        ],
+        "camera_factor": 1,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 0.0,
+        "standard_ftol_byte": 0,
+        "standard_ftol_fog_fraction": 1.0
+      },
+      {
+        "depth_cm": 60,
+        "effective_density": [
+          0,
+          0,
+          0
+        ],
+        "camera_factor": 0.5,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 127.5,
+        "standard_ftol_byte": 127,
+        "standard_ftol_fog_fraction": 0.5019607843137255
+      },
+      {
+        "depth_cm": 1000,
+        "effective_density": [
+          0,
+          0,
+          0
+        ],
+        "camera_factor": 0.5,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 127.5,
+        "standard_ftol_byte": 127,
+        "standard_ftol_fog_fraction": 0.5019607843137255
+      },
+      {
+        "depth_cm": 2000,
+        "effective_density": [
+          0,
+          0,
+          0
+        ],
+        "camera_factor": 0.5,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 127.5,
+        "standard_ftol_byte": 127,
+        "standard_ftol_fog_fraction": 0.5019607843137255
+      },
+      {
+        "depth_cm": 4000,
+        "effective_density": [
+          0,
+          0,
+          0
+        ],
+        "camera_factor": 0.5,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 127.5,
+        "standard_ftol_byte": 127,
+        "standard_ftol_fog_fraction": 0.5019607843137255
+      },
+      {
+        "depth_cm": 8000,
+        "effective_density": [
+          0,
+          0,
+          0
+        ],
+        "camera_factor": 0.5,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 127.5,
+        "standard_ftol_byte": 127,
+        "standard_ftol_fog_fraction": 0.5019607843137255
+      },
+      {
+        "depth_cm": 60,
+        "effective_density": [
+          0,
+          0,
+          4000
+        ],
+        "camera_factor": 0.5,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 125.5875015258789,
+        "standard_ftol_byte": 125,
+        "standard_ftol_fog_fraction": 0.5098039215686274
+      },
+      {
+        "depth_cm": 1000,
+        "effective_density": [
+          0,
+          0,
+          4000
+        ],
+        "camera_factor": 0.5,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 95.625,
+        "standard_ftol_byte": 95,
+        "standard_ftol_fog_fraction": 0.6274509803921569
+      },
+      {
+        "depth_cm": 2000,
+        "effective_density": [
+          0,
+          0,
+          4000
+        ],
+        "camera_factor": 0.5,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 63.75,
+        "standard_ftol_byte": 63,
+        "standard_ftol_fog_fraction": 0.7529411764705882
+      },
+      {
+        "depth_cm": 4000,
+        "effective_density": [
+          0,
+          0,
+          4000
+        ],
+        "camera_factor": 0.5,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 0.0,
+        "standard_ftol_byte": 0,
+        "standard_ftol_fog_fraction": 1.0
+      },
+      {
+        "depth_cm": 8000,
+        "effective_density": [
+          0,
+          0,
+          4000
+        ],
+        "camera_factor": 0.5,
+        "fog_enabled": true,
+        "original_pre_crt_alpha": 0.0,
+        "standard_ftol_byte": 0,
+        "standard_ftol_fog_fraction": 1.0
+      },
+      {
+        "depth_cm": 2000,
+        "effective_density": [
+          2000,
+          0,
+          4000
+        ],
+        "camera_factor": 0.5,
+        "fog_enabled": false,
+        "original_pre_crt_alpha": 255.0,
+        "standard_ftol_byte": 255,
+        "standard_ftol_fog_fraction": 0.0
+      }
+    ]
+  }
+}
