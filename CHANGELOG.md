@@ -1,5 +1,11 @@
 # Mercenaries development history
 
+## Check programs link with libm — 2026-11-06
+
+- `test_mercs_lance`, `test_mercs_bwdplace`, `test_mercs_gps_ai`, `test_mercs_environment` and `bwdtool` link
+  `bwdplace.c`, which calls `sqrtl`, without `-lm`. Newer compilers inline it, so they linked anyway, but Ubuntu
+  22.04 (the Linux CI) does not. All the check programs now link even with `-fno-builtin`.
+
 ## macOS packaging with the system awk — 2026-11-06
 
 - `scripts/macos_mercs_app.sh` failed on macOS with "nonterminated character class". macOS's BWK awk ends a

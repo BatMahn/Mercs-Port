@@ -135,7 +135,7 @@ test_mercs_camo: tests/test_mercs_camo.c src/bwd.c src/bwdplace.c src/prj.c src/
 	$(CC) $(CFLAGS) -Wno-conversion -Isrc $(filter %.c,$^) -o $@ -lm
 
 test_mercs_lance: tests/test_mercs_lance.c src/lance.c src/bwd.c src/bwdplace.c src/prj.c src/datapath.c $(HDRS)
-	$(CC) $(CFLAGS) -Isrc $(filter %.c,$^) -o $@
+	$(CC) $(CFLAGS) -Isrc $(filter %.c,$^) -o $@ -lm
 
 MERCS_CAMPAIGN_SRC = src/mercscampaign.c src/mercsstore.c src/mercssave.c src/mercssave_init.c src/mercsinterchange.c src/mercsmechlab.c src/mercsrmg.c \
                      src/mercsdebrief.c src/mercsshell_data.c src/mercsscene.c src/mercscareer.c src/mercsresult.c \
@@ -231,10 +231,10 @@ test_mercs_scores: tests/test_mercs_scores.c src/mercsscores.c src/mercspanels.c
 	$(CC) $(CFLAGS) -Wno-conversion -Isrc $(filter %.c,$^) -o $@ -lm
 
 test_mercs_bwdplace: tests/test_mercs_bwdplace.c src/bwdplace.c src/bwd.c src/prj.c src/datapath.c tests/fixtures/combat-completion/original-bwdplace.h $(HDRS)
-	$(CC) $(CFLAGS) -Wno-conversion -Isrc $(filter %.c,$^) -o $@
+	$(CC) $(CFLAGS) -Wno-conversion -Isrc $(filter %.c,$^) -o $@ -lm
 
 test_mercs_gps_ai: tests/test_mercs_gps_ai.c src/bwd.c src/bwdplace.c src/prj.c src/datapath.c $(HDRS)
-	$(CC) $(CFLAGS) -Isrc $(filter %.c,$^) -o $@
+	$(CC) $(CFLAGS) -Isrc $(filter %.c,$^) -o $@ -lm
 
 # This fixture test includes combat.c to exercise actual critical-slot IDs.
 test_mercs_loadout: tests/test_mercs_loadout.c src/combat.c src/mek.c src/prj.c src/datapath.c $(HDRS)
@@ -295,7 +295,7 @@ test_mercs_prj_checksum: tests/test_mercs_prj_checksum.c src/prj.c src/mek.c src
 	$(CC) $(CFLAGS) -Isrc $(filter %.c,$^) -o $@ -lm
 
 test_mercs_environment: tests/test_mercs_environment.c src/bwd.c src/bwdplace.c src/prj.c src/datapath.c $(HDRS)
-	$(CC) $(CFLAGS) -Isrc $(filter %.c,$^) -o $@
+	$(CC) $(CFLAGS) -Isrc $(filter %.c,$^) -o $@ -lm
 
 test_mercs_overlay: tests/test_mercs_overlay.c src/portcfg.c src/prj.c src/datapath.c $(HDRS)
 	$(CC) $(CFLAGS) -Isrc $(filter %.c,$^) -o $@
@@ -562,7 +562,7 @@ mechview: tools/mechview.c src/anim.c src/mek.c src/mech3d.c src/render.c src/te
 	$(CC) $(CFLAGS) -Isrc $^ -o $@ -lm
 
 bwdtool: tools/bwdtool.c src/mtbl.c src/bwd.c src/bwdplace.c src/prj.c src/datapath.c
-	$(CC) $(CFLAGS) -Isrc $^ -o $@
+	$(CC) $(CFLAGS) -Isrc $^ -o $@ -lm
 
 mektool: tools/mektool.c src/mek.c src/datapath.c src/prj.c
 	$(CC) $(CFLAGS) -Isrc $^ -o $@
