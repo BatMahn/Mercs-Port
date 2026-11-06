@@ -2,6 +2,7 @@
  * SMK room objects and recovered navigation tables. Port-only display settings
  * are separate. Career changes are staged and saved before becoming live. */
 #include <SDL3/SDL.h>
+#include "mercsicon.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -3133,6 +3134,7 @@ int mercs_shell_run(const char *exe, portcfg *cfg, int edition)
     if (cfg->mode != 1) flags |= SDL_WINDOW_FULLSCREEN;
     s->window = SDL_CreateWindow("MechWarrior 2: Mercenaries", 1280, 960, flags);
     if (!s->window) { mercs_gui_error(SDL_GetError()); goto cleanup; }
+    mercs_set_window_icon(s->window);
     if (cfg->mode == 1) SDL_SetWindowPosition(s->window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
     SDL_SetWindowMinimumSize(s->window, SW, SH);
     s->renderer = create_shell_renderer(s->window, cfg);

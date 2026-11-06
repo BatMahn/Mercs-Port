@@ -1,5 +1,101 @@
 # Mercenaries development history
 
+## macOS packaging with the system awk — 2026-11-06
+
+- `scripts/macos_mercs_app.sh` failed on macOS with "nonterminated character class". macOS's BWK awk ends a
+  `/.../` regex at the `/` inside `[^/]`. The two checks that used it now match against string regexes. With BWK awk
+  (`original-awk`) the packaging tests went from 11 failures to all passing.
+
+## Game icon — 2026-11-06
+
+- The Mercenaries icon is used everywhere:
+  - **macOS app:** `packaging/macos/mercsport.icns`. The app had no icon before.
+  - **Windows:** `packaging/windows/mercsport.ico`, built from the icon's 16-256 px frames, replaces the
+    MechWarrior 2 icon in `mercs.exe`.
+  - **Running window:** a 64 px copy in `src/mercsicon.h`, set with `SDL_SetWindowIcon` on the shell and mission
+    windows. This is what Linux title bars and taskbars show.
+  - **Fedora RPM:** a desktop entry plus a 256 px icon, so it appears in the application menu.
+  - **Linux tarball:** carries both files.
+- The MechWarrior 2 `.ico` and its 32 px source are removed. `packaging/windows/mw2port.rc` is renamed
+  `mercsport.rc`.
+
+## GitHub builds — 2026-11-06
+
+- `.github/workflows/build.yml` replaces the release-only workflow. It builds the macOS app, the Linux tarball, the
+  Fedora RPM and the Windows zip on every push to main, on pull requests and on demand. A `v*` tag also publishes
+  them as a release.
+- The Linux job compiles every check program (`make test-bins`, new). The macOS job runs `make check-packaging`.
+- The RPM spec is renamed to `packaging/mercsport.spec`. It was missing `README.md`, `FOLDER_SETUP.md` and
+  `THIRD_PARTY.md`: it listed them by their source paths, so rpmbuild stopped. They are now installed to
+  `/usr/share/doc/mercsport`. Debuginfo is off, since the spec builds from the checked-out tree.
+- The Windows cross-build was checked locally: `mercs.exe` links against SDL 3.4.18 (MinGW) and imports only
+  `SDL3.dll` and system DLLs.
+
+## DOS lighting traced: per-vertex light, mission point lights — 2026-11-06
+
+All of this is traced in MW2.EXE and checked against DOSBox frames of BET1SCN1, LUT1SCN1 and IVA1SCN1 at 1024 x 768.
+
+- **Per-vertex light.** Textured polygons are lit per vertex, and the level is interpolated across the polygon.
+  - At load, DOS builds a normal for each vertex (0x46168). It goes through the object's polygons from the last,
+    adds each face normal to its corners, and renormalises after every addition.
+  - Each frame, every vertex is lit from that normal (0x4f6c8).
+  - The textured span setup reads each vertex's level (0x49f20).
+  - The port lit every polygon flat, which gave the mechs hard-edged, darker faces.
+- **The x/z swap.** The per-vertex call (0x4f79f) passes the normal in the order z, y, x. As a result, a vertex
+  sees the light's x against its normal's z, and z against x. The polygon path (0x4d20e) doesn't do this. The port
+  reproduces the swap, which brings back the window grid on BET1's buildings.
+- **Gouraud panels.** The cockpit's colour-ramp polygons take each corner at its own vertex level instead of the
+  polygon's.
+- **Mission point lights (MLIT chunks).** The port now reads these: position and box half-size (0x62ba9 → 0x4f4fc).
+  - They are used only while Multiple Lights is on.
+  - Each light whose box holds the polygon or vertex adds 128 × cosine, with no intensity scaling, until the
+    light reaches 0x80.
+  - BET1, BET2, MCC1, SIG3, SIG4 and SOL3 have one. BET1's sits 10 m up beside the player's start.
+- **Unit shadows.** These now multiply each colour channel by the LUMA row's own darkening, so they take DOS's
+  greenish tint.
+- **Difference from DOSBox** (mean absolute difference per channel, 1024 x 768, before → after):
+
+  | Mission | Cockpit | External |
+  |---|---|---|
+  | BET1 | 10.5 → 9.9 | 9.2 → 8.2 |
+  | LUT1 | 7.6 → 6.9 | 7.8 → 7.5 |
+  | IVA1 | 23.0 → 29.5 | 7.5 → 7.5 |
+
+  IVA1's cockpit gets worse: its panels show the DOS band pattern, but with the brightness inverted (see
+  KNOWN_ISSUES).
+
+## DOSBox comparisons: unit shadows, radar nav blips — 2026-11-06
+
+- Units now cast shadows in the DOS look when Shadows is on. As in MW2.EXE 0x509e8 / 0x507b4, each polygon
+  whose normal does not point down is dropped straight to the ground under the unit (5 cm above it, unless the
+  ground is at 0), and the pixels under it go through the LUMA row named by SKYGND.PAR `shadowtable`. The port
+  draws that row as a multiply by its average darkening of the ground texture, so overlapping polygons darken
+  again, as in DOS. Matches DOSBox BET1SCN1 in shape and position. The shade is an approximation: DOS's shadow
+  is slightly greener.
+- Radar nav blips now use the original sprite table (MW2.EXE 0xc9d14; MERCSW.DLL has the same one). Every nav is
+  the 5 x 5 diamond (RTGTNP, RRTGTNP once reached). The selected nav gets RNP / RRNP drawn on top, after the
+  units (0x12038, 0x11da0). The port had the two rows swapped. This now matches DOSBox pixel for pixel, before
+  and after N.
+- Removed the "ramp-3 texels take the polygon's ramp" plate rule from the first comparison. LUT1SCN1 showed it
+  was wrong: DOS's grey panel lines came out yellow.
+- Lighting is still darker than DOS. See docs/DOSBOX_COMPARISON.md section 4 for what has been ruled out.
+
+## First DOSBox comparisons: camouflage by star — 2026-11-06
+
+The original DOS sim now runs headless in DOSBox straight into a mission, at 320 x 200, 640 x 480 and 1024 x 768
+(`scripts/dosbox/`, docs/DOSBOX_COMPARISON.md). Compared with the port on BET1SCN1:
+
+- Units now wear their star's camouflage. The STAR value picks a set through the mission's CAMO chunks
+  (MW2.EXE 0x62bf6 / 0x62e74), which remaps the plate slots; the insignia is slot 0x3f plus the star value. Every
+  unit had been drawn in plate set 0, and the actors' star value never reached the renderer. This applies to the DOS
+  and 3dfx looks; the player's mech gets its star too.
+- On textured polygons whose colour ramp is 8-15 (the mechs' plates), the ramp-3 texels are drawn in the polygon's
+  ramp, so the 'b'/'c' plates come out brown as in DOS.
+- New test: test_mercs_camo. The check runner now skips, and names, the three tests that need the private
+  captured-palette fixtures, instead of stopping on them.
+- Open, from the same comparison: lighting levels (mechs, cockpit, buildings darker than DOS), mech shadows,
+  and the radar blip's shape (docs/DOSBOX_COMPARISON.md section 4).
+
 ## SDL_GPU renderer migration — 2026-11-03
 
 Replaced the active OpenGL backend with SDL3 GPU: Metal on macOS, Vulkan on

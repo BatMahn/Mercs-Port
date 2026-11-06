@@ -21,7 +21,7 @@ for mercs_tool in otool install_name_tool codesign lipo awk; do
 done
 otool -h "$mercs_exe" >/dev/null 2>&1 || mercs_fail "mercs must be a native macOS Mach-O executable."
 # The application must use SDL_GPU/Metal, with no direct legacy GL imports.
-if otool -L "$mercs_exe" | awk '/OpenGL\.framework|libGL[^/]*\.dylib|libEGL/ {found=1} END {exit !found}'; then
+if otool -L "$mercs_exe" | awk '$0 ~ "OpenGL\\.framework|libGL[^/]*\\.dylib|libEGL" {found=1} END {exit !found}'; then
     mercs_fail "mercs still links OpenGL; run make clean and rebuild this source."
 fi
 mercs_archs=$(lipo -archs "$mercs_exe")
@@ -82,7 +82,7 @@ mercs_resolve_library() {
 
 # Bundle the SDL3 library the executable actually links. A Homebrew dylib or
 # an official SDL3.framework is supported; no SDL2 compatibility shim is used.
-mercs_sdl_link=$(mercs_dependencies "$mercs_exe" | awk '/(^|\/)libSDL3[^/]*\.dylib$/ || /(^|\/)SDL3\.framework\/(Versions\/[^/]+\/)?SDL3$/ {print; exit}')
+mercs_sdl_link=$(mercs_dependencies "$mercs_exe" | awk '$0 ~ "(^|/)libSDL3[^/]*\\.dylib$" || $0 ~ "(^|/)SDL3\\.framework/(Versions/[^/]+/)?SDL3$" {print; exit}')
 [ -n "$mercs_sdl_link" ] || mercs_fail "no native SDL3 library was found in mercs; rebuild with pkg-config sdl3."
 mercs_sdl_source=${MERCS_SDL3_LIBRARY:-${MERCS_SDL3_DYLIB:-}}
 if [ -z "$mercs_sdl_source" ]; then

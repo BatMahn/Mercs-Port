@@ -42,6 +42,8 @@ layout(std140, set = UBO_SET, binding = 0) uniform WorldFrame {
     vec3  u_hz_indices; int  u_dos_ortho;
     int   u_shared_depth; int u_satellite; int u_dos_texture_linear; int u_dos_light;
     float u_dos_intensity;
+    int   u_dos_mlit_n;   // the mission's MLIT point lights (0 with Multiple Lights off): xyz GL position, w the box half size
+    vec4  u_dos_mlit[4];
     ivec4 u_pit_rank4[128];   // u_pit_rank[512] (GLR_PIT_MAX), four to an ivec4
 };
 
@@ -77,6 +79,28 @@ ivec2 dos_scr(vec3 w) {
   if (u_dos_ortho > 0) zc = u_dos_ortho;
   ivec2 c = ivec2(u_vp) / 2;
   return ivec2(c.x + dos_pq(xc, u_dos_ps.x, zc), c.y - dos_pq(yc, u_dos_ps.y, zc));
+}
+/* MW2.EXE 0x4f6c8: a vertex's light level from its normal tn (glr's DOS vertex normal, the stored sign) - the ambient level,
+ * the directional term x intensity / 128 when positive, less the fog by its depth (0x4f7e4), then each point light whose
+ * box holds it while under 0x80 (capped there, 0x4f98e) - and (C >> 1) x light / 0x440, 0..15 (0x4fa07) */
+float dos_vertex_level(vec3 p, vec3 tn, float C) {
+  /* 0x4f79f pushes the vertex normal +0x28, +0x24, +0x20 to 0x4d246 (the polygon's 0x4d20e: +0x14, +0x18, +0x1c), so a
+   * vertex sees the light's x against its normal's z and z against x: in game axes nv = (nz, ny, nx), here (GL z = -game
+   * z) (-nz, ny, -nx) */
+  float nl = length(tn); vec3 nv = nl > 0.0 ? -tn / nl : vec3(0.0);
+  nv = vec3(-nv.z, nv.y, -nv.x);
+  vec3 Lv = u_dos_dir != 0 ? u_dos_lpos : u_dos_lpos - p; float ll = length(Lv);
+  float f = nl > 0.0 && ll > 0.0 ? trunc(128.0 * dot(nv, Lv / ll)) : 127.0;
+  float light = u_dos_amb + (u_dos_light != 0 ? max(0.0, trunc(f * u_dos_intensity / 128.0)) : 0.0);
+  if (u_dos_fogdist > 0.0) { int key = int(max(dos_camz(p), 0.0)); light = max(0.0, light - float((int(uint(key) << 11) / int(u_dos_fogdist)) >> 4)); }
+  for (int i = 0; i < 4; i++) {
+    if (i >= u_dos_mlit_n || light >= 128.0 || nl <= 0.0) break;
+    vec3 d = u_dos_mlit[i].xyz - p;
+    if (any(greaterThan(abs(d), vec3(u_dos_mlit[i].w)))) continue;
+    float lp = length(d), fi = lp > 0.0 ? trunc(128.0 * dot(nv, d / lp)) : 128.0;
+    if (fi > 0.0) light = min(128.0, light + fi);
+  }
+  return clamp(floor(floor(C / 2.0) * light / 1088.0), 0.0, 15.0);
 }
 #endif
 

@@ -30,6 +30,7 @@
 #include "rb.h"
 #include "rb_shaders.h"
 #include <SDL3/SDL.h>
+#include "mercsicon.h"
 #ifndef main   /* The native launcher compiles this file as mercs_sim_main. */
 #include <SDL3/SDL_main.h>
 #endif
@@ -215,7 +216,7 @@ static mech3d    g_frame_layer;     /* this frame's actor layer, kept for the vi
 static int       g_sat_i;   /* Mercs satellite descriptor4:100000..12500cm full width */
 static int32_t   g_map_low=-1000,g_map_high=6400;
 static int       g_radar_big, g_satmap;   /* F2 NEXT_RADAR_MODE (small / large centred), F3 RADAR_MAP_TOGGLE */
-static unsigned char g_nav_seen[256];   /* nav points reached (engine nav flag 0x20: RRNP on the radar, autopilot skips them) */
+static unsigned char g_nav_seen[256];   /* nav points reached (engine nav flag 0x20: RRTGTNP on the radar, autopilot skips them) */
 static int       g_radar_mode = 1;        /* engine 0x10003fb0: 1 small -> 2 large -> 0 off -> 1 */
 /* the radar range per radar mode (index into RADAR_CM): each descriptor keeps its own (0x1024a760[mode] +0x18: small 1 and
  * large 2 both {range 200000, reset 200000, min 50000, max 400000} - the label shows half: 1.0 km), all reset once at the
@@ -3439,6 +3440,9 @@ static void on_presentation(void *user, int frame_ticks)
     fx_palette_step(&g_fxw, frame_ticks);
     fx_palette_flush(&g_fxw);
 }
+static int g_dos_shadow_row;
+static float g_dos_mlit[4][4];   /* the mission's MLIT point lights: x, y, z, box half size (MW2.EXE 0x62ba9) */
+static int g_dos_mlit_n;   /* SKYGND.PAR shadowtable: the LUMA row under a unit's shadow (0x507b4) */
 static void dos_scene(glr *r, prj_archive *ma, const char *mission)
 {
     bwd_mission bm;
@@ -3452,6 +3456,7 @@ static void dos_scene(glr *r, prj_archive *ma, const char *mission)
         const char *path = getenv("MERCS_SKYGND");
         if ((!path || !path[0]) && dp_resolve("SKYGND.PAR", sky_path, sizeof sky_path) == 0) path = sky_path;
         skygnd_dos_lookup(path,mission,&sg);
+        g_dos_shadow_row = sg.found ? sg.shadowtable : 0;
         g_view->dos_intensity = sg.intensity;
         if (g_scene.slot[0x4a] && sg.tile_ground > 0) {
             mercs_ground cfg;
@@ -3470,6 +3475,7 @@ static void dos_scene(glr *r, prj_archive *ma, const char *mission)
     g_dos_day = 0; g_dos_group = -1; g_dos_evals = 0; g_dos_band = 0; g_dos_next_eval = 0; g_dos_amp = 0; g_dos_t0 = 0;
     memset(g_dos_slot_ok, 0, sizeof g_dos_slot_ok);
     g_dos_sky_index = 0x60; g_dos_ground_index = 0xd0;
+    g_dos_mlit_n = 0;
     if (bwd_mission_load(ma, name, &bm) == 0) {
         for (k = 0; k < bm.record_count; k++)
             for (c = 0; c < bm.records[k].chunk_count; c++) {
@@ -3499,6 +3505,13 @@ static void dos_scene(glr *r, prj_archive *ma, const char *mission)
                     if (idx <= 255) g_dos_sky_index = (int)idx;
                     else fprintf(stderr, "Unsupported Mercenaries SKYM palette index %u.\n", (unsigned)idx);
                 }
+                else if (strcmp(ch->tag, "MLIT") == 0 && ch->size >= 16 && g_dos_mlit_n < 4) {
+                    /* a permanent point light (0x62ba9 -> 0x4f4fc, mask 7): position +0..+8, box half size +0xc */
+                    int q;
+                    for (q = 0; q < 4; q++)
+                        g_dos_mlit[g_dos_mlit_n][q] = (float)(int32_t)(ch->data[q * 4] | ch->data[q * 4 + 1] << 8 | ch->data[q * 4 + 2] << 16 | (uint32_t)ch->data[q * 4 + 3] << 24);
+                    g_dos_mlit_n++;
+                }
                 else if (strcmp(ch->tag, "LTBL") == 0 && ch->size >= 2) luma_id = ch->data[0] | ch->data[1] << 8;
                 else if (strcmp(ch->tag, "LITE") == 0 && ch->size >= 28) {
                     const uint8_t *d = ch->data;
@@ -3515,6 +3528,7 @@ static void dos_scene(glr *r, prj_archive *ma, const char *mission)
     /* Mercs DOS 0x6169d/0x152e4: INIT +8 selects dawn/day/dusk/night.
      * All 68 retail INIT records use 0..3. OUT3 phase2 -> 708322 seconds,
      * which selects its dusk palette instead of the inherited MW2 night. */
+    if (getenv("MERCS_DEBUG_DOS")) fprintf(stderr, "dos: INIT phase %d, day %d s\n", g_dos_t0, g_dos_day);
     g_dos_t0 = bwd_mercs_day_start(g_dos_t0, g_dos_day);
     if (g_dos_t0 < 0) {
         fprintf(stderr, "Unsupported Mercenaries time-of-day selector or day length.\n");
@@ -3552,6 +3566,25 @@ static void dos_scene(glr *r, prj_archive *ma, const char *mission)
     if (getenv("MERCS_DEBUG_DOS")) fprintf(stderr, "dos: %d textures\n", g_scene.textures_loaded);
     if (getenv("MERCS_DEBUG_DOS")) { int s2, q; for (s2 = 0; s2 < 20; s2++) if (g_dos_slot_ok[s2]) { fprintf(stderr, "slot %d:", s2); for (q = 0; q < 256; q++) if (s2 != 17 || g_dos_slotpal[s2][q * 3] != 63 || g_dos_slotpal[s2][q * 3 + 1]) fprintf(stderr, " %02x=%d,%d,%d", q, g_dos_slotpal[s2][q * 3], g_dos_slotpal[s2][q * 3 + 1], g_dos_slotpal[s2][q * 3 + 2]); fprintf(stderr, "\n"); } }
     glr_set_dos(r, (const uint8_t (*)[3])g_scene.palette, have_luma ? luma : NULL);
+    {   /* the units' shadows (0x507b4): the pixels under one go through LUMA row `shadowtable` (SKYGND.PAR) - drawn as a
+         * multiply by that row's mean darkening of the ground's (slot 0x4a) texels, per channel (the row's shades are not
+         * all greys: on BET1 it leans green) */
+        float k[3] = {0, 0, 0};
+        const texture *gt = g_scene.slot[0x4a];
+        if (have_luma && g_dos_shadow_row > 0 && g_dos_shadow_row < 16 && gt && gt->rgba) {
+            double a[3] = {0, 0, 0}, b[3] = {0, 0, 0};
+            int i, c, n = gt->w * gt->h;
+            for (i = 0; i < n; i++) {
+                const int t = (int)(gt->rgba[i] & 0xff), sh = luma[g_dos_shadow_row * 256 + t];
+                if (!(gt->rgba[i] >> 24)) continue;
+                for (c = 0; c < 3; c++) { a[c] += g_scene.palette[sh][c]; b[c] += g_scene.palette[t][c]; }
+            }
+            for (c = 0; c < 3; c++) k[c] = b[c] > 0 ? (float)(a[c] / b[c]) : 0.0f;
+            if (k[0] <= 0) k[0] = 1e-3f;   /* (k[0] > 0: shadows on) */
+        }
+        if (getenv("MERCS_DEBUG_DOS")) fprintf(stderr, "dos: shadow row %d, k %.3f %.3f %.3f; %d MLIT\n", g_dos_shadow_row, (double)k[0], (double)k[1], (double)k[2], g_dos_mlit_n);
+        glr_set_dos_shadow(r, k);
+    }
     fx_palette_bind(&g_fxw, g_dos_slotpal, g_dos_slot_ok, 0, dos_palette_submit, r);
 }
 
@@ -4337,6 +4370,7 @@ static int load(glr *r, prj_archive *ma, prj_archive *ta, int ati, const char *r
         }
     }
     c3d_load_scene(ma, ta, ati, mission, &g_scene);
+    { int cs[8]; c3d_camo_sets(ma, mission, cs); glr_set_camo_sets(r, cs); }   /* the mission's CAMO sets */
     glr_set_bank0(r, g_scene.bank0);   /* scrub billboards (colour type 3) */
     if (ati == 3) dos_scene(r, ma, mission);   /* the DOS edition: its palette, LUMA table, light and flat sky / ground */
     else glr_set_dos(r, NULL, NULL);
@@ -4617,6 +4651,7 @@ static int switch_look(glr *r, glr_view *v, prj_archive *ma, prj_archive **ta, i
     {   /* the texture maps (BMID) of the edition's own archive when it has one: its sky and ground can differ */
         prj_archive *em = strcmp(mo, tx) == 0 ? nt : prj_open(mo, err, sizeof err);
         c3d_load_scene(em ? em : ma, nt, k, mission, &g_scene);
+        { int cs[8]; c3d_camo_sets(em ? em : ma, mission, cs); glr_set_camo_sets(r, cs); }   /* its CAMO sets */
         if (em && em != nt) prj_close(em);
     }
     glr_set_bank0(r, g_scene.bank0);
@@ -5696,6 +5731,7 @@ int main(int argc, char **argv)
             }
         }
         if (!win) win = SDL_CreateWindow("MechWarrior 2: Mercenaries", 1280, 720, SDL_WINDOW_RESIZABLE);
+        mercs_set_window_icon(win);
         if (!win || rb_init(win, gpu, aa, gerr, sizeof gerr) != 0) {
             char m[1024];
             snprintf(m, sizeof m,
@@ -7049,7 +7085,7 @@ int main(int argc, char **argv)
                         if (g_sfx) { float p3[3]; snd_player_pos(p3); snd_at(g_sim.player_unit.landed_vy >= -16.154f ? MERCS_SOUND_LANDING_SOFT : MERCS_SOUND_LANDING_HARD, p3, 0, snd_cockpit()); }   /* Mercs DOS 0x33748: mech minus camera, MECMTNSF/MECMTNHD. */
                         jolt_start(0.0f, -g_sim.player_unit.landed_vy, 0.0f, g_sim.now);
                     }
-                    {   /* the nav's visited flag 0x20 (RRNP on the radar, the autopilot skips it, the objectives' "visited"
+                    {   /* the nav's visited flag 0x20 (RRTGTNP on the radar, the autopilot skips it, the objectives' "visited"
                          * test 0x10009ab0) is set in three places only, each with MECNAVPT 0xe7 when new: the autopilot's
                          * arrival (0x10015cb4) and the selector's upkeep (0x1001d5fb) above / below, and an objective node's
                          * "within" test of a nav (0x10009b80 / DOS 0x16190, msim tgt_within: kinds 0x100 / 0x2000 while
@@ -7392,6 +7428,11 @@ int main(int argc, char **argv)
                             int gq = src->parts[q].group;
                             if (mech3d_fly_loc(src, q, fly)) continue;
                             all.parts[all.part_count] = src->parts[q];
+                            all.parts[all.part_count].tex_offset = g_actors[k].tex_offset;   /* its star's camouflage set (STAR) */
+                            if (g_sim.armed[k] && !dead) {   /* its shadow (0x509e8): on the ground under it, raised 5 unless at 0 (0x507b4) */
+                                all.parts[all.part_count].casts = 1;
+                                all.parts[all.part_count].cast_y = g_sim.units[k].ground != 0 ? g_sim.units[k].ground + 5.0f : 0.0f;
+                            }
                             all.parts[all.part_count].map_alliance=(unsigned)unit_side(k);
                             all.parts[all.part_count].map_flags=g_sim.armed[k] ?
                                 (g_sim.units[k].destroyed?2u:0u)|
@@ -7426,6 +7467,9 @@ int main(int argc, char **argv)
                     for (q = 0; q < pm->part_count; q++) {
                         if (mech3d_fly_loc(pm, q, fly)) continue;
                         all.parts[all.part_count] = pm->parts[q];
+                        all.parts[all.part_count].tex_offset = mech3d_player_star_tex;   /* its star's camouflage set */
+                        all.parts[all.part_count].casts = !g_sim.player_unit.destroyed;   /* its shadow (0x509e8, 0x507b4) */
+                        all.parts[all.part_count].cast_y = g_sim.player_unit.ground != 0 ? g_sim.player_unit.ground + 5.0f : 0.0f;
                         all.parts[all.part_count].map_alliance=0;
                         all.parts[all.part_count].map_flags=(g_sim.player_unit.destroyed?2u:0u)|(g_sim.player_unit.shutdown?0x10u:0u);
                         all.parts[all.part_count++].dmg_nib = loc_nibble(&g_sim.player_unit, pm->parts[q].group);   /* (0x1002b9b0) */
@@ -7871,6 +7915,8 @@ int main(int argc, char **argv)
                     if (!g_multiple_lights || !(ed_light || getenv("MERCS_FXLIGHT")) || getenv("MERCS_NO_FXLIGHT")) bi = -1;
                 }
                 v.point_light = bi >= 0;
+                memcpy(v.dos_mlit, g_dos_mlit, sizeof v.dos_mlit);
+                v.dos_mlit_n = g_tex_kind == 3 && g_multiple_lights ? g_dos_mlit_n : 0;   /* the list 0xb411c: Multiple Lights (0xb4124) */
                 if (bi >= 0) {
                     int lvl = g_lite_level - 10;
                     if (lvl < 0 || lvl > 255) lvl = 64;
@@ -8462,14 +8508,16 @@ int main(int argc, char **argv)
                     }
                 }
                 if (!g_satmap) { if (g_hs_ruser.tex) hud_draw(g_hud, &g_hs_ruser, px, py, NULL); else hud_rect(g_hud, px - 4.0f, py - 1.0f, 8.0f, 4.0f, green); }
-                {   /* blips (0x10003830): nav points (0x10003c10) RNP (RRNP once reached), the targeted one RTGTNP /
-                     * RRTGTNP; then 0x10003960: every unit but the player with +0x14 & 0x1400 and none of 0x4816 - so not
+                {   /* blips (0x10003830): nav points (0x10003c10) RTGTNP (RRTGTNP once reached), the targeted one with
+                     * RNP / RRNP on top; then 0x10003960: every unit but the player with +0x14 & 0x1400 and none of 0x4816 - so not
                      * destroyed (2 / 4) and not powered down (0x10: shut down, resting / held by a node) - and every thing
                      * with flags & 0x1400 (the dropships, gunships, engagement spheres...) and none of 0x1e, RGPF / E / N by
                      * side (0x10019040 / 0x10019060); then the target (0x10003a60, whatever its power state): RTGTGP (a
                      * plus; a thing without 0x1400: RTGTGT), RTGTOF at the edge when beyond the radar. DOSBox MAROSCN1: the
                      * resting Nova / Mad Dog (480 / 590 m) are not shown, the moving hover cars (things 0x400) are */
                     int nblip_u = 0, nblip_t = 0;
+                    const hud_sprite *tnp_sp = NULL;
+                    float tnp_x = 0, tnp_y = 0;
                     float ly = g_satmap ? 0.0f : g_pl.heading * 3.14159265f / 180.0f;
                     float rcm = g_satmap ? 50000.0f / (float)(1 << g_sat_i) : RADAR_CM[g_radar_i], rr2 = g_satmap ? 320.0f : rad;
                     int nvt = tgt < 0 ? current_nav(NULL) : -1;
@@ -8526,8 +8574,13 @@ int main(int argc, char **argv)
                             } else {   float l = sqrtf(dd2); bx = cx + (bx - cx) * rad / l; by = cy + (by - cy) * rad / l; }
                             sp = &g_hs_rtof[nvq >= 0 ? 0 : sd];
                         } else if (nvq >= 0) {
+                            /* MW2.EXE's table at 0xc9d14 (rows of 3, the descriptor's +0x70): every nav point row 4 -
+                             * RTGTNP, RRTGTNP once reached (0x12038: +0x30 / +0x34) - and the targeted one again on top,
+                             * after the units, row 5: RNP / RRNP (0x11da0 -> 0x11f29). DOSBox BET1SCN1 1024 x 768: Nav Beta
+                             * a solid 5 x 5 diamond, with N on it the diamond with a bright plus */
                             int rch = nvq < 256 && g_nav_seen[nvq];
-                            sp = istgt ? &g_hs_rtnp[rch] : &g_hs_rnp[rch];
+                            sp = &g_hs_rtnp[rch];
+                            if (istgt) { tnp_sp = &g_hs_rnp[rch]; tnp_x = bx; tnp_y = by; }
                         } else sp = istgt ? (set3 ? &g_hs_rtgt[sd] : &g_hs_rtgp[sd]) : &g_hs_rgp[sd];
                         if (sp->tex) hud_draw(g_hud, sp, bx, by, NULL);
                         else if (nvq < 0) hud_rect(g_hud, bx - 1.5f, by - 1.5f, 3.0f, 3.0f, blipc);
@@ -8535,6 +8588,7 @@ int main(int argc, char **argv)
                         if (nvq < 0 && !istgt && q >= g_actor_count && getenv("MERCS_RADAR_LOG") && g_tex_kind == 3 && pxr && dd2 <= rad * rad)
                             printf("RADARTHING now=%d %d %d\n", (int)g_sim.now, (int)lrintf(bx / rw.ux), (int)lrintf(by / rw.uy));   /* TEST hook: a thing's blip, screen pixels */
                     }
+                    if (tnp_sp && tnp_sp->tex) hud_draw(g_hud, tnp_sp, tnp_x, tnp_y, NULL);   /* the targeted nav's mark (0x11da0) */
                     if (getenv("MERCS_RADAR_LOG")) {   /* TEST hook: the plain blips drawn (units, things) */
                         static double last = -1;
                         if (g_sim.now / 1000.0 >= last + 1.0) { last = g_sim.now / 1000.0; printf("RADAR t=%.1f units %d things %d\n", g_sim.now / 1000.0, nblip_u, nblip_t); }

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=MechWarrior 2: Mercenaries
+GenericName=Mech combat simulator
+Comment=Native port of MechWarrior 2: Mercenaries (needs your own game data)
+Exec=mercs
+Icon=mercsport
+Terminal=false
+Categories=Game;ActionGame;Simulation;

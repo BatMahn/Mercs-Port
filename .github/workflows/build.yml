@@ -1,11 +1,40 @@
-name: Release
+name: Build
 
+# Every push to main, every pull request, and on demand: build all four platforms and keep the packages as
+# workflow artifacts. A v* tag also publishes them as a GitHub release.
 on:
   push:
+    branches: [main]
     tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+env:
+  SDL3_VERSION: 3.4.18
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.v.outputs.name }}
+      number: ${{ steps.v.outputs.number }}
+    steps:
+      - id: v
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = tag ]; then
+            echo "name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "number=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=dev-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+            echo "number=0.0.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          fi
+
   build-macos:
+    needs: version
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,15 +43,19 @@ jobs:
         run: brew install sdl3 pkgconf
 
       - name: Build
-        run: make mercs
+        run: make -j"$(sysctl -n hw.ncpu)" mercs
+
+      - name: Packaging tests
+        run: make check-packaging
 
       - name: Build .app bundle
-        run: sh scripts/macos_mercs_app.sh
+        run: MERCS_APP_VERSION=${{ needs.version.outputs.number }} sh scripts/macos_mercs_app.sh
 
       - name: Package
         run: |
           mkdir -p dist
-          zip -r dist/Mercs-Port-${{ github.ref_name }}-macos-arm64.zip Mercenaries.app README.md FOLDER_SETUP.md THIRD_PARTY.md
+          ditto -c -k --keepParent Mercenaries.app dist/Mercs-Port-${{ needs.version.outputs.name }}-macos-arm64.zip
+          zip -j dist/Mercs-Port-${{ needs.version.outputs.name }}-macos-arm64.zip README.md FOLDER_SETUP.md THIRD_PARTY.md
 
       - uses: actions/upload-artifact@v4
         with:
@@ -30,9 +63,8 @@ jobs:
           path: dist/*.zip
 
   build-linux:
-    runs-on: ubuntu-22.04   # build against the older glibc for the portable tarball
-    env:
-      SDL3_VERSION: 3.4.18
+    needs: version
+    runs-on: ubuntu-22.04   # the older glibc, so the portable tarball runs on more distributions
     steps:
       - uses: actions/checkout@v4
 
@@ -44,9 +76,16 @@ jobs:
             libwayland-dev wayland-protocols libdecor-0-dev \
             libasound2-dev libpulse-dev libpipewire-0.3-dev libdbus-1-dev libudev-dev
 
-      # SDL loads Vulkan at runtime. Generated shaders are already checked in;
-      # the release build needs neither shader compilers nor OpenGL development libraries.
+      - name: Cache SDL3
+        id: sdl3-cache
+        uses: actions/cache@v4
+        with:
+          path: sdl3
+          key: sdl3-${{ env.SDL3_VERSION }}-ubuntu-22.04-novgl
+
+      # SDL loads Vulkan at runtime. The compiled shaders are checked in, so no shader tools or OpenGL are needed.
       - name: Build SDL3 without OpenGL
+        if: steps.sdl3-cache.outputs.cache-hit != 'true'
         run: |
           curl -sSfL -o sdl3.tar.gz https://github.com/libsdl-org/SDL/releases/download/release-${SDL3_VERSION}/SDL3-${SDL3_VERSION}.tar.gz
           tar xzf sdl3.tar.gz
@@ -54,14 +93,16 @@ jobs:
             -DCMAKE_INSTALL_PREFIX="$PWD/sdl3" -DCMAKE_INSTALL_LIBDIR=lib \
             -DSDL_TESTS=OFF -DSDL_EXAMPLES=OFF -DSDL_STATIC=OFF \
             -DSDL_OPENGL=OFF -DSDL_OPENGLES=OFF -DSDL_VULKAN=ON -DSDL_RENDER_VULKAN=ON
-          cmake --build sdl3-build -j$(nproc)
+          cmake --build sdl3-build -j"$(nproc)"
           cmake --install sdl3-build
-          echo "SDL3_DIR=$PWD/sdl3" >> "$GITHUB_ENV"
 
       - name: Build
-        # Make consumes $$, then the recipe shell consumes the backslash:
-        # the resulting ELF RUNPATH is literally $ORIGIN.
-        run: make mercs SDL3_DIR="$SDL3_DIR" SDL3_LIBS="-L$SDL3_DIR/lib -lSDL3 "'-Wl,-rpath,\$$ORIGIN'
+        # Make consumes $$, then the shell consumes the backslash: the ELF RUNPATH is literally $ORIGIN.
+        run: make -j"$(nproc)" mercs SDL3_DIR="$PWD/sdl3" SDL3_LIBS="-L$PWD/sdl3/lib -lSDL3 "'-Wl,-rpath,\$$ORIGIN'
+
+      # The checks themselves need the original game data (make check GAME=...), which CI does not have.
+      - name: Compile the check programs
+        run: make -j"$(nproc)" test-bins SDL3_DIR="$PWD/sdl3" SDL3_LIBS="-L$PWD/sdl3/lib -lSDL3 -Wl,-rpath,$PWD/sdl3/lib"
 
       - name: Package
         run: |
@@ -72,10 +113,11 @@ jobs:
             exit 1
           fi
           cp mercs dist/Mercs-Port/
-          cp -L "$SDL3_DIR/lib/libSDL3.so.0" dist/Mercs-Port/
+          cp -L sdl3/lib/libSDL3.so.0 dist/Mercs-Port/
+          cp packaging/linux/mercsport.png packaging/linux/mercsport.desktop dist/Mercs-Port/
           cp -r assets dist/Mercs-Port/
           cp README.md FOLDER_SETUP.md THIRD_PARTY.md dist/Mercs-Port/
-          cd dist && tar czf Mercs-Port-${{ github.ref_name }}-linux-x86_64.tar.gz Mercs-Port
+          cd dist && tar czf Mercs-Port-${{ needs.version.outputs.name }}-linux-x86_64.tar.gz Mercs-Port
 
       - uses: actions/upload-artifact@v4
         with:
@@ -83,6 +125,7 @@ jobs:
           path: dist/*.tar.gz
 
   build-fedora:
+    needs: version
     runs-on: ubuntu-latest
     container: fedora:latest
     steps:
@@ -93,11 +136,10 @@ jobs:
 
       - name: Build RPM
         run: |
-          MERCS_VERSION=${GITHUB_REF_NAME#v}
-          rpmbuild -bb packaging/mw2port.spec \
+          rpmbuild -bb packaging/mercsport.spec \
             --define "_sourcedir $PWD" \
             --define "_topdir $PWD/rpmbuild" \
-            --define "_version $MERCS_VERSION"
+            --define "_version ${{ needs.version.outputs.number }}"
           mkdir -p dist
           cp rpmbuild/RPMS/x86_64/*.rpm dist/
 
@@ -107,13 +149,12 @@ jobs:
           path: dist/*.rpm
 
   build-windows:
-    runs-on: ubuntu-24.04   # cross-compiled with MinGW-w64; ships SDL3.dll beside mercs.exe
-    env:
-      SDL3_VERSION: 3.4.18
+    needs: version
+    runs-on: ubuntu-24.04   # cross-compiled with MinGW-w64; SDL3.dll ships beside mercs.exe
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install MinGW-w64 and SDL3 (MinGW development package)
+      - name: Install MinGW-w64 and the SDL3 MinGW development package
         run: |
           sudo apt-get update
           sudo apt-get install -y mingw-w64 g++-mingw-w64-x86-64 pkg-config zip
@@ -122,7 +163,7 @@ jobs:
           echo "SDL3_DIR=$PWD/SDL3-${SDL3_VERSION}/x86_64-w64-mingw32" >> "$GITHUB_ENV"
 
       - name: Build
-        run: make mercs WINDOWS=1 CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ AR=x86_64-w64-mingw32-ar SDL3_DIR="$SDL3_DIR"
+        run: make -j"$(nproc)" mercs WINDOWS=1 CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ AR=x86_64-w64-mingw32-ar SDL3_DIR="$SDL3_DIR"
 
       - name: Package
         run: |
@@ -134,7 +175,7 @@ jobs:
           cp mercs.exe "$SDL3_DIR/bin/SDL3.dll" dist/Mercs-Port/
           cp -r assets dist/Mercs-Port/
           cp README.md FOLDER_SETUP.md THIRD_PARTY.md dist/Mercs-Port/
-          cd dist && zip -r Mercs-Port-${{ github.ref_name }}-windows-x64.zip Mercs-Port
+          cd dist && zip -r Mercs-Port-${{ needs.version.outputs.name }}-windows-x64.zip Mercs-Port
 
       - uses: actions/upload-artifact@v4
         with:
@@ -142,6 +183,7 @@ jobs:
           path: dist/*.zip
 
   release:
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: [build-macos, build-linux, build-fedora, build-windows]
     runs-on: ubuntu-latest
     permissions:

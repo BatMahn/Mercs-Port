@@ -90,6 +90,9 @@ struct glr {
     int    has_a[GLR_SLOTS];
     texture *const *ti_slots;               /* glr_set_titanium (the caller's array), NULL off */
     int    ti_camo[8];
+    int    camo_set[8];   /* the mission's CAMO sets (glr_set_camo_sets) */
+    float *shd; int shd_n, shd_cap; rb_buf shd_vbo; float shd_k[3];   /* the DOS unit shadows (glr_set_dos_shadow) */
+    float *dvn;   /* set_layer's scratch: one DOS object's vertex normals */
     texture *const *ti_bank0;               /* glr_set_titanium_extra: the Titanium bank-0 bitmaps (billboards) */
     glr_ti_shade ti_shade;                  /* glr_set_titanium_extra: the palette shade of its colour type 1 polygons */
     uint8_t ti_pal[2][256][3];              /* per layer: the palette its colour kinds 1 / 2 shade in (set_layer) */
@@ -193,9 +196,10 @@ glr *glr_create(void)
     glr *r = calloc(1, sizeof *r);
     int l, k;
     if (!r) return NULL;
+    glr_set_camo_sets(r, NULL);
     glr_use_variant(r, 0);
     for (l = 0; l < GLR_LAYERS; l++) r->layer[l].vbo = rb_buf_new();
-    r->env_vbo = rb_buf_new(); r->dome_vbo = rb_buf_new(); r->spr_vbo = rb_buf_new();
+    r->env_vbo = rb_buf_new(); r->dome_vbo = rb_buf_new(); r->spr_vbo = rb_buf_new(); r->shd_vbo = rb_buf_new();
     for (k = 0; k < GLR_SLOTS * 4; k++) r->tex[k] = rb_tex_new();
     for (k = 0; k < GLR_SLOTS; k++) { r->tex_a[k] = rb_tex_new(); r->dome_tex[k] = rb_tex_new(); }
     for (k = 0; k < 2; k++) r->env_tex[k] = rb_tex_new();
@@ -214,7 +218,7 @@ void glr_destroy(glr *r)
     for (k = 0; k < 2; k++) rb_tex_delete(r->env_tex[k]);
     rb_tex_delete(r->map_palette); rb_tex_delete(r->dos_tex); rb_tex_delete(r->ptab_tex);
     rb_tex_delete(r->ground_flat); rb_tex_delete(r->sky_flat); rb_tex_delete(r->mercs_ground_tex);
-    rb_buf_delete(r->env_vbo); rb_buf_delete(r->dome_vbo); rb_buf_delete(r->spr_vbo);
+    rb_buf_delete(r->env_vbo); rb_buf_delete(r->dome_vbo); rb_buf_delete(r->spr_vbo); rb_buf_delete(r->shd_vbo); free(r->shd); free(r->dvn);
     free(r->dome_v); free(r->dome_pfirst); free(r->dome_pcount); free(r->dome_pslot);
     free(r->par); free(r->palpar); free(r->palpar_vertices);
     for (l = 0; l < GLR_LAYERS; l++) {
@@ -238,6 +242,7 @@ static int g_billboards;   /* TEST ONLY: colour type 3 billboards in the last st
 
 static void upload_texture(glr *r, int slot, const texture *t);
 static void upload_alpha_reading(glr *r, int slot, const texture *t);
+static void shadow_vertex(glr *r, float x, float y, float z);
 void glr_slot_frame(glr *r, int slot, const texture *t)
 {
     if (!r || slot < 0 || slot >= GLR_SLOTS || r->slot_frame[slot] == t) return;
@@ -416,10 +421,13 @@ static void dos_normal_corners(const wtb_object *o, const wtb_poly *q, int *a, i
 /* Keep original WTBO alternatives with disjoint distance intervals. The
  * shader selects one level using the original focal/detail scale, while the
  * simulation retains its collision model. */
+/* a star's camouflage set c (0..7) -> the plates' base slot (Mercs MW2.EXE table 0xbc920; Titanium mercsw 0x100a11e0) */
+static const int MERCS_CAMO_BASE[8] = {0, 1, 0x56, 0x66, 0x76, 0x86, 0xf3, 0xf9};
 static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256][3],
                      texture *const slots[GLR_SLOTS], int camo, int clan, int bounds)
 {
     const int ti_world_normals = getenv("MERCS_TEST_TI_WORLDN") != NULL;   /* TEST ONLY: turn them as the 3D editions do */
+    (void)camo; (void)clan;   /* (MW2's clan camouflage / insignia offsets: Mercs takes each unit's star, MERCS_CAMO_BASE) */
     const int test_lit8 = getenv("MERCS_TEST_LIT_8") != NULL;   /* TEST ONLY: colour type 8 lit (the port before) */
     glr_layer *L = &r->layer[li];
     size_t cap = 0, n = 0, *count, *pos;
@@ -461,6 +469,7 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
             size_t acc = 0;
             for (b = 0; b < GLR_BATCHES; b++) { pos[b] = acc; acc += count[b]; if (b < GLR_SLOTS) apos[b] = acc - acount[b]; }
             if (li == 1) r->pit_n = r->pit_present = 0;
+            if (li == 1) r->shd_n = 0;
         }
         for (pi = 0; pi < m->part_count; pi++) {
             const mech3d_part *part = &m->parts[pi];
@@ -496,6 +505,35 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
             int32_t lower, upper;
             const wtb_object *o = &model->objects[oi];
             if (!wtb_lod_interval(model, oi, &lower, &upper)) continue;
+            /* DOS: the vertex normals (MW2.EXE 0x46168, at load): the polygons from the last, each one's unit normal added to
+             * its corners' sums, every sum normalised again at once (0x46058) - lit per vertex (0x4f6c8) and the level
+             * interpolated over the polygon */
+            if (r->dos && !model->extended && !ti && pass == 1 && o->vert_count > 0) {
+                float *g = realloc(r->dvn, (size_t)o->vert_count * 3 * sizeof *g);
+                int k5, i5, c5;
+                if (g) {
+                    r->dvn = g;
+                    memset(g, 0, (size_t)o->vert_count * 3 * sizeof *g);
+                    for (k5 = o->poly_count - 1; k5 >= 0; k5--) {
+                        const wtb_poly *q5 = &o->polys[k5];
+                        int na, nb, nc;
+                        float a5[3], b5[3], n5[3], l5;
+                        if (q5->n < 3) continue;
+                        dos_normal_corners(o, q5, &na, &nb, &nc);
+                        a5[0] = (float)(o->verts[nb].x - o->verts[na].x); a5[1] = (float)(o->verts[nb].y - o->verts[na].y); a5[2] = (float)(o->verts[nb].z - o->verts[na].z);
+                        b5[0] = (float)(o->verts[nc].x - o->verts[na].x); b5[1] = (float)(o->verts[nc].y - o->verts[na].y); b5[2] = (float)(o->verts[nc].z - o->verts[na].z);
+                        n5[0] = a5[1] * b5[2] - a5[2] * b5[1]; n5[1] = a5[2] * b5[0] - a5[0] * b5[2]; n5[2] = a5[0] * b5[1] - a5[1] * b5[0];
+                        l5 = sqrtf(n5[0] * n5[0] + n5[1] * n5[1] + n5[2] * n5[2]);
+                        if (l5 <= 0) continue;
+                        for (i5 = 0; i5 < q5->n; i5++) {
+                            float *vn = g + (size_t)q5->idx[i5] * 3, m5;
+                            for (c5 = 0; c5 < 3; c5++) vn[c5] += n5[c5] / l5;
+                            m5 = sqrtf(vn[0] * vn[0] + vn[1] * vn[1] + vn[2] * vn[2]);
+                            if (m5 > 0) for (c5 = 0; c5 < 3; c5++) vn[c5] /= m5;
+                        }
+                    }
+                }
+            }
             for (k = 0; k < o->poly_count; k++) {
                 const wtb_poly *q = &o->polys[k];
                 float face[3], e1[3], e2[3], poly_col[3], ti_vmin;
@@ -611,8 +649,13 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
                     }
                     continue;
                 }
-                if (slot == GLR_SLOT_CAMO) slot += camo + part->tex_offset;
-                else if (slot == GLR_SLOT_INSIGNIA) slot += clan + part->tex_offset;   /* engine 0x10042000 */
+                if (li == 1 && (part->objtype & 0xf00) == 0x100 && !part->ti) {
+                    /* a mech's camouflage plates and insignia by its star (Mercs MW2.EXE 0x62e74; the 3dfx edition's maps use
+                     * the same plate layout - c b a d e f g h - so the same remap, as the Titanium one 0x100748ab) */
+                    const int c = part->tex_offset < 1 ? 0 : part->tex_offset > 7 ? 7 : part->tex_offset, cs = r->camo_set[c];
+                    if (slot <= 0xa && !(slot & 1)) slot = cs < 2 ? slot + cs : MERCS_CAMO_BASE[cs] + slot / 2;
+                    else if (slot == 0x3f) slot += c;
+                }
                 if (model->extended && !part->flat && slot < GLR_SLOTS && slots && slots[slot] && (q->color & 0xFF) != 0xF0) batch = slot;
                 if (ti) {
                     /* the Titanium colour word (mercsw 0x1001b050: kinds 2, 5, 6, 7 textured - 0x1001b346 -, the bitmap the low
@@ -635,6 +678,18 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
                 if (r->dos && !model->extended) {   /* DOS bitmaps: types 5-7 bitmap = low byte; type 3 (scrub / effect cards,
                                                      * 0x3250 ...) bitmap = (word >> 4) & 0xff, transparent texels */
                     int ty = (q->color >> 12) & 7, bs = ty == 3 ? (q->color >> 4) & 0xff : q->color & 0xff;
+                    /* a mech's camouflage and insignia by its star (Mercs MW2.EXE 0x62e74, from the polygon loader 0x633c9,
+                     * for a unit of type 0x100): c = the star's STAR +0 (0x60a10 -> unit table +0x1a8078; part->tex_offset),
+                     * clamped 0..7, its set s = the mission's CAMO table[c] (0x62c22 -> 0xbc92c); the even plate slots
+                     * 0-0xa become slot + s for s 0 / 1, else base[s] + slot / 2, base 0xbc920 = {0, 1, 0x56, 0x66, 0x76,
+                     * 0x86, 0xf3, 0xf9} (the BET1MAP1 plates: c b a d e f g h); slot 0x3f + c (the insignia, 0x62f8b).
+                     * DOSBox BET1SCN1 (STAR 6 -> CAMO set 3, the player; 1 -> 4, the lancemates; a patched STAR moved the
+                     * player's plates): as the Titanium remap (0x100748ab) */
+                    if (ty != 3 && li == 1 && (part->objtype & 0xf00) == 0x100) {
+                        const int c = part->tex_offset < 1 ? 0 : part->tex_offset > 7 ? 7 : part->tex_offset, cs = r->camo_set[c];
+                        if (bs <= 0xa && !(bs & 1)) bs = cs < 2 ? bs + cs : MERCS_CAMO_BASE[cs] + bs / 2;
+                        else if (bs == 0x3f) bs += c;   /* (the insignia: the star's own value, 0x62f8b) */
+                    }
                     batch = GLR_SLOTS;
                     if ((ty >= 5 || ty == 3) && !part->flat && slots && slots[bs]) batch = bs;
                 }
@@ -666,6 +721,7 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
                 face[1] = e1[2] * e2[0] - e1[0] * e2[2];
                 face[2] = e1[0] * e2[1] - e1[1] * e2[0];
                 int wface = 0;   /* face[] already in world (game) coordinates */
+                float lface[3] = {face[0], face[1], face[2]};
                 if (r->dos && !model->extended && part->has_rot) {
                     /* DOS (one-sided, 0x3e1de): the posed polygon's own normal - a scaled object (the laser bolts, 3 x 3 x
                      * 12) would tilt a rotated model normal and cull faces seen along it */
@@ -831,6 +887,10 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
                         /* Titanium: the model's own normal, unturned (mercsw 0x1002ecaa reads the vertex's +0x40 as made at
                          * load, 0x10003df0; 0x10004934 turns only positions and polygon normals), its length kept */
                         if (ti && !ti_world_normals) { f[3] = nx; f[4] = ny; f[5] = -nz; }
+                        /* the unit's shadow (0x507b4): the polygon's corners straight down to the ground (x, z kept) - one whose
+                         * normal points down (+0x18 < 0) casts none */
+                        if (r->dos && li == 1 && pass == 1 && part->casts && r->shd_k[0] > 0 && (wface ? face[1] : lface[1]) >= 0)
+                            shadow_vertex(r, f[0], part->cast_y, f[2]);
                         f[6] = (float)v->a;
                         f[7] = (float)v->b;
                         if (batch >= GLR_TI && batch < GLR_TB) {   /* Titanium (mercsw 0x10001081, every textured kind via 0x10053280): a texture of
@@ -870,6 +930,20 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
                             const int ty = (q->color >> 12) & 15;
                             if (ty >= 5 && ty <= 11)
                                 f[11] = (float)-(notex_cls + 16 + (ty == 6 || ty == 7 || ty == 8 || ty == 10 ? 4 : 0) + (ty <= 7 ? 8 : 0));
+                        }
+                        if (r->dos && !model->extended && !ti && r->dvn && !tik) {
+                            /* the DOS vertex normal (above), turned as the normals are, in the Titanium colour's place;
+                             * w 4 marks it (the shader's per-vertex light) */
+                            const float *vn = r->dvn + (size_t)q->idx[tri[a]] * 3;
+                            float *t = tic + pos[batch] * 4;
+                            if (part->has_rot) {
+                                const float *R = part->rot;
+                                for (c = 0; c < 3; c++) t[c] = R[c * 3] * vn[0] + R[c * 3 + 1] * vn[1] + R[c * 3 + 2] * vn[2];
+                            } else {
+                                t[0] = cy * vn[0] + sy * vn[2]; t[1] = vn[1]; t[2] = -sy * vn[0] + cy * vn[2];
+                            }
+                            t[2] = -t[2];
+                            t[3] = 4.0f;
                         }
                         if (tik) {
                             float *t = tic + pos[batch] * 4;
@@ -1175,6 +1249,23 @@ int glr_set_actors(glr *r, const mech3d *m, const uint8_t palette[256][3],
     return set_layer(r, 1, m, palette, slots, camo, clan, 0);
 }
 
+void glr_set_dos_shadow(glr *r, const float k[3]) { if (r) { r->shd_k[0] = k ? k[0] : 0; r->shd_k[1] = k ? k[1] : 0; r->shd_k[2] = k ? k[2] : 0; } }
+static void shadow_vertex(glr *r, float x, float y, float z)
+{
+    if (r->shd_n == r->shd_cap) {
+        int cap = r->shd_cap ? 2 * r->shd_cap : 3072;
+        float *g = realloc(r->shd, (size_t)cap * 3 * sizeof *g);
+        if (!g) return;
+        r->shd = g; r->shd_cap = cap;
+    }
+    r->shd[r->shd_n * 3] = x; r->shd[r->shd_n * 3 + 1] = y; r->shd[r->shd_n * 3 + 2] = z;
+    r->shd_n++;
+}
+void glr_set_camo_sets(glr *r, const int camo[8])
+{
+    int k;
+    for (k = 0; k < 8; k++) r->camo_set[k] = camo ? camo[k] & 7 : k;
+}
 void glr_set_titanium(glr *r, texture *const slots[GLR_SLOTS], const int camo[8])
 {
     r->ti_slots = slots;
@@ -2390,6 +2481,35 @@ static void draw_view(glr *r, const glr_view *v, int x0, int y0, int w, int h)
             rb_depth_func(RB_LESS);
             r->F.u_dos = 0;
             r->D.u_tilit = 0;
+            if (r->dos && r->shd_k[0] > 0 && r->shd_n >= 3 && v->ortho_w <= 0 && !v->wire && !v->no_shadows) {
+                /* the units' shadows on the ground (0x5091b / 0x50938: each projected polygon filled through LUMA row
+                 * `shadowtable`, so overlaps darken again): a multiply by the row's darkening, over the ground only (its
+                 * depth: no depth write, so units and buildings drawn later cover them) */
+                float *sd = malloc((size_t)r->shd_n * FLOATS_PER_VERTEX * sizeof *sd), *q = sd;
+                int i;
+                if (sd) {
+                    for (i = 0; i < r->shd_n; i++) {
+                        float *st = q;
+                        q = env_vertex(q, r->shd[i * 3], r->shd[i * 3 + 1], r->shd[i * 3 + 2], 0, 1, 0, 0, 0);
+                        st[8] = r->shd_k[0]; st[9] = r->shd_k[1]; st[10] = r->shd_k[2];
+                    }
+                    rb_storage(r->shd_vbo);
+                    glr_upload_aux(r->shd_vbo, sd, (size_t)r->shd_n);
+                    free(sd);
+                    r->F.u_fog_density = 0;
+                    U4(r->F.u_tifog, 0, 0, 0, 1);
+                    r->D.u_textured = 0; r->D.u_unlit = 1;
+                    rb_blend(RB_BLEND_MUL);
+                    rb_depth_write(0);
+                    rb_depth_bias(1, -1.0f, -2.0f);
+                    glr_draw_arrays(r, 0, r->shd_n);
+                    rb_depth_bias(0, 0, 0);
+                    rb_depth_write(1);
+                    rb_blend(RB_BLEND_OFF);
+                    r->D.u_textured = 1; r->D.u_unlit = r->dos;
+                    rb_storage(r->env_vbo);
+                }
+            }
         } else if (r->env_has[0] && !r->dos && !r->mercs_ground_config.mode) {
             UV(r->F.u_depth_remap, depth_remap, (1) * 4);
             r->F.u_shared_depth = shared_depth;
@@ -2443,6 +2563,14 @@ static void draw_view(glr *r, const glr_view *v, int x0, int y0, int w, int h)
         else if (camera_light) UV(r->F.u_dos_lpos, eye, (1) * 3);       /* Mercs DOS LITE sentinel, 0x613a8 / 0x4fa4c */
         else U3(r->F.u_dos_lpos, v->dos_lpos[0], v->dos_lpos[1], -v->dos_lpos[2]);
         r->F.u_dos_amb = v->point_light ? v->dos_amb - 10.0f : v->dos_amb;
+        {
+            int i;
+            r->F.u_dos_mlit_n = v->dos_mlit_n < 0 ? 0 : v->dos_mlit_n > 4 ? 4 : v->dos_mlit_n;
+            for (i = 0; i < r->F.u_dos_mlit_n; i++) {
+                r->F.u_dos_mlit[i][0] = v->dos_mlit[i][0]; r->F.u_dos_mlit[i][1] = v->dos_mlit[i][1];
+                r->F.u_dos_mlit[i][2] = -v->dos_mlit[i][2]; r->F.u_dos_mlit[i][3] = v->dos_mlit[i][3];
+            }
+        }
         r->F.u_dos_intensity = (float)(v->dos_intensity < 0 ? 0 : v->dos_intensity > 128 ? 128 : v->dos_intensity);
         r->F.u_dos_light = v->point_light || !no_light;
         r->F.u_dos_fogdist = v->ortho_w > 0 ? 0.0f : v->dos_fogdist;

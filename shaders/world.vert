@@ -177,6 +177,13 @@ VertexOut world_vertex(int vertex_id) {
   result.normal = nrm; result.uv = a_uv; result.color = a_color; result.texsel = int(floor(a_texsel + 0.5)); result.sph = a_sphere;
   if (u_dos != 0 && int(a_color.r + 0.5) == 5) result.color.g *= result.clip.w;
   result.tic = a_tic.rgb; result.ticm = int(a_tic.a + 0.5); result.gs = a_uv; result.uvl = a_uv;
+#if DOS_LOOK
+  if (u_dos != 0 && result.ticm == 4) {   /* the vertex's own level (dos_vertex_level), interpolated over the polygon */
+    float lv = dos_vertex_level(p, a_tic.rgb, floor(a_color.b + 0.5));
+    result.tic = vec3(lv, 0.0, 0.0);
+    if (int(a_color.r + 0.5) == 3) result.gs = vec2(0.0, a_uv.y + a_uv.x * (lv + 1.0) / 16.0);   /* Gouraud: its corner's colour */
+  }
+#endif
   int hi = e / 32; e -= hi * 32; int corner = e - 3 * (e / 3);
   result.bary = vec3(corner == 0 ? 1.0 : 0.0, corner == 1 ? 1.0 : 0.0, corner == 2 ? 1.0 : 0.0); result.emask = (e / 3) | (hi << 3);
 

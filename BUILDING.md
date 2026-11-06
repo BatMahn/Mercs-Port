@@ -181,6 +181,25 @@ SDL2 rejection, dependency auditing, signature ordering, and preservation of an
 existing app on failure, and refusal of direct OpenGL application dependencies. It needs neither the original game data nor macOS.
 The gameplay regression commands are documented in the current handoff.
 
+## GitHub builds
+
+`.github/workflows/build.yml` builds four packages:
+
+| Package | Built on | How |
+|---|---|---|
+| macOS arm64 `.app` (zip) | macOS | Homebrew SDL3, `make check-packaging` |
+| Linux x86_64 tarball | Ubuntu 22.04 | SDL3 built without OpenGL, bundled with `$ORIGIN` |
+| Fedora RPM | Fedora container | `packaging/mercsport.spec`, built against Fedora's SDL3 |
+| Windows x64 zip | Ubuntu 24.04 | MinGW-w64 cross-compile, `SDL3.dll` beside `mercs.exe` |
+
+When it runs:
+
+- **Every push to `main`, every pull request, or *Run workflow*:** the packages are kept as the run's artifacts.
+- **A `v*` tag:** the packages are also published as a GitHub release.
+
+The Linux job also compiles every check program (`make test-bins`). The checks themselves need the original game
+data, so they are run locally with `make check GAME=...`.
+
 ## Upstream references
 
 - [SDL3 migration guide](https://wiki.libsdl.org/SDL3/README-migration):

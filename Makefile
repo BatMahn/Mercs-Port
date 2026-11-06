@@ -30,7 +30,7 @@ ifeq ($(WINDOWS),1)
   DLLIB =
   WINSRC = src/wincompat.c
   WINLIBS = -lole32 -lshell32   # system DLLs: the folder picker (wincompat.c mw2_pick_folder)
-  WINRES = build/mw2res.o
+  WINRES = build/mercsres.o
   WINDRES ?= $(patsubst %gcc,%windres,$(CC))
 else
   DLLIB = -ldl
@@ -55,7 +55,7 @@ all: mercs
 tools: $(BIN)
 
 # Windows: the exe's icon and version information
-build/mw2res.o: packaging/windows/mw2port.rc packaging/windows/mw2port.ico
+build/mercsres.o: packaging/windows/mercsport.rc packaging/windows/mercsport.ico
 	@mkdir -p build
 	$(WINDRES) -I packaging/windows $< -O coff -o $@
 
@@ -130,6 +130,9 @@ test_mercs_audio_events: build/mercs/tests/test_mercs_audio_events.o $(filter-ou
 
 test_mercs_paths: tests/test_mercs_paths.c src/portcfg.c src/prj.c src/datapath.c src/portcfg.h src/datapath.h
 	$(CC) $(CFLAGS) -Isrc $(filter %.c,$^) -o $@
+
+test_mercs_camo: tests/test_mercs_camo.c src/bwd.c src/bwdplace.c src/prj.c src/datapath.c $(HDRS)
+	$(CC) $(CFLAGS) -Wno-conversion -Isrc $(filter %.c,$^) -o $@ -lm
 
 test_mercs_lance: tests/test_mercs_lance.c src/lance.c src/bwd.c src/bwdplace.c src/prj.c src/datapath.c $(HDRS)
 	$(CC) $(CFLAGS) -Isrc $(filter %.c,$^) -o $@
@@ -583,7 +586,7 @@ test_inputmap: tests/test_inputmap.c tools/inputmap.h tools/inputmap_defaults.h 
 	$(CC) -std=c99 -D_DEFAULT_SOURCE -Itools -Isrc $(SDL3_CFLAGS) tests/test_inputmap.c src/datapath.c $(SDL3_LIBS) -o $@
 
 # Focused Mercenaries checks; original archives remain external test fixtures.
-MERCS_TEST_BIN = test_mercs_ammunition test_mercs_controls test_mercs_world_lod test_mercs_results test_mercs_result_transport test_mercs_career test_mercs_mission_return test_mercs_exchange test_mercs_roundtrip test_mercs_paths test_mercs_lance test_mercs_gps_ai test_mercs_loadout test_mercs_combat test_mercs_return test_mercs_ai_trait test_mercs_ai_transport test_mercs_prj_checksum test_mercs_environment test_mercs_backdrop test_mercs_overlay test_mercs_inputmap test_mercs_audio test_mercs_voice test_mercs_voice_audio test_mercs_hud test_mercs_cockpit test_mercs_cockpit_render test_mercs_cockpit_depth test_mercs_palette_render test_mercs_world_render test_mercs_timing test_mercs_resources test_mercs_effects test_mercs_fx_area
+MERCS_TEST_BIN = test_mercs_ammunition test_mercs_controls test_mercs_world_lod test_mercs_results test_mercs_result_transport test_mercs_career test_mercs_mission_return test_mercs_exchange test_mercs_roundtrip test_mercs_paths test_mercs_lance test_mercs_camo test_mercs_gps_ai test_mercs_loadout test_mercs_combat test_mercs_return test_mercs_ai_trait test_mercs_ai_transport test_mercs_prj_checksum test_mercs_environment test_mercs_backdrop test_mercs_overlay test_mercs_inputmap test_mercs_audio test_mercs_voice test_mercs_voice_audio test_mercs_hud test_mercs_cockpit test_mercs_cockpit_render test_mercs_cockpit_depth test_mercs_palette_render test_mercs_world_render test_mercs_timing test_mercs_resources test_mercs_effects test_mercs_fx_area
 MERCS_TEST_BIN += test_mercs_ground_render test_mercs_texture_filter test_mercs_economy test_mercs_ground test_mercs_particles test_mercs_particle_events
 MERCS_TEST_BIN += test_mercs_special test_mercs_orders
 MERCS_TEST_BIN += test_mercs_mission_dispatch test_mercs_nuclear_wave
@@ -605,6 +608,10 @@ MERCS_TEST_BIN += test_mercs_aircraft_coordinates
 GAME ?= ../game-data/Mercs-game
 MW2_REFERENCE ?= ../reference-game-data/MW2-game
 GBL_REFERENCE ?= ../reference-game-data/GBL-game
+# CI (no game data): compile every check program; running them needs the original game (make check GAME=...)
+test-bins: $(MERCS_TEST_BIN) $(MERCS_SHELL_TEST_BIN)
+.PHONY: test-bins
+
 check: mercs $(MERCS_TEST_BIN)
 	python3 tests/run_mercs_checks.py --game "$(GAME)" --mw2 "$(MW2_REFERENCE)" --gbl "$(GBL_REFERENCE)" $(CHECK_ARGS)
 

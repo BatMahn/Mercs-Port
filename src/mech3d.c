@@ -269,6 +269,8 @@ void mech3d_free(mech3d *m)
 
 #include <math.h>
 
+int mech3d_player_star_tex;   /* the player's star's camouflage set (STAR +0), set by world3d_load_actors */
+
 typedef struct {
     int     present;
     int16_t parent;
@@ -611,6 +613,8 @@ int world3d_actors(prj_archive *a, const char *scene, world_actor **actors, int 
                                   * in Cadet Training) is the player, never an actor. The player leads the star (engine:
                                   * starmates' "my leader" 0x2201 is the player), so the starmates take follower slots 1, 2.. */
                 if (g.table >= 0 && g.table < 64) per_table[g.table]++;
+                /* its star's camouflage set (STAR +0, as the actors' tex_offset; Mercs DOS 0x60a10 per star) */
+                mech3d_player_star_tex = g.table >= 0 && g.table < 64 && star_tex[g.table] >= 0 && star_tex[g.table] < 16 ? star_tex[g.table] : 0;
                 continue;
             }
             if (g.table < 0 || g.table >= ntables || tables[g.table]->size < 106) continue;

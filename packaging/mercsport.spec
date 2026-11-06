@@ -1,3 +1,5 @@
+%global debug_package %{nil}
+
 Name:           mercsport
 Version:        %{_version}
 Release:        1%{?dist}
@@ -22,8 +24,14 @@ make -C %{_sourcedir} -j$(nproc) mercs
 install -Dm755 %{_sourcedir}/mercs %{buildroot}%{_bindir}/mercs
 mkdir -p %{buildroot}%{_datadir}/mercsport
 cp -r %{_sourcedir}/assets %{buildroot}%{_datadir}/mercsport/
+install -Dm644 %{_sourcedir}/packaging/linux/mercsport.desktop %{buildroot}%{_datadir}/applications/mercsport.desktop
+install -Dm644 %{_sourcedir}/packaging/linux/mercsport.png %{buildroot}%{_datadir}/icons/hicolor/256x256/apps/mercsport.png
+mkdir -p %{buildroot}%{_docdir}/mercsport
+install -m644 %{_sourcedir}/README.md %{_sourcedir}/FOLDER_SETUP.md %{_sourcedir}/THIRD_PARTY.md %{buildroot}%{_docdir}/mercsport/
 
 %files
 %{_bindir}/mercs
 %{_datadir}/mercsport
-%doc %{_sourcedir}/README.md %{_sourcedir}/FOLDER_SETUP.md %{_sourcedir}/THIRD_PARTY.md
+%{_datadir}/applications/mercsport.desktop
+%{_datadir}/icons/hicolor/256x256/apps/mercsport.png
+%{_docdir}/mercsport

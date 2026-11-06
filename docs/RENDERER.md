@@ -117,11 +117,17 @@ make shaders SHADER_TOOLS=/path/to/shader-tools
 
 The generator uses glslangValidator, SPIRV-Cross and DXC. It checks shared
 uniform-block layouts, runs `spirv-val` when available and rejects unsigned
-DXIL containers. This Mercs revision was generated with glslang 15.1.0,
+DXIL containers. The SDL_GPU migration revision was generated with glslang 15.1.0,
 SPIRV-Cross commit `57e4efcc84112abcd426dc5ec248b5339bee04f2`, and official
 DXC 1.9.2609.5. The standalone DXIL validator was also run on every generated
 container. SPIRV-Cross was built with its Makefile, which does not embed its
 Git revision in the executable; the exact commit is recorded here.
+
+The 2026-11-06 revision (the DOS plate-colour change in world.frag) was regenerated with glslang 15.1.0, the
+Ubuntu 24.04 SPIRV-Cross package (2021.01.15+1.3.239.0) and the DXC 1.8.2505.1 release (libdxcompiler 1.9-dev);
+its DXIL is signed by that release's validator. The tool change reorders some generated text in rb_shaders.c; the
+shaders' behaviour differs only by that change, which the Vulkan runs here confirm. Metal and Direct3D 12 output
+has not been run on hardware since.
 
 ## Validation and limits
 

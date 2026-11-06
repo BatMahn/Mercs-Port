@@ -1,8 +1,7 @@
 /* Windows resources for mercs.exe: the program icon (Explorer, taskbar, and SDL's window class all use icon 1)
- * and version information. mw2port.ico: the original MechWarrior 2 icon (32 x 32, 16 colours - mw2port-32.png,
- * isolated camouflage specks removed), pixel-doubled for 64 / 128 / 256, resampled for 24 / 48 and redrawn by hand
- * for 16. */
-1 ICON "mw2port.ico"
+ * and version information. mercsport.ico: the Mercenaries icon (packaging/macos/mercsport.icns), its 16 / 32 / 64 /
+ * 128 / 256 frames as drawn and 24 / 48 resampled. */
+1 ICON "mercsport.ico"
 
 1 VERSIONINFO
 FILEVERSION     1,0,0,0
