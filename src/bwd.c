@@ -399,25 +399,3 @@ char *bwd_mission_text(const bwd_mission *m, const char *record_suffix)
     out[used] = '\0';
     return out;
 }
-
-int bwd_mission_camo_sets(prj_archive *a, const char *scene, int sets[8])
-{
-    bwd_mission bm;
-    int k, c, n = 0;
-    for (k = 0; k < 8; k++) sets[k] = k;
-    if (!a || bwd_mission_load(a, scene, &bm) != 0) return -1;
-    for (k = 0; k < bm.record_count; k++)
-        for (c = 0; c < bm.records[k].chunk_count; c++) {
-            const bwd_chunk *ch = &bm.records[k].chunks[c];
-            int32_t st, set;
-            if (strcmp(ch->tag, "CAMO") != 0 || ch->size < 8) continue;
-            st = (int32_t)rd32(ch->data);
-            set = (int32_t)rd32(ch->data + 4);
-            st = st < 1 ? 0 : st > 7 ? 7 : st;   /* (both clamped as 0x62bfc..0x62c1d) */
-            set = set < 1 ? 0 : set > 7 ? 7 : set;
-            sets[st] = set;
-            n++;
-        }
-    bwd_mission_free(&bm);
-    return n;
-}

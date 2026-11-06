@@ -73,8 +73,6 @@ The current evidence is indexed in [SDL3_MIGRATION.md](docs/SDL3_MIGRATION.md).
 | Shell/video | Original art/fonts/events/dialog defaults; original movie media | Centered native fit, F5/F10, optional CRT/fill/stretch and retry messages are modern policies |
 | Edition selection | Separate DOS, dedicated 3dfx and Titanium resources and numeric weapon data | Native OpenGL reproduction; no Glide/hardware emulation claim |
 | Soundtrack | User-selected full DOS tracks02–22 | All graphics choices keep that soundtrack; Titanium never replaces it |
-| Camouflage | A unit's STAR +0 value (0x60a10) picks its set through the mission's CAMO chunks (0x62bf6 -> 0xbc92c); the even plate slots 0-0xa become slot + set for sets 0/1, else base[set] + slot/2 with base {0,1,0x56,0x66,0x76,0x86,0xf3,0xf9} (0x62e74); the insignia is slot 0x3f + the STAR value. DOSBox BET1SCN1, plus a patched STAR that changed the player's plates | Applied to the dedicated 3dfx look as well, since its maps use the same plate layout (INFERRED) |
-| DOS unit shadows | Polygons with normal y >= 0 dropped to the unit's ground (+5 unless 0) and filled through LUMA row `shadowtable` (0x509e8 -> 0x50948 -> 0x507b4) | Drawn as a multiply by that row's mean darkening of the ground texture rather than a per-pixel LUMA remap; DOS's shade is slightly greener |
 | Bad original records | Exact supplied ASA00STD/JEN50STD checksums and truncated BET4CAM1 are fingerprinted | Exceptions are narrow; missing BET4 rows are not fabricated; generic malformed data rejects |
 
 MercNet is explicitly out of scope. The user has confirmed a working Mac build

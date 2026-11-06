@@ -215,14 +215,6 @@ void glr_set_skydome(glr *r, const wtb_object *o, texture *const slots[GLR_SLOTS
  * 0x100748ab: an even slot 0-0xa with the star's CAMO set c: + c for c < 2, else base[c] + slot / 2; slot 0x3f + star).
  * slots NULL: off. The arrays are the caller's and must stay valid; call before glr_set_mech / glr_set_actors. */
 void glr_set_titanium(glr *r, texture *const slots[GLR_SLOTS], const int camo[8]);
-/* The mission's camouflage sets (CAMO chunks, common3d c3d_camo_sets): a unit's star camouflage value c (its STAR +0,
- * mech3d_part.tex_offset) draws its plates from set camo[c] (NULL: the identity) - the DOS and 3dfx looks */
-void glr_set_camo_sets(glr *r, const int camo[8]);
-/* The DOS look's unit shadows (Mercs MW2.EXE 0x509e8 -> 0x50948 -> 0x507b4): each polygon of a unit whose normal does
- * not point down, its corners dropped to the ground (mech3d_part.casts / cast_y), filled through the LUMA row of the
- * mission's SKYGND.PAR shadowtable - drawn here as a multiply by `k`, that row's mean darkening of the ground's texels
- * (0: no shadows - the Shadows combat variable off, or not the DOS look) */
-void glr_set_dos_shadow(glr *r, float k);
 
 /* The rest of the Titanium models' look (call after glr_set_titanium, before glr_set_mech / glr_set_actors):
  * bank0 - its bank-0 bitmaps (texture indices below 0x100: the colour type 3 billboards' bitmap (w >> 4) & 0xff,

@@ -1,37 +1,5 @@
 # Mercenaries development history
 
-## DOSBox comparisons: unit shadows, radar nav blips — 2026-11-06
-
-- Units now cast shadows in the DOS look when Shadows is on. As in MW2.EXE 0x509e8 / 0x507b4, each polygon
-  whose normal does not point down is dropped straight to the ground under the unit (5 cm above it, unless the
-  ground is at 0), and the pixels under it go through the LUMA row named by SKYGND.PAR `shadowtable`. The port
-  draws that row as a multiply by its average darkening of the ground texture, so overlapping polygons darken
-  again, as in DOS. Matches DOSBox BET1SCN1 in shape and position. The shade is an approximation: DOS's shadow
-  is slightly greener.
-- Radar nav blips now use the original sprite table (MW2.EXE 0xc9d14; MERCSW.DLL has the same one). Every nav is
-  the 5 x 5 diamond (RTGTNP, RRTGTNP once reached). The selected nav gets RNP / RRNP drawn on top, after the
-  units (0x12038, 0x11da0). The port had the two rows swapped. This now matches DOSBox pixel for pixel, before
-  and after N.
-- Removed the "ramp-3 texels take the polygon's ramp" plate rule from the first comparison. LUT1SCN1 showed it
-  was wrong: DOS's grey panel lines came out yellow.
-- Lighting is still darker than DOS. See docs/DOSBOX_COMPARISON.md section 4 for what has been ruled out.
-
-## First DOSBox comparisons: camouflage by star — 2026-11-06
-
-The original DOS sim now runs headless in DOSBox straight into a mission, at 320 x 200, 640 x 480 and 1024 x 768
-(`scripts/dosbox/`, docs/DOSBOX_COMPARISON.md). Compared with the port on BET1SCN1:
-
-- Units now wear their star's camouflage. The STAR value picks a set through the mission's CAMO chunks
-  (MW2.EXE 0x62bf6 / 0x62e74), which remaps the plate slots; the insignia is slot 0x3f plus the star value. Every
-  unit had been drawn in plate set 0, and the actors' star value never reached the renderer. This applies to the DOS
-  and 3dfx looks; the player's mech gets its star too.
-- On textured polygons whose colour ramp is 8-15 (the mechs' plates), the ramp-3 texels are drawn in the polygon's
-  ramp, so the 'b'/'c' plates come out brown as in DOS.
-- New test: test_mercs_camo. The check runner now skips, and names, the three tests that need the private
-  captured-palette fixtures, instead of stopping on them.
-- Open, from the same comparison: lighting levels (mechs, cockpit, buildings darker than DOS), mech shadows,
-  and the radar blip's shape (docs/DOSBOX_COMPARISON.md section 4).
-
 ## SDL_GPU renderer migration — 2026-11-03
 
 Replaced the active OpenGL backend with SDL3 GPU: Metal on macOS, Vulkan on

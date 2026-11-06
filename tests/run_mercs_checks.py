@@ -59,12 +59,9 @@ def main():
     checks = 0
     skipped = []
 
-    def run(name, *arguments, expected=0, contains=(), timeout=90, private_fixture=False):
+    def run(name, *arguments, expected=0, contains=(), timeout=90):
         nonlocal checks
         exe = project / (name + (".exe" if os.name == "nt" else ""))
-        if not exe.is_file() and private_fixture:   # built only with the private captured-palette fixtures (KNOWN_ISSUES.md)
-            skipped.append(f"{name} (private captured-palette fixtures, tests/fixtures/mission-order-dispatch)")
-            return
         if not exe.is_file():
             raise RuntimeError(f"Missing test executable {exe.name}; build it with make {name}")
         print(f"RUN: {name}", flush=True)
@@ -92,7 +89,6 @@ def main():
         run("test_mercs_paths", game, mw2, gbl, private("paths"))
         run("test_mercs_overlay", private("overlay"))
         run("test_mercs_lance", archive, private("lance"))
-        run("test_mercs_camo", archive)
         run("test_mercs_gps_ai", archive)
         run("test_mercs_loadout", archive)
         run("test_mercs_prj_checksum", archive, glide_archive,
@@ -117,7 +113,7 @@ def main():
         run("test_mercs_mission_dispatch", archive, glide_archive, titanium_archive)
         run("test_mercs_nuclear_wave", archive, glide_archive, titanium_archive)
         run("test_mercs_ammo_capacity", archive, glide_archive, titanium_archive)
-        run("test_mercs_palette_controller", private_fixture=True)
+        run("test_mercs_palette_controller")
         run("test_mercs_alliance", archive, glide_archive, titanium_archive)
         run("test_mercs_targeting", archive, glide_archive, titanium_archive)
         run("test_mercs_ai_los", archive)
@@ -144,8 +140,8 @@ def main():
         run("test_mercs_resources", archive)
         run("test_mercs_texture_clocks", archive, glide_archive, titanium_archive)
         run("test_mercs_palette_cards")
-        run("test_mercs_palette_frontend", archive, private_fixture=True)
-        run("test_mercs_dedicated_particle_palette", archive, glide_archive, titanium_archive, private_fixture=True)
+        run("test_mercs_palette_frontend", archive)
+        run("test_mercs_dedicated_particle_palette", archive, glide_archive, titanium_archive)
         run("test_mercs_pose", archive, glide_archive, titanium_archive)
         run("test_mercs_inputmap", game / "cd/MERCS")
         run("test_mercs_controls", game / "cd")

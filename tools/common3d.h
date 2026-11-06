@@ -239,17 +239,6 @@ static void c3d_environment(glr *r, c3d_scene *s, const char *mission, glr_view 
     glr_set_titanium(r, NULL, NULL);
 }
 
-/* A mission's camouflage sets (bwd_mission_camo_sets: its CAMO chunks over the identity) */
-#if defined(__GNUC__)
-__attribute__((unused))
-#endif
-static void c3d_camo_sets(prj_archive *a, const char *mission, int sets[8])
-{
-    char name[16];
-    snprintf(name, sizeof name, "%.4sSCN1", mission);
-    bwd_mission_camo_sets(a, name, sets);
-}
-
 /* The Titanium look's sky and ground (mercsw.dll): its SKYGND.PAR (MW2_SKYGND) for the mission; the Titanium archive's
  * own texture map (its slot numbers differ from the 3D editions') for the ground (slot 0x4a, 0x100559eb) and the sky
  * dome (the SKYDOME object its planets include: clouds 0x8c, mountains 0x5d / 0x6c / 0x6d / 0x8d, moon 0x7c, sun 0x7d);
