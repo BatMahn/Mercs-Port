@@ -61,19 +61,26 @@ At 640 x 480 the HUD, cockpit outline, compass, weapon list, radar and skyline l
   CAMO chunks: player star 6 → set 3, lancemates 1 → set 4. The set remaps the even plate slots 0-0xa
   (MW2.EXE 0x62e74, 0x62bf6). The insignia uses slot 0x3f plus the star value. The port drew every unit with
   plate set 0. Checked by patching a copy of the PRJ: changing the player's STAR value in DOSBox changed its plates.
-- **Ramp-3 texels in high colour ramps.** On a textured polygon whose colour ramp is 8-15 (the plates, 0x6cxx), the
-  ramp-3 texels are drawn in the polygon's own ramp. This turns the grey 'c'/'b' plates brown. INFERRED from the
-  pictures; the DOS span routine has not been traced.
+- **Unit shadows.** These follow 0x509e8 → 0x50948 → 0x507b4. Polygons whose normal does not point down are
+  dropped to the ground under the unit (+5, or 0 when the ground is 0). They are filled through LUMA row
+  `shadowtable` (7 on BET1). The port uses a multiply by that row's mean darkening (0.746 on BET1). The shape and
+  position match; DOS's shade is slightly greener.
+- **Radar nav blips.** The sprite table at 0xc9d14 has rows of 3 and is the same in MERCSW.DLL. Navs use row 4,
+  RTGTNP / RRTGTNP (a diamond). The selected nav adds row 5 on top, RNP / RRNP; off the radar it uses row 6,
+  RTGTOF. Pixel-identical at 1024 x 768, before and after `n`.
+- **Removed:** the "ramp-3 texels take the polygon's ramp" plate rule. LUT1SCN1 contradicted it: its grey panel
+  lines came out yellow.
 
 **Still different (open):**
 
-1. **Lighting level.** Mechs, the cockpit panels and the city buildings are darker in the port. The DOS mech's camo
-   sits at the texels' own indices (about 0xc8-0xcc); the port's sits 3-4 shade levels lower. The cockpit's
-   lower-left panels are a single colour in DOS, but several darker shades in the port. The light formula
-   (0x4fa4c: ambient + max(0, f × intensity >> 7) − fog, then level = (C >> 1) × light / 0x440) matches the port's.
-   The suspect is the ambient term: 0x4f5c4 is fed `[light + 0x28] >> 16`, and how the LITE loader fills that
-   field has not been traced.
-2. **Mech shadows.** With Shadows On, DOS draws a dark, dithered shadow on the ground under each mech. The port
-   draws none.
-3. **Radar contact.** The DOS enemy blip is a 3 x 3 orange diamond; the port draws a 2 x 2 light dot.
-4. **The building window grid.** It shows faintly in DOS and is black in the port. Probably the same cause as 1.
+1. **Lighting level.** Mechs, the cockpit panels and the city buildings are darker in the port. Mean RGB over the
+   player's mech (external view) is DOS 90/75/55 against the port's 70/60/48.
+   - The inputs match the DOS memory dump: ambient 45, intensity 70, fog 400000, LUMA 2, light vector
+     (-100000, 20000, 0).
+   - The polygon formula matches too: 0x4fa4c, level = (C >> 1) × light / 0x440.
+   - Ruled out: an absolute value on the cosine, and a camera-fixed light.
+   - DOS lights the two back halves of the torso about equally; the port lights one side darker.
+   - The cockpit panels are a single shade in DOS. DOS lights vertices at 0x4f6c8 (vertex normals +0x20), gated
+     by 0xb4118, 0xb408c == 3 and 0xb4128, but the DOS WTB vertices carry no normals in the file.
+   - Next: find where +0x20 is filled, and whether textured polygons take the per-vertex level.
+2. **The building window grid.** It shows faintly in DOS and is black in the port. Probably the same cause as 1.

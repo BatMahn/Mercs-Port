@@ -55,6 +55,8 @@ typedef struct {
     unsigned  map_flags;     /* original unit flags used by satellite object filtering */
     unsigned  map_alliance;  /*0 friendly,1 hostile,2 neutral; original map color table */
     int       shadow;        /* a flat shadow piece on the ground: drawn as a translucent darkening */
+    int       casts;         /* DOS look: casts a shadow on the ground (glr_set_dos_shadow; Mercs MW2.EXE 0x509e8) */
+    float     cast_y;        /*   the ground's height under it (cm; +5 unless 0, 0x5082d)*/
     int       coll;          /* world objects: OBJ collision type (0 box, 1 XZ box, 4 none, 5 terrain...); -1 none */
     /* (unused since the shots' test became sphere-only: kept for the struct's users) */
     float    *hull;
