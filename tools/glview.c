@@ -3515,6 +3515,7 @@ static void dos_scene(glr *r, prj_archive *ma, const char *mission)
     /* Mercs DOS 0x6169d/0x152e4: INIT +8 selects dawn/day/dusk/night.
      * All 68 retail INIT records use 0..3. OUT3 phase2 -> 708322 seconds,
      * which selects its dusk palette instead of the inherited MW2 night. */
+    if (getenv("MERCS_DEBUG_DOS")) fprintf(stderr, "dos: INIT phase %d, day %d s\n", g_dos_t0, g_dos_day);
     g_dos_t0 = bwd_mercs_day_start(g_dos_t0, g_dos_day);
     if (g_dos_t0 < 0) {
         fprintf(stderr, "Unsupported Mercenaries time-of-day selector or day length.\n");
@@ -4337,6 +4338,7 @@ static int load(glr *r, prj_archive *ma, prj_archive *ta, int ati, const char *r
         }
     }
     c3d_load_scene(ma, ta, ati, mission, &g_scene);
+    { int cs[8]; c3d_camo_sets(ma, mission, cs); glr_set_camo_sets(r, cs); }   /* the mission's CAMO sets */
     glr_set_bank0(r, g_scene.bank0);   /* scrub billboards (colour type 3) */
     if (ati == 3) dos_scene(r, ma, mission);   /* the DOS edition: its palette, LUMA table, light and flat sky / ground */
     else glr_set_dos(r, NULL, NULL);
@@ -4617,6 +4619,7 @@ static int switch_look(glr *r, glr_view *v, prj_archive *ma, prj_archive **ta, i
     {   /* the texture maps (BMID) of the edition's own archive when it has one: its sky and ground can differ */
         prj_archive *em = strcmp(mo, tx) == 0 ? nt : prj_open(mo, err, sizeof err);
         c3d_load_scene(em ? em : ma, nt, k, mission, &g_scene);
+        { int cs[8]; c3d_camo_sets(em ? em : ma, mission, cs); glr_set_camo_sets(r, cs); }   /* its CAMO sets */
         if (em && em != nt) prj_close(em);
     }
     glr_set_bank0(r, g_scene.bank0);
@@ -7392,6 +7395,7 @@ int main(int argc, char **argv)
                             int gq = src->parts[q].group;
                             if (mech3d_fly_loc(src, q, fly)) continue;
                             all.parts[all.part_count] = src->parts[q];
+                            all.parts[all.part_count].tex_offset = g_actors[k].tex_offset;   /* its star's camouflage set (STAR) */
                             all.parts[all.part_count].map_alliance=(unsigned)unit_side(k);
                             all.parts[all.part_count].map_flags=g_sim.armed[k] ?
                                 (g_sim.units[k].destroyed?2u:0u)|
@@ -7426,6 +7430,7 @@ int main(int argc, char **argv)
                     for (q = 0; q < pm->part_count; q++) {
                         if (mech3d_fly_loc(pm, q, fly)) continue;
                         all.parts[all.part_count] = pm->parts[q];
+                        all.parts[all.part_count].tex_offset = mech3d_player_star_tex;   /* its star's camouflage set */
                         all.parts[all.part_count].map_alliance=0;
                         all.parts[all.part_count].map_flags=(g_sim.player_unit.destroyed?2u:0u)|(g_sim.player_unit.shutdown?0x10u:0u);
                         all.parts[all.part_count++].dmg_nib = loc_nibble(&g_sim.player_unit, pm->parts[q].group);   /* (0x1002b9b0) */

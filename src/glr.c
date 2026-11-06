@@ -90,6 +90,7 @@ struct glr {
     int    has_a[GLR_SLOTS];
     texture *const *ti_slots;               /* glr_set_titanium (the caller's array), NULL off */
     int    ti_camo[8];
+    int    camo_set[8];   /* the mission's CAMO sets (glr_set_camo_sets) */
     texture *const *ti_bank0;               /* glr_set_titanium_extra: the Titanium bank-0 bitmaps (billboards) */
     glr_ti_shade ti_shade;                  /* glr_set_titanium_extra: the palette shade of its colour type 1 polygons */
     uint8_t ti_pal[2][256][3];              /* per layer: the palette its colour kinds 1 / 2 shade in (set_layer) */
@@ -193,6 +194,7 @@ glr *glr_create(void)
     glr *r = calloc(1, sizeof *r);
     int l, k;
     if (!r) return NULL;
+    glr_set_camo_sets(r, NULL);
     glr_use_variant(r, 0);
     for (l = 0; l < GLR_LAYERS; l++) r->layer[l].vbo = rb_buf_new();
     r->env_vbo = rb_buf_new(); r->dome_vbo = rb_buf_new(); r->spr_vbo = rb_buf_new();
@@ -416,10 +418,13 @@ static void dos_normal_corners(const wtb_object *o, const wtb_poly *q, int *a, i
 /* Keep original WTBO alternatives with disjoint distance intervals. The
  * shader selects one level using the original focal/detail scale, while the
  * simulation retains its collision model. */
+/* a star's camouflage set c (0..7) -> the plates' base slot (Mercs MW2.EXE table 0xbc920; Titanium mercsw 0x100a11e0) */
+static const int MERCS_CAMO_BASE[8] = {0, 1, 0x56, 0x66, 0x76, 0x86, 0xf3, 0xf9};
 static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256][3],
                      texture *const slots[GLR_SLOTS], int camo, int clan, int bounds)
 {
     const int ti_world_normals = getenv("MERCS_TEST_TI_WORLDN") != NULL;   /* TEST ONLY: turn them as the 3D editions do */
+    (void)camo; (void)clan;   /* (MW2's clan camouflage / insignia offsets: Mercs takes each unit's star, MERCS_CAMO_BASE) */
     const int test_lit8 = getenv("MERCS_TEST_LIT_8") != NULL;   /* TEST ONLY: colour type 8 lit (the port before) */
     glr_layer *L = &r->layer[li];
     size_t cap = 0, n = 0, *count, *pos;
@@ -611,8 +616,13 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
                     }
                     continue;
                 }
-                if (slot == GLR_SLOT_CAMO) slot += camo + part->tex_offset;
-                else if (slot == GLR_SLOT_INSIGNIA) slot += clan + part->tex_offset;   /* engine 0x10042000 */
+                if (li == 1 && (part->objtype & 0xf00) == 0x100 && !part->ti) {
+                    /* a mech's camouflage plates and insignia by its star (Mercs MW2.EXE 0x62e74; the 3dfx edition's maps use
+                     * the same plate layout - c b a d e f g h - so the same remap, as the Titanium one 0x100748ab) */
+                    const int c = part->tex_offset < 1 ? 0 : part->tex_offset > 7 ? 7 : part->tex_offset, cs = r->camo_set[c];
+                    if (slot <= 0xa && !(slot & 1)) slot = cs < 2 ? slot + cs : MERCS_CAMO_BASE[cs] + slot / 2;
+                    else if (slot == 0x3f) slot += c;
+                }
                 if (model->extended && !part->flat && slot < GLR_SLOTS && slots && slots[slot] && (q->color & 0xFF) != 0xF0) batch = slot;
                 if (ti) {
                     /* the Titanium colour word (mercsw 0x1001b050: kinds 2, 5, 6, 7 textured - 0x1001b346 -, the bitmap the low
@@ -635,6 +645,18 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
                 if (r->dos && !model->extended) {   /* DOS bitmaps: types 5-7 bitmap = low byte; type 3 (scrub / effect cards,
                                                      * 0x3250 ...) bitmap = (word >> 4) & 0xff, transparent texels */
                     int ty = (q->color >> 12) & 7, bs = ty == 3 ? (q->color >> 4) & 0xff : q->color & 0xff;
+                    /* a mech's camouflage and insignia by its star (Mercs MW2.EXE 0x62e74, from the polygon loader 0x633c9,
+                     * for a unit of type 0x100): c = the star's STAR +0 (0x60a10 -> unit table +0x1a8078; part->tex_offset),
+                     * clamped 0..7, its set s = the mission's CAMO table[c] (0x62c22 -> 0xbc92c); the even plate slots
+                     * 0-0xa become slot + s for s 0 / 1, else base[s] + slot / 2, base 0xbc920 = {0, 1, 0x56, 0x66, 0x76,
+                     * 0x86, 0xf3, 0xf9} (the BET1MAP1 plates: c b a d e f g h); slot 0x3f + c (the insignia, 0x62f8b).
+                     * DOSBox BET1SCN1 (STAR 6 -> CAMO set 3, the player; 1 -> 4, the lancemates; a patched STAR moved the
+                     * player's plates): as the Titanium remap (0x100748ab) */
+                    if (ty != 3 && li == 1 && (part->objtype & 0xf00) == 0x100) {
+                        const int c = part->tex_offset < 1 ? 0 : part->tex_offset > 7 ? 7 : part->tex_offset, cs = r->camo_set[c];
+                        if (bs <= 0xa && !(bs & 1)) bs = cs < 2 ? bs + cs : MERCS_CAMO_BASE[cs] + bs / 2;
+                        else if (bs == 0x3f) bs += c;   /* (the insignia: the star's own value, 0x62f8b) */
+                    }
                     batch = GLR_SLOTS;
                     if ((ty >= 5 || ty == 3) && !part->flat && slots && slots[bs]) batch = bs;
                 }
@@ -1175,6 +1197,11 @@ int glr_set_actors(glr *r, const mech3d *m, const uint8_t palette[256][3],
     return set_layer(r, 1, m, palette, slots, camo, clan, 0);
 }
 
+void glr_set_camo_sets(glr *r, const int camo[8])
+{
+    int k;
+    for (k = 0; k < 8; k++) r->camo_set[k] = camo ? camo[k] & 7 : k;
+}
 void glr_set_titanium(glr *r, texture *const slots[GLR_SLOTS], const int camo[8])
 {
     r->ti_slots = slots;

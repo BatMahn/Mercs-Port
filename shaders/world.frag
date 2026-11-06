@@ -61,15 +61,19 @@ vec3 ti_light(vec3 nn) {
 
 vec3 dos_colour(float idx) { return texture(u_dos_tab, vec2((idx + 0.5) / 256.0, 16.5 / 17.0)).rgb; }
 #if DOS_LOOK
-vec4 dos_texture_tap(vec2 uv, float lev, bool keyed) {
-  vec4 t = textureLod(u_tex, uv, 0.0); float idx = floor(t.r * 255.0 + 0.5);
+// a textured polygon of colour ramp 8-15 paints its bitmap's ramp-3 texels (0x30-0x3f) in its own ramp: the mechs'
+// camouflage plates (0x6cxx: ramp 0xc, the browns) - DOSBox BET1SCN1, the lancemate Crab (INFERRED from the picture;
+// the DOS span routine not traced). Ramp 4 parts (0x64xx) keep their blue-grey ramp-3 texels
+float dos_paint(float ti, float ramp) { return ti >= 48.0 && ti < 64.0 && ramp >= 128.0 ? ramp + ti - 48.0 : ti; }
+vec4 dos_texture_tap(vec2 uv, float lev, bool keyed, float ramp) {
+  vec4 t = textureLod(u_tex, uv, 0.0); float idx = dos_paint(floor(t.r * 255.0 + 0.5), ramp);
   if (lev < 15.0) idx = floor(texture(u_dos_tab, vec2((idx + 0.5) / 256.0, (lev + 0.5) / 17.0)).r * 255.0 + 0.5);
   float a = keyed ? t.a : 1.0; return vec4(dos_colour(idx) * a, a);
 }
-vec4 dos_texture_filtered(vec2 uv, float lev, bool keyed) {
+vec4 dos_texture_filtered(vec2 uv, float lev, bool keyed, float ramp) {
   vec2 size = vec2(textureSize(u_tex, 0)), p = uv * size - 0.5, w = fract(p), c = (floor(p) + 0.5) / size;
-  vec4 top = mix(dos_texture_tap(c, lev, keyed), dos_texture_tap(c + vec2(1.0 / size.x, 0.0), lev, keyed), w.x);
-  vec4 bottom = mix(dos_texture_tap(c + vec2(0.0, 1.0 / size.y), lev, keyed), dos_texture_tap(c + 1.0 / size, lev, keyed), w.x);
+  vec4 top = mix(dos_texture_tap(c, lev, keyed, ramp), dos_texture_tap(c + vec2(1.0 / size.x, 0.0), lev, keyed, ramp), w.x);
+  vec4 bottom = mix(dos_texture_tap(c + vec2(0.0, 1.0 / size.y), lev, keyed, ramp), dos_texture_tap(c + 1.0 / size, lev, keyed, ramp), w.x);
   vec4 t = mix(top, bottom, w.y); if (t.a > 0.0) t.rgb /= t.a; return t;
 }
 #endif
@@ -179,10 +183,10 @@ void main() {
     int kind = int(v_color.r + 0.5); float base = floor(v_color.g + 0.5), C = floor(v_color.b + 0.5);
     if (kind == 0) { o_color = vec4(dos_colour(base), 1.0); return; }
     if (kind == 4) {
-      if (u_dos_texture_linear != 0) { vec4 t = dos_texture_filtered(v_uv / u_texsize, 15.0, true); if (t.a < 0.5) discard; o_color = vec4(t.rgb, 1.0); return; }
+      if (u_dos_texture_linear != 0) { vec4 t = dos_texture_filtered(v_uv / u_texsize, 15.0, true, 0.0); if (t.a < 0.5) discard; o_color = vec4(t.rgb, 1.0); return; }
       vec4 tb = texture(u_tex, v_uv / u_texsize); if (tb.a < 0.5) discard; o_color = vec4(dos_colour(floor(tb.r * 255.0 + 0.5)), 1.0); return; }
     if (kind == 5) { float sh = clamp(floor(v_color.g * glFragCoord.w + 0.00001), 0.0, 15.0);
-      if (u_dos_texture_linear != 0) { o_color = vec4(dos_texture_filtered(v_uv, sh, false).rgb, 1.0); return; }
+      if (u_dos_texture_linear != 0) { o_color = vec4(dos_texture_filtered(v_uv, sh, false, 0.0).rgb, 1.0); return; }
       float tx = floor(texture(u_tex, v_uv).r * 255.0 + 0.5);
       float idx = sh >= 15.0 ? tx : floor(texture(u_dos_tab, vec2((tx + 0.5) / 256.0, (sh + 0.5) / 17.0)).r * 255.0 + 0.5); o_color = vec4(dos_colour(idx), 1.0); return; }
     float nl = length(v_normal); vec3 Lv = u_dos_dir != 0 ? u_dos_lpos : u_dos_lpos - v_world; float ll = length(Lv);
@@ -194,9 +198,10 @@ void main() {
     float lev = clamp(floor(floor(C / 2.0) * light / 1088.0), 0.0, 15.0);
     if (kind == 1 || (kind == 2 && v_texsel < 0 && ((-v_texsel) & u_notex) != 0)) { o_color = vec4(dos_colour(base + lev), 1.0); return; }
     if (kind == 3) { o_color = vec4(dos_gouraud(lev), 1.0); return; }
-    if (u_dos_texture_linear != 0) { vec4 t = dos_texture_filtered(v_uv / u_texsize, lev, true); if (t.a < 0.5) discard; o_color = vec4(t.rgb, 1.0); return; }
+    if (u_dos_texture_linear != 0) { vec4 t = dos_texture_filtered(v_uv / u_texsize, lev, true, base); if (t.a < 0.5) discard; o_color = vec4(t.rgb, 1.0); return; }
     vec4 tx = texture(u_tex, v_uv / u_texsize); if (tx.a < 0.5) discard;
     float ti = floor(tx.r * 255.0 + 0.5);
+    ti = dos_paint(ti, base);
     float si = lev >= 15.0 ? ti : floor(texture(u_dos_tab, vec2((ti + 0.5) / 256.0, (lev + 0.5) / 17.0)).r * 255.0 + 0.5);
     o_color = vec4(dos_colour(si), 1.0); return;
   }
@@ -208,7 +213,7 @@ void main() {
     vec2 uv = ((u_ati & 1) != 0 && (af & 4) != 0) || ((u_ati & 2) != 0 && (af & 16) != 0) ? v_uvl : v_uv;
 #if DOS_LOOK
     if (u_sprite_indexed != 0) {
-      if (u_dos_texture_linear != 0) t = dos_texture_filtered(uv / u_texsize, 15.0, true);
+      if (u_dos_texture_linear != 0) t = dos_texture_filtered(uv / u_texsize, 15.0, true, 0.0);
       else { t = textureLod(u_tex, uv / u_texsize, 0.0); t.rgb = dos_colour(floor(t.r * 255.0 + 0.5)); }
     } else
 #endif

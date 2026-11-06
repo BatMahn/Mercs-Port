@@ -201,4 +201,9 @@ void bwd_mission_free(bwd_mission *m);
 /* All ORDR text in the mission, in include order, concatenated. malloc'd. */
 char *bwd_mission_text(const bwd_mission *m, const char *record_suffix);
 
+/* A mission's camouflage sets: its records' CAMO chunks {i32 star camouflage value, i32 set}, each clamped 0..7, over the
+ * identity (Mercs DOS 0x62bf6 -> table 0xbc92c, read by the polygon remap 0x62f0c; Titanium mercsw 0x10073a6b ->
+ * 0x100a11f0). BET1SCN1: {1, 4} {6, 3} {7, 5}. Returns the number of CAMO chunks, -1 if the scene can't be loaded. */
+int bwd_mission_camo_sets(prj_archive *a, const char *scene, int sets[8]);
+
 #endif

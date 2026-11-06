@@ -1,5 +1,21 @@
 # Mercenaries development history
 
+## First DOSBox comparisons: camouflage by star — 2026-11-06
+
+The original DOS sim now runs headless in DOSBox straight into a mission, at 320 x 200, 640 x 480 and 1024 x 768
+(`scripts/dosbox/`, docs/DOSBOX_COMPARISON.md). Compared with the port on BET1SCN1:
+
+- Units now wear their star's camouflage. The STAR value picks a set through the mission's CAMO chunks
+  (MW2.EXE 0x62bf6 / 0x62e74), which remaps the plate slots; the insignia is slot 0x3f plus the star value. Every
+  unit had been drawn in plate set 0, and the actors' star value never reached the renderer. This applies to the DOS
+  and 3dfx looks; the player's mech gets its star too.
+- On textured polygons whose colour ramp is 8-15 (the mechs' plates), the ramp-3 texels are drawn in the polygon's
+  ramp, so the 'b'/'c' plates come out brown as in DOS.
+- New test: test_mercs_camo. The check runner now skips, and names, the three tests that need the private
+  captured-palette fixtures, instead of stopping on them.
+- Open, from the same comparison: lighting levels (mechs, cockpit, buildings darker than DOS), mech shadows,
+  and the radar blip's shape (docs/DOSBOX_COMPARISON.md section 4).
+
 ## SDL_GPU renderer migration — 2026-11-03
 
 Replaced the active OpenGL backend with SDL3 GPU: Metal on macOS, Vulkan on

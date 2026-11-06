@@ -352,6 +352,8 @@ void world3d_free_actors(world_actor *actors, int count);
 /* Shallow-combine the actors' parts into one mech3d for drawing (models are
  * shared, so release with free(out->parts) only). */
 int  world3d_compose(const world_actor *actors, int count, mech3d *out);
+/* the player's star's camouflage set (its STAR entry +0, as world_actor.tex_offset), set when the actors are loaded */
+extern int mech3d_player_star_tex;
 void mech3d_free(mech3d *m);
 
 /* The Titanium edition's own models (its 16-bit MW2.PRJ): the same records and OBJ structure as the 3D editions', but
