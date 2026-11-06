@@ -1,5 +1,13 @@
 # Mercenaries development history
 
+## macOS app: lipo's argument order — 2026-11-06
+
+- The app packaging failed on GitHub's macOS runner with "libSDL3.0.dylib lacks the executable's arm64
+  architecture". The script ran `lipo -verify_arch arm64 FILE`, but real `lipo` reads every argument after
+  `-verify_arch` as an architecture name, so the file came out as an unknown architecture. It now runs
+  `lipo FILE -verify_arch arm64`. The packaging tests' mock `lipo` follows the real argument order, so the old form
+  now fails 7 tests.
+
 ## Check programs link with libm — 2026-11-06
 
 - `test_mercs_lance`, `test_mercs_bwdplace`, `test_mercs_gps_ai`, `test_mercs_environment` and `bwdtool` link

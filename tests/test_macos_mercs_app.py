@@ -35,11 +35,14 @@ elif name == "codesign":
     if os.environ.get("MOCK_SIGN_FAIL"):
         sys.exit(1)
 elif name == "lipo":
-    obj = json.loads(Path(args[-1]).read_text())
+    # real lipo: "lipo -archs FILE", and "lipo FILE -verify_arch ARCH..." (every argument after -verify_arch is an
+    # architecture - "lipo -verify_arch arm64 FILE" fails on macOS)
     if args[0] == "-archs":
+        obj = json.loads(Path(args[1]).read_text())
         print(" ".join(obj["archs"]))
-    elif args[0] == "-verify_arch":
-        sys.exit(0 if args[1] in obj["archs"] else 1)
+    elif len(args) >= 3 and args[1] == "-verify_arch":
+        obj = json.loads(Path(args[0]).read_text())
+        sys.exit(0 if all(a in obj["archs"] for a in args[2:]) else 1)
     else:
         raise AssertionError(args)
 elif name == "otool":

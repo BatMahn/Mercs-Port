@@ -56,7 +56,7 @@ mercs_expand_path() {
 }
 mercs_check_arch() {
     for mercs_arch in $mercs_archs; do
-        lipo -verify_arch "$mercs_arch" "$1" >/dev/null 2>&1 || mercs_fail "$1 lacks the executable's $mercs_arch architecture."
+        lipo "$1" -verify_arch "$mercs_arch" >/dev/null 2>&1 || mercs_fail "$1 lacks the executable's $mercs_arch architecture."
     done
 }
 # Resolve @rpath against the built executable's actual load commands first.
