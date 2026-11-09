@@ -8603,7 +8603,7 @@ int main(int argc, char **argv)
                 HUD_SIDE(0);
             }
             {   /* Mercs window 26: altitude text and a vertical jump-fuel gauge.
-                 * MERCSW 0x1002eded / 0x100169fb; absolute foot elevation, not
+                 * MERCSW 0x1002eded / 0x100169fb; the height in cm x 1000 / 65536 (see mercsmfd_view.h), not
                  * the Mech2 ALTTAPE instrument. The two empty text rows remain
                  * reserved for Jets even on a mech without jump jets. */
 

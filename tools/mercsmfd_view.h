@@ -33,7 +33,11 @@ static void mercs_mfd_draw_one(int slot, int w, int h)
                 char altitude[32];
                 HUD_SIDE(side);
                 hud_text(g_hud, ax, ay + 2 * fh, "Alt:", green);
-                snprintf(altitude, sizeof altitude, "%.2f m", (double)pu->y / 100.0);
+                /* the original's number: (object +0x54 - unit +0x400) x 1000 / 65536 (DOS 0x3fa10 "%.2f m" with 1/65536,
+                 * MERCSW 0x1002eded the same), the height in centimetres - so it reads about 1.53 x the height in metres.
+                 * DOSBox BUZ1SCN1 at the start: "2836.67 m" where the mech stands 1859.04 m up (185904 x 1000 / 65536 =
+                 * 2836.67), so +0x400 is 0 there, standing on raised terrain: taken as 0 (INFERRED) */
+                snprintf(altitude, sizeof altitude, "%.2f m", (double)pu->y * 1000.0 / 65536.0);
                 hud_text(g_hud, ax, ay + 3 * fh, altitude, green);
                 if (pu->jets > 0) {
                     const int AW = aw.x1 - aw.x0 + 1, AH = aw.y1 - aw.y0 + 1;

@@ -1,5 +1,41 @@
 # Mercenaries development history
 
+## v0.1.1: DOSBox sweep of every mission; held enemies, spawn height, Alt readout — 2026-11-09
+
+Every fixed mission's opening was captured in DOSBox (cockpit and external view, 640 x 480) and in the port, and the
+differences were traced in the original MW2.EXE. Fixed:
+
+- **Held enemy groups never woke.** 115 enemy star tables go from their start node straight to a hold node
+  (kind 0x400, state 10, powered down). The port ran no AI rules at all for a powered-down unit, so a held group sat
+  switched off for the whole mission unless the player shot it. In the original a held unit keeps its senses: a
+  sighting reaches its leader, and the group assignment (DOS 0x2dc1c) picks members in any state but target/attack,
+  powered-down ones included, which wakes them. DOSBox IVA3SCN1: the Mongoose 345 m away heads for the player from the
+  first seconds; in the port it never moved. Held units now run their rules with movement and fire held off, and wake
+  when their state changes. Shutdown (state 11) is unchanged. BET1 is unchanged too: in DOSBox and the port nothing
+  attacks a player standing still there for 90 s.
+- **Elevated player starts.** 12 missions put the player's start point above the ground (GRA4 40 m, IVA3 30 m, SOL5
+  45 m, SPA1 and SPA2 12 m, ...). The port dropped the mech, which landed with leg damage. The original has the mech on
+  the ground and undamaged from the first frame (DOSBox GRA4SCN1, IVA3SCN1: the Alt readout at the terrain height).
+  The player now starts on the surface below the start point (the sim's own ground query, so a roof or bridge start
+  keeps its roof or bridge). Enemies keep their authored starts; whether the original grounds them too is not yet
+  checked.
+- **The Alt readout.** The original prints (object +0x54 - unit +0x400) x 1000 / 65536 as "%.2f m" (DOS 0x3fa10,
+  MERCSW 0x1002eded), i.e. the height in centimetres x 1000 / 65536, about 1.53 x the height in metres. DOSBox
+  BUZ1SCN1 reads 2836.67 m where the mech stands 1859.04 m up. The port printed the height in metres. It now prints the
+  original's number (unit +0x400 taken as 0, INFERRED: it is 0 standing on BUZ1's raised terrain).
+
+Checked and matching (no change): the opening frames of BET1/3/5, BIG1, BUZ1, DOM1, DOW2, GRA2/3/5, LUT2/3/6, MCC2/4 within
+a few levels per pixel; DOU1 (the player is killed within ~13 s standing still in both), GRA1, the BET1 automated
+playthrough (won in 148 s), LUT1's start below zero (-1.42 m in both), the HUD message periods, the mission start
+message, and the external camera at rest (REC1's view perched on a rock structure and DOU1's from behind are both
+the original's). The DOSBox harness itself had a trap: the DOS sim writes the player's mech back to `MEK\PLY00MER.MEK` when a
+mission ends, so after one death every later run starts with a wrecked mech. docs/DOSBOX_COMPARISON.md now says to
+restore it before each run.
+
+The 3dfx and Titanium effect cards (fire, smoke, jet and death cards, kind 7 with light nibble 0xf) were checked for
+the black-flame bug fixed in the MW2 port: Mercs draws them as sprites, not through the lit model path, and they render
+correctly.
+
 ## macOS app: lipo's argument order — 2026-11-06
 
 - The app packaging failed on GitHub's macOS runner with "libSDL3.0.dylib lacks the executable's arm64

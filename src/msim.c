@@ -2537,7 +2537,17 @@ void msim_step(msim *s, int32_t dt_ms)
         }
     star_done:
         v.speed_kmh = fabsf(m->speed) * 0.036f;   /* actual speed */
-        if (s->powered_down && s->powered_down[i]) { m->throttle = 0; m->turn = 0; m->wants_fire = 0; }   /* shut down: no rules run */
+        if (s->powered_down && s->powered_down[i] && m->state == AI_REST) {
+            /* A unit resting under a hold node (state 10) keeps its senses: its rules run, so a sighting is posted to
+             * its leader, whose group assignment (DOS 0x2dc1c: members in any state but 2 / 3, powered down included)
+             * wakes the member it picks. Until its state changes it stays powered down - no movement or fire. DOSBox
+             * IVA3SCN1: the Mongoose (table 3: start -> hold, nothing after) heads for the player from the first
+             * seconds, 345 m off; the port's sat powered down for the whole mission, as every held star did. */
+            ai_step(&s->ai, m, &v, dt);
+            if (m->state != AI_REST && m->state != AI_SHUTDOWN) ai_wake(s, i);
+            else { m->throttle = 0; m->turn = 0; m->wants_fire = 0; m->jet = 0; m->jet_forward = 0; m->jet_back = 0; m->jet_side = 0; }
+        }
+        else if (s->powered_down && s->powered_down[i]) { m->throttle = 0; m->turn = 0; m->wants_fire = 0; }   /* shut down: no rules run */
         else {
             ai_step(&s->ai, m, &v, dt);
             if (m->entered) {   /* 0x10013e00: the exit (0x10013680 cases 5 / 7 -> 0x10013e90) and the entry (0x10013790 case 7
@@ -5809,6 +5819,16 @@ static void settle_spawn_ground(msim *s)
         spawn_terrain_floor(s, s->player[0], s->player[2], s->player_unit.y, s->player_centre_h, &floor) && s->player_unit.y < floor) {
         s->player_unit.y = s->player_unit.ground = floor;
         s->player_unit.vy = 0;
+    } else if (spawn_ground_class(s->player_unit_class)) {
+        /* An elevated player start stands on the surface under it at once. 12 retail missions put the player's start
+         * above the ground (GRA4 40 m, IVA3 30 m, SOL5 45 m, SPA1/2 12 m ...): DOSBox GRA4SCN1 / IVA3SCN1 show the
+         * terrain height (365.98 / 412.60 on the Alt readout = 239.85 / 270.39 m) and an undamaged mech from the
+         * first frame, where the port dropped the mech 30-40 m and took leg damage on landing. The surface is the
+         * runtime query's (within 10 m of the centre, else the highest below), so a roof or bridge start keeps its
+         * roof or bridge. Other units keep their authored starts: IVA3's six enemies start at 300 m over a 258 m
+         * plateau and drop, as before - whether the original grounds them too is not yet checked in DOSBox. */
+        float g = msim_ground(s, s->player[0], s->player[2], s->player_unit.y + s->player_centre_h);
+        if (s->player_unit.y > g) { s->player_unit.y = s->player_unit.ground = g; s->player_unit.vy = 0; }
     }
     for (i = 0; s->actors && s->units && i < s->actor_count; i++) {
         world_actor *a = &s->actors[i];

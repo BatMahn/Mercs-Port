@@ -39,6 +39,11 @@ Step commands: `sleep N`, `key K` (xdotool names: `c`, `Escape`, `F12`, ...), `d
 - **Useful keys:** `c` switches to the external view, which shows the player's mech. `Esc` opens the main menu;
   its option 4 is Combat Variables.
 - **Run one at a time.** Runs share display :99, so always use `flock`.
+- **Restore the install before every run.** When a mission ends (the player dies, or it is won or lost), the DOS sim
+  writes the player's mech back to `MEK\PLY00MER.MEK` and leaves `MW2CAR.CFG`, `MW2MSN.CFG` and `SALVAGE.MW2`
+  behind. After one death every later run starts with a wrecked mech: no cockpit, an empty weapon list, the camera in
+  the ground. Copy the extracted MEK back and delete those three files before each run. (A sweep that skipped this
+  reported "dead at the start" on GRA2-4, DOW2 and IVA2-4; they all match once the mech is restored.)
 
 ## 3. The port's matching frame
 
