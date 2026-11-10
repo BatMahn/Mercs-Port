@@ -42,6 +42,7 @@ layout(std140, set = UBO_SET, binding = 0) uniform WorldFrame {
     vec3  u_hz_indices; int  u_dos_ortho;
     int   u_shared_depth; int u_satellite; int u_dos_texture_linear; int u_dos_light;
     float u_dos_intensity;
+    int   u_dos_fogpal;   // the LUMA table is a fog table (its [0][0] not 0, Mercs 0x49d06 -> 0xb3f6c)
     int   u_dos_mlit_n;   // the mission's MLIT point lights (0 with Multiple Lights off): xyz GL position, w the box half size
     vec4  u_dos_mlit[4];
     ivec4 u_pit_rank4[128];   // u_pit_rank[512] (GLR_PIT_MAX), four to an ivec4
@@ -83,6 +84,19 @@ ivec2 dos_scr(vec3 w) {
 /* MW2.EXE 0x4f6c8: a vertex's light level from its normal tn (glr's DOS vertex normal, the stored sign) - the ambient level,
  * the directional term x intensity / 128 when positive, less the fog by its depth (0x4f7e4), then each point light whose
  * box holds it while under 0x80 (capped there, 0x4f98e) - and (C >> 1) x light / 0x440, 0..15 (0x4fa07) */
+/* Mercenaries' Gouraud corner (0x495d0 .. 0x49610, colour type 0x4000): a corner whose colour is a ramp shade (index 48 or
+ * more) becomes the polygon's ramp + its level, or + 15 - its level with a fog table (the fog palettes' ramps run from
+ * the colour to the fog); a lower index is kept */
+/* a damaged mech location (its type word's 0x100 objects' nibble n, 1-15: 0x4689b): the level x (16 - n) / 16, rounded
+ * (0x46645), or with PLNT +52 set + n / 15 of the way to 15 (0x466a4) - the polygon's and each corner's */
+float dos_dnib(float lev, int n) {
+  if (n <= 0) return lev;
+  int l = int(lev);
+  if (u_dsign == 0) return float((((16 - n) * 4096 * l) + 32768) >> 16 & 15);
+  int t = ((15 - l) << 16) / 15;
+  return float(l + ((n * t + 32768) >> 16));
+}
+float dos_gouraud_level(float lev) { return u_dos_fogpal != 0 ? 15.0 - lev : lev; }
 float dos_vertex_level(vec3 p, vec3 tn, float C) {
   /* 0x4f79f pushes the vertex normal +0x28, +0x24, +0x20 to 0x4d246 (the polygon's 0x4d20e: +0x14, +0x18, +0x1c), so a
    * vertex sees the light's x against its normal's z and z against x: in game axes nv = (nz, ny, nx), here (GL z = -game
@@ -94,7 +108,7 @@ float dos_vertex_level(vec3 p, vec3 tn, float C) {
   float light = u_dos_amb + (u_dos_light != 0 ? max(0.0, trunc(f * u_dos_intensity / 128.0)) : 0.0);
   if (u_dos_fogdist > 0.0) { int key = int(max(dos_camz(p), 0.0)); light = max(0.0, light - float((int(uint(key) << 11) / int(u_dos_fogdist)) >> 4)); }
   for (int i = 0; i < 4; i++) {
-    if (i >= u_dos_mlit_n || light >= 128.0 || nl <= 0.0) break;
+    if (i >= u_dos_mlit_n || light >= 128.0 || nl <= 0.0 || u_dos_fogpal != 0) break;   /* 0x4f84a: not with a fog table */
     vec3 d = u_dos_mlit[i].xyz - p;
     if (any(greaterThan(abs(d), vec3(u_dos_mlit[i].w)))) continue;
     float lp = length(d), fi = lp > 0.0 ? trunc(128.0 * dot(nv, d / lp)) : 128.0;

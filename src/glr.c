@@ -100,6 +100,7 @@ struct glr {
     float  center[3], radius;
     /* the DOS edition */
     int    dos;
+    int    dos_fogpal;   /* the LUMA table is a fog table (its [0][0] not 0) */
     rb_tex dos_tex;                         /* 256 x 17: rows 0-15 the LUMA table (as indices), row 16 the palette (RGB) */
     rb_tex map_palette;
     int    pit_present;  /* actor layer contains the separate cockpit subtree */
@@ -155,16 +156,16 @@ struct glr {
 
 static void glr_draw_arrays(glr *r, int first, int count)
 {
-    if (count <= 0 || (r->prog == RB_PROG_WORLD && count > INT_MAX / 2)) return;
+    if (count <= 0 || ((r->prog == RB_PROG_WORLD || r->prog == RB_PROG_WORLD_DOS) && count > INT_MAX / 2)) return;
     r->D.u_first = first;
     r->F.u_fbh = (float)rb_target_height();
     rb_program(r->prog);
     rb_uniforms(0, &r->F, sizeof r->F);
     rb_uniforms(1, &r->D, sizeof r->D);
-    /* The accelerated shader emits up to two near-clipped triangles per input
-     * triangle. DOS keeps its original indices for exact polygon span walking.
-     * All native draws begin at zero; u_first is the storage vertex base. */
-    rb_draw(0, r->prog == RB_PROG_WORLD ? count * 2 : count);
+    /* The world shader emits up to two near-clipped triangles per input
+     * triangle (both looks: DOS relights the corners it makes on the near
+     * plane). All native draws begin at zero; u_first is the storage vertex base. */
+    rb_draw(0, r->prog == RB_PROG_WORLD || r->prog == RB_PROG_WORLD_DOS ? count * 2 : count);
 }
 
 /* A complete auxiliary mesh (sky, ground, sprites), with disabled object-only
@@ -494,7 +495,7 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
             if (part->hidden || part->moving || part->facing || model->object_count <= 0) continue;   /* moving: a path-carried world part, facing: a fire /
                                                                                  * smoke card - both drawn on the actor layer */
             if (pass == 1 && li == 1 && part->dos_pit) r->pit_present = 1;
-            const int dnib = !r->dos && !ti && part->dmg_nib > 0 && part->dmg_nib < 16 ? part->dmg_nib : 0;
+            const int dnib = !ti && part->dmg_nib > 0 && part->dmg_nib < 16 ? part->dmg_nib : 0;
             /* the texture switches by the object's type word (0x1002a768: DAT_1024e228 & type, and with the OBJECT bit 0x100
              * also class 5): OBJECT TEXTURES (0x100652f0: bits 0x100 mechs, 0x200) -> class 1, TERRAIN TEXTURES (0x10065340:
              * bit 0x800) -> class 2; other objects (type 0 rocks, buildings) keep their textures */
@@ -904,11 +905,12 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
                                 if (tt->h > 1) f[7] *= (float)tt->h / (float)(tt->h - 1);
                             }
                         }
-                        /* DOS Gouraud: the vertex's baked index a = ramp | intensity (0x4fef0 -> 0x38560); the shader rescales
-                         * the intensity by the polygon's level */
-                        if (r->dos && !model->extended && ((q->color >> 12) & 7) == 4) {   /* 0x3bb80: a < 48 not rescaled */
-                            f[6] = v->a >= 48 ? (float)(v->a & 15) : 0.0f;
-                            f[7] = v->a >= 48 ? (float)(v->a & ~15) : (float)v->a;
+                        /* DOS Gouraud (Mercenaries 0x495d0): a corner whose baked index a is a ramp shade (48 or more) is
+                         * drawn as the polygon's ramp (its colour word's bits 8-11) + the corner's level (the shader's
+                         * dos_gouraud_level); a lower index as it is */
+                        if (r->dos && !model->extended && ((q->color >> 12) & 7) == 4) {
+                            f[6] = v->a >= 48 ? 1.0f : 0.0f;
+                            f[7] = v->a >= 48 ? (float)(((q->color >> 8) & 0xf) * 16) : (float)v->a;
                         }
                         if (part->tint) { f[8] = (float)((part->tint >> 16) & 0xff) / 255.0f; f[9] = (float)((part->tint >> 8) & 0xff) / 255.0f; f[10] = (float)(part->tint & 0xff) / 255.0f; }
                         else if (ti_flat && tk4) for (c = 0; c < 3; c++) f[8 + c] = (float)palette[v->a & 0xff][c] / 255.0f;   /* 0x100535d2 */
@@ -1660,6 +1662,7 @@ void glr_set_dos(glr *r, const uint8_t pal[256][3], const uint8_t *luma)
     uint8_t (*img)[256][4] = r->dos_img;
     int x, y;
     r->dos = pal != NULL;
+    r->dos_fogpal = luma && luma[0] != 0;   /* Mercs 0x49d06: [0xb3f6c] = the table's first byte */
     glr_use_variant(r, r->dos);
     if (!pal) return;
     for (y = 0; y < 16; y++)
@@ -2572,6 +2575,7 @@ static void draw_view(glr *r, const glr_view *v, int x0, int y0, int w, int h)
             }
         }
         r->F.u_dos_intensity = (float)(v->dos_intensity < 0 ? 0 : v->dos_intensity > 128 ? 128 : v->dos_intensity);
+        r->F.u_dos_fogpal = r->dos_fogpal;
         r->F.u_dos_light = v->point_light || !no_light;
         r->F.u_dos_fogdist = v->ortho_w > 0 ? 0.0f : v->dos_fogdist;
         r->F.u_dos_dir = v->point_light || camera_light ? 0 : v->dos_dir;

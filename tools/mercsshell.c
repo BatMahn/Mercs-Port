@@ -315,10 +315,23 @@ static void reset_text_reveal(shell *s);
 static void poll_shell(shell *s);
 static int prepare_economy_page(shell *s, int fresh);
 
+/* The original's mouse driver puts the pointer back at the centre of the 640 x 480 screen when its movie player or
+ * the career shell starts (the driver reset). DOSBox: the pointer jumps to the centre after the launch movie (and so
+ * sits on MISSION COMMAND in the DropShip, showing its label) and on entering the StarPort from the main menu, and it
+ * stays put between pages without a movie (registration -> news -> StarPort). The picture is fitted about the
+ * window's centre, so the screen's centre is the window's. Only while the pointer is over the window. */
+static void center_pointer(shell *s)
+{
+    int w, h;
+    if (!s->window || SDL_GetMouseFocus() != s->window || !SDL_GetWindowSize(s->window, &w, &h) || w <= 0 || h <= 0) return;
+    SDL_WarpMouseInWindow(s->window, (float)w * 0.5f, (float)h * 0.5f);
+}
+
 static void set_page(shell *s, int page)
 {
     if (s->save_editing) finish_save_description(s, 0);
     if (s->mechlab_editing) finish_mechlab_name(s, 0);
+    if (s->page == PAGE_MENU && page == PAGE_HALL) center_pointer(s);
     s->previous_page = s->page; s->page = page;
     s->status[0] = 0; s->select_all = 0; s->scroll = 0; s->wheel_remainder = 0;
     s->transition = -1; s->transition_clip = NULL; s->portrait_restart = 0;
@@ -428,6 +441,7 @@ static void play_movie(shell *s, const char *name)
     if (result == 1) s->running = 0;
     else if (result < 0) snprintf(s->status, sizeof s->status, "%s", movie_error);
     if (s->running && s->page == PAGE_REGISTER) SDL_StartTextInput(s->window);
+    if (s->running) center_pointer(s);
     fprintf(stderr, "mercs shell: movie-ended=%s result=%d\n", name, result);
 }
 
@@ -2506,10 +2520,11 @@ static void key(shell *s, SDL_Keycode k, SDL_Keymod mods)
     if (s->page == PAGE_REGISTER) {
         char *input = s->focus ? s->unit : s->pilot;
         size_t n = strlen(input);
-        if (k == SDLK_TAB) { s->focus = !s->focus; s->select_all = 0; }
-        else if (k == SDLK_A && (mods & (SDL_KMOD_CTRL | SDL_KMOD_GUI))) s->select_all = 1;
+        /* DOSBox: Return in the call sign moves to the unit name; Return in the unit name and Tab do nothing - the
+         * ACCEPT button registers (the port's Return-to-accept and Tab toggle were additions) */
+        if (k == SDLK_A && (mods & (SDL_KMOD_CTRL | SDL_KMOD_GUI))) s->select_all = 1;
         else if (k == SDLK_BACKSPACE) { if (s->select_all) input[0] = 0; else if (n) input[n-1] = 0; s->select_all = 0; }
-        else if (k == SDLK_RETURN || k == SDLK_KP_ENTER) { if (!s->focus && s->pilot[0]) s->focus = 1; else register_pilot(s); }
+        else if (k == SDLK_RETURN || k == SDLK_KP_ENTER) { if (!s->focus && s->pilot[0]) s->focus = 1; }
     } else if (s->page == PAGE_CONTRACTS || s->page == PAGE_NEWS || s->page == PAGE_BRIEFING || s->page == PAGE_DEBRIEF ||
                s->page == PAGE_FINANCE || s->page == PAGE_DROP_FINANCE || s->page == PAGE_PERSONNEL ||
                s->page == PAGE_INVENTORY || s->page == PAGE_DROP_INVENTORY || s->page == PAGE_TRADING || s->page == PAGE_FACTORY ||

@@ -84,12 +84,23 @@ At 640 x 480 the HUD, cockpit outline, compass, weapon list, radar and skyline l
     the texture sampling falls a texel off.
 - **Building window grid.** This was fixed by the x/z swap.
 - **Shadow tint.** The shadow now darkens each channel separately.
+- **Gouraud cockpits (2026-11-09).** Mercenaries' Gouraud fill (0x495d0, colour type 0x4000) draws a ramp-shade corner
+  as the polygon's ramp + the corner's level, or ramp + 15 - level when the LUMA table is a fog table (its first byte
+  not 0, 0x49d06 -> 0xb3f6c). The port had used MW2's ramp + intensity x level. Checked by patching a copy of the PRJ:
+  IVA1 with ambient 20 instead of 95 turns DOS's cockpit light; replacing the FOG LUMA table changes nothing there (so
+  the table is not looked up). With a fog table the MLIT point lights are not added per vertex (0x4f84a). The
+  re-captured cockpit frames of IVA1-4, MCC3/6/7, MED1, REC1/2 and LUT3/6 went from 5-30 % of pixels off to under 3 %.
+- **Night ground (BET2, BET4).** TL1PLAIN is drawn (patching it to untextured removes BET1's green patch in DOS), but
+  black at night: its corners are hundreds of metres off, so the depth term takes their light to 0, and DOS
+  interpolates the corner levels in screen space, where the near-plane corners lie far off the screen (raising the
+  fog distance 100 x in a PRJ copy shows it). The port now interpolates the vertex levels in screen space and lights
+  the corners it makes on the near plane itself. Its 4 cm drawing lift of flat ground pieces is no longer in the
+  collision (DOSBox BET2: Alt 0.00 m).
+- **Damage shading in the DOS look.** 0x4689b darkens a damaged mech location's levels by (16 - n) / 16 (or brightens
+  them, PLNT +52); the port had applied it only to the 3D editions. Traced, not yet captured in DOSBox.
 
 **Still different (open):**
 
-1. **IVA1's cockpit panels.** These are Gouraud, colour type 4. The port shows the same bands as DOS, but light where
-   DOS is near black. IVA1's light points straight up (0, 20000, 0), and its LUMA table is FOG (1). BET1's and
-   LUT1's lights are mostly horizontal, and their cockpits match better with the vertex levels.
-2. **Shadow interior.** DOS remaps each pixel through the LUMA row, which flattens the ground texture. The port's
+1. **Shadow interior.** DOS remaps each pixel through the LUMA row, which flattens the ground texture. The port's
    multiply keeps the texture's contrast.
-3. **Camo stripe edges.** These are a texel or two off: DOS uses affine spans, the GPU perspective-correct UVs.
+2. **Camo stripe edges.** These are a texel or two off: DOS uses affine spans, the GPU perspective-correct UVs.

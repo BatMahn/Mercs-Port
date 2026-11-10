@@ -4,16 +4,13 @@ What is still open in the Mercenaries port, in plain language.
 
 - **Side-by-side comparison with the original.** Every fixed mission's opening has been compared with the DOS game in
   DOSBox (docs/DOSBOX_COMPARISON.md). Differences found and not yet fixed:
-  - **Cockpit panels on IVA1, IVA3, MCC3, MCC6, MED1 and REC1:** lighter than DOS, near black there. IVA and MCC3's light points straight
-    up (0, 20000, 0) with a high ambient level; the cockpits of missions with a sideways light (BET1, LUT1) match.
-  - **Night ground on BET2 and BET4:** the port shows the dim ground texture of the TL1PLAIN object where DOS shows
-    black. Patching TL1PLAIN's colours in a copy of the archive changed nothing in DOS, on BET1 or BET4, so DOS never
-    draws it. It is the mission's one object of class 0x90, which DOS registers for a separate draw pass at mission
-    start (0x1038c); why that pass shows nothing is not yet traced.
-  - **Enemy starts above the ground:** IVA3's enemies start 41 m above a plateau and drop on to it. The player's
-    elevated starts are now grounded as in DOS; the enemies' have not been checked.
   - **External camera glide:** for its first two seconds after `c` on DOU1 the port's camera rises over the hill behind
     the mech before settling; DOS's stays low. At rest both match (and on REC1 both perch on the same rock).
+  - **REC2 and MYB1 openings:** DOSBox shows white shapes in REC2's sky that the port does not, and the port shows a
+    camouflaged block structure to the right on MYB1 that DOS does not. Neither is traced yet (the captures are taken
+    at different moments, so a timing difference is possible).
+  - **Large textured polygons are split into triangles** in the port, where DOS fills the whole polygon span by span;
+    the light levels across a big quad can differ slightly (OUT3's hangar roof is a little lighter than in DOS).
   - **Camo stripe edges** land a texel or two off, and **shadow interiors** keep the ground's contrast where DOS remaps
     them flatter.
 

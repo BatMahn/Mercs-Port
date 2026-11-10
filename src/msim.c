@@ -3012,12 +3012,12 @@ static void part_vertex(const mech3d_part *p, const wtb_vertex *v, float out[3])
     if (p->has_rot) {
         const float *R = p->rot;
         out[0] = R[0] * v->x + R[1] * v->y + R[2] * v->z + (float)p->pos[0];
-        out[1] = R[3] * v->x + R[4] * v->y + R[5] * v->z + (float)p->pos[1];
+        out[1] = R[3] * v->x + R[4] * v->y + R[5] * v->z + (float)(p->pos[1] - p->lift);
         out[2] = R[6] * v->x + R[7] * v->y + R[8] * v->z + (float)p->pos[2];
     } else {
         float c = cosf(p->yaw * 3.14159265f / 180.0f), sn = sinf(p->yaw * 3.14159265f / 180.0f);
         out[0] = c * v->x + sn * v->z + (float)p->pos[0];
-        out[1] = (float)v->y + (float)p->pos[1];
+        out[1] = (float)v->y + (float)(p->pos[1] - p->lift);   /* (the drawing lift left out: DOSBox BET2 stands at 0.00 m) */
         out[2] = -sn * v->x + c * v->z + (float)p->pos[2];
     }
 }

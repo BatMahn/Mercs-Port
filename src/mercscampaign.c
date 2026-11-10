@@ -236,7 +236,19 @@ int mercs_campaign_new(prj_archive *a,int mode,const char *pilot,const char *uni
     strcpy(c.campaign,mode?"CAMP":"NOVICE");
     s->last_return_mission=-1;
     if(hydrate_inplace(a,&c,s,e,n)||available_missions(a,&c,s,e,n))goto bad;
-    if(!mode&&accept_inplace(a,&c,s,0,e,n))goto bad;
+    if(!mode){
+        /* The Mercenary (novice) career takes its first contract at once, but the original keeps the starting
+         * record's news - Colonel Harris's last will ("Dear <pilot>, if you're reading this ...") - on the
+         * StarPort terminal: DOSBox, after registering, the news page and the terminal show the letter, not
+         * NOVICE1's GALEDON V bulletin, until the DropShip is boarded. Keep the header's NEWS text (0x342, 4096
+         * bytes) across the accept. */
+        uint8_t *news=malloc(4096);
+        if(!news){fail(e,n,"Out of memory creating career");goto bad;}
+        memcpy(news,mercs_save_header(c.document)+0x342,4096);
+        if(accept_inplace(a,&c,s,0,e,n)){free(news);goto bad;}
+        memcpy(mercs_save_header_edit(c.document)+0x342,news,4096);free(news);
+        if(hydrate_inplace(a,&c,s,e,n))goto bad;
+    }
     *v=*s;*out=c;free(s);return 0;
 bad:mercs_campaign_free(&c);free(s);return -1;
 }

@@ -402,7 +402,7 @@ int world3d_append(prj_archive *a, const char *record, int with_damaged, mech3d 
                  * (TL1SIDWK a sidewalk, V_AFLAM* flames ...) */
                 /* (the T_1 pieces had been drawn as translucent shadows: the engine has no shadow pass - they are
                  * painted pad / runway markings, type-1 colour 0x1c70, drawn flat in palette 0xcf; see glr) */
-                if (p->pos[1] + o->verts[0].y <= 2 && p->pos[1] + o->verts[0].y >= -2) p->pos[1] += 4;
+                if (p->pos[1] + o->verts[0].y <= 2 && p->pos[1] + o->verts[0].y >= -2) { p->pos[1] += 4; p->lift = 4; }
             }
         }
         if (getenv("MERCS_DEBUG_WORLD")) fprintf(stderr, "world %s obj %d %s at %d,%d,%d type 0x%x\n", record, i, p->model_name, p->pos[0], p->pos[1], p->pos[2], (unsigned)p->objtype);   /* tests */

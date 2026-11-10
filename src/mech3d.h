@@ -58,6 +58,7 @@ typedef struct {
     int       casts;         /* DOS look: casts a shadow on the ground (glr_set_dos_shadow; Mercs MW2.EXE 0x509e8) */
     float     cast_y;        /*   the ground's height under it (cm; +5 unless 0, 0x5082d)*/
     int       coll;          /* world objects: OBJ collision type (0 box, 1 XZ box, 4 none, 5 terrain...); -1 none */
+    int       lift;          /* cm the port raised a flat ground-level piece by for drawing (in pos[1]); not in collision */
     /* (unused since the shots' test became sphere-only: kept for the struct's users) */
     float    *hull;
     int       hull_count;

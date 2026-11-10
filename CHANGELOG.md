@@ -1,5 +1,53 @@
 # Mercenaries development history
 
+## v0.1.3: DOS look - Gouraud cockpits, night ground, damage shading — 2026-11-09
+
+Traced in MW2.EXE and checked against DOSBox with patched copies of the archive (see docs/DOSBOX_COMPARISON.md):
+
+- **Cockpit panels too light** on IVA1-5, MCC3/6/7, MED1, REC1/2 and others. Mercenaries' Gouraud fill (0x495d0) draws
+  a corner as its polygon's ramp + the corner's light level, counted down from the top of the ramp when the mission's
+  LUMA table is a fog table (the fog palettes' ramps run from the colour to the fog). The port used MW2's rule (ramp +
+  the corner's intensity scaled by the level), which made fog missions' cockpits pale. The re-captured cockpit frames
+  went from 20-30 % of pixels off to under 3 % on those missions; BET and LUT are unchanged. With a fog table the
+  mission's point lights are not added per vertex either (0x4f84a).
+- **Night ground on BET2 and BET4.** The port showed TL1PLAIN's dim texture where DOS is black. DOS interpolates the
+  vertex light levels in screen space, so on a huge ground polygon the far corners' level (0 at night, through the
+  depth term) covers everything seen. The port now does the same (the corners it makes on the near plane are lit
+  themselves, as 0x4cd65 / 0x4f6c8 do).
+- **Alt on BET2:** the port stood the player on its 4 cm drawing lift of flat ground pieces (0.06 m); the lift is now
+  left out of the collision (DOS: 0.00 m).
+- **Damage shading in the DOS look:** a damaged mech location's light levels are scaled by (16 - n) / 16, or raised
+  towards 15 when PLNT +52 is set (0x4689b). The port had applied this only to the 3D editions. (Traced; not yet
+  captured in DOSBox.)
+
+Shaders regenerated (glslangValidator 15.1.0, SPIRV-Cross, DXC 1.9 dev 4950: the unchanged sources reproduce the
+previous src/rb_shaders.c byte for byte).
+
+## v0.1.2: shell side-by-side with DOS; target display, Harris letter, registration keys, pointer — 2026-11-09
+
+The shell was run side by side with the DOS game in DOSBox at 640 x 480 (both careers, from the main menu through
+registration, the StarPort, the Office, the office computer and the contract pages), and the target display was
+compared in a mission. Fixed:
+
+- **Target display.** Mercenaries' DOS viewer draws the targeted unit as a solid silhouette in the display colour
+  (DOSBox IVA3SCN1, the Mongoose: colour 7 fill, no edges); F4 then gives the shaded model, then off. The port drew
+  MW2's black polygons with coloured outlines. It now fills them. A damaged location takes its damage colour
+  (INFERRED: only an intact target was captured).
+- **Colonel Harris's letter.** The Mercenary (novice) career accepts its first contract at once. The port's accept
+  replaced the starting record's news, so the letter was gone. The original keeps it until the DropShip is boarded;
+  the news text now survives the accept.
+- **Registration keys.** In DOS, Return in the unit-name field and Tab do nothing; only ACCEPT registers. The port's
+  Return registered the pilot and Tab switched fields. Both now follow DOS (Return in the pilot-name field still moves
+  to the unit name).
+- **Pointer recentring.** The DOS mouse driver reset puts the pointer in the middle of the screen after each movie and
+  on entering the StarPort from the main menu. The port now does the same while its window has the mouse.
+
+Checked and matching (no change): the main menu (pixel-identical apart from the pointer), its hover hints, the
+registration screen, the StarPort hotspots and labels, the launch movie and DropShip, the Commander career's letter,
+Office, office computer and first contract with its NEXT pages; in missions, the speed curve and top speed (COM00STD,
+61 kph), the leg turn rate (90 degrees a second), heat and its dH/dT readout, and enemy starts above the ground (IVA3:
+no fall damage in either).
+
 ## v0.1.1: DOSBox sweep of every mission; held enemies, spawn height, Alt readout — 2026-11-09
 
 Every fixed mission's opening was captured in DOSBox (cockpit and external view, 640 x 480) and in the port, and the

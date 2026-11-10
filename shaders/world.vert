@@ -179,9 +179,12 @@ VertexOut world_vertex(int vertex_id) {
   result.tic = a_tic.rgb; result.ticm = int(a_tic.a + 0.5); result.gs = a_uv; result.uvl = a_uv;
 #if DOS_LOOK
   if (u_dos != 0 && result.ticm == 4) {   /* the vertex's own level (dos_vertex_level), interpolated over the polygon */
-    float lv = dos_vertex_level(p, a_tic.rgb, floor(a_color.b + 0.5));
-    result.tic = vec3(lv, 0.0, 0.0);
-    if (int(a_color.r + 0.5) == 3) result.gs = vec2(0.0, a_uv.y + a_uv.x * (lv + 1.0) / 16.0);   /* Gouraud: its corner's colour */
+    float lv = dos_dnib(dos_vertex_level(p, a_tic.rgb, floor(a_color.b + 0.5)), result.dnib);
+    /* interpolated in screen space, as the original's spans (v_gs: noperspective) - a huge polygon's corner made on the
+     * near plane (0x4cd65) projects far off the screen, so the far corners' levels hold across what is seen (BET2's
+     * TL1PLAIN black at night in DOSBox, as its far corners) */
+    result.gs = int(a_color.r + 0.5) == 3 ? vec2(0.0, a_uv.y + a_uv.x * dos_gouraud_level(lv))   /* Gouraud: its corner's colour */
+                                          : vec2(lv, 0.0);
   }
 #endif
   int hi = e / 32; e -= hi * 32; int corner = e - 3 * (e / 3);
@@ -246,19 +249,27 @@ VertexOut clipped_vertex(VertexOut a, VertexOut b, VertexOut c, vec3 weight, boo
   result.gs = screen_weight.x * a.gs + screen_weight.y * b.gs + screen_weight.z * c.gs;
   result.uvl = screen_weight.x * a.uvl + screen_weight.y * b.uvl + screen_weight.z * c.uvl;
   result.tivf = ti_vertex_fog(result.viewpos, result.world) * result.clip.w;
+#if DOS_LOOK
+  if (u_dos != 0 && result.ticm == 4 && boundary) {
+    /* a corner made on the near plane (MW2.EXE 0x4cd65: position and vertex normal interpolated along the edge) is lit
+     * at its own depth and normal (0x4f6c8), not given its corners' interpolated level */
+    float lv = dos_dnib(dos_vertex_level(result.world, result.tic, floor(result.color.b + 0.5)), result.dnib);
+    result.gs = int(a.color.r + 0.5) == 3 ? vec2(0.0, result.uv.y + result.uv.x * dos_gouraud_level(lv)) : vec2(lv, 0.0);
+  }
+#endif
   return result;
 }
 
 void remap_depth(inout VertexOut value) {
+#if DOS_LOOK
+  if (u_dos != 0) return;   /* (the DOS look keeps its own depths) */
+#endif
   if (u_shared_depth != 0) {
     vec2 ab = value.pit > 0 ? u_depth_remap.zw : u_depth_remap.xy;
     value.clip.z = ab.x * value.clip.z + ab.y * value.clip.w;
   }
 }
 void main() {
-#if DOS_LOOK
-  output_vertex(world_vertex(u_first + gl_VertexIndex));
-#else
   // SDL_GPU deliberately has no geometry shader. Six output vertices per
   // source triangle reproduce Mercs' former GS: one triangle when all corners
   // survive (the second is degenerate), two when clipping makes a quad.
@@ -270,7 +281,13 @@ void main() {
   p[0] = world_vertex(source); p[1] = world_vertex(source + 1); p[2] = world_vertex(source + 2);
   float d[3]; int inside = 0;
   for (int i = 0; i < 3; i++) { d[i] = p[i].clip.z + p[i].clip.w; if (d[i] >= 0.0) inside++; }
+#if DOS_LOOK
+  /* DOS: a triangle crossing the near plane is cut here (as 0x4d379 cuts the polygon), so the new corners can be lit
+   * as the original lights them (clipped_vertex); the cockpit set and billboards as they are */
+  if (inside == 3 || u_dos == 0 || p[0].pit > 0 || p[0].bb != 0) {
+#else
   if (inside == 3 || (u_shared_depth == 0 && (u_tifog.x <= 0.5 || u_tifog.z <= 0.5 || p[0].pit > 0 || p[0].bb != 0))) {
+#endif
     VertexOut value = p[corner < 3 ? corner : 0]; remap_depth(value); output_vertex(value); return;
   }
   if (inside == 0) {
@@ -287,5 +304,4 @@ void main() {
   int index = corner < 3 ? corner : count == 4 ? (corner == 3 ? 0 : corner - 2) : 0;
   VertexOut value = clipped_vertex(p[0], p[1], p[2], weights[index], boundary[index]);
   remap_depth(value); output_vertex(value);
-#endif
 }

@@ -78,8 +78,8 @@ vec4 dos_gclip(int i) { int b = i * 13; vec4 q = u_mvp * vec4(dos_float(b), dos_
 float dos_gshade(int i, float g) {
   int b = i * 13;
   if (world_vtx[i * 25 + 20] > 3.5)   /* each corner at its own level (0x4f6c8 -> the span's +0x2c), not the polygon's */
-    g = (dos_vertex_level(vec3(dos_float(b), dos_float(b + 1), dos_float(b + 2)), vec3(world_vtx[i * 25 + 17], world_vtx[i * 25 + 18], world_vtx[i * 25 + 19]), floor(dos_float(b + 10) + 0.5)) + 1.0) / 16.0;
-  return dos_float(b + 7) + dos_float(b + 6) * g;
+    g = (dos_dnib(dos_vertex_level(vec3(dos_float(b), dos_float(b + 1), dos_float(b + 2)), vec3(world_vtx[i * 25 + 17], world_vtx[i * 25 + 18], world_vtx[i * 25 + 19]), floor(dos_float(b + 10) + 0.5)), v_dnib) + 1.0) / 16.0;
+  return dos_float(b + 7) + dos_float(b + 6) * dos_gouraud_level(floor(g * 16.0 - 0.5));
 }
 int dos_q(float p) { return (int(trunc(p * 4.0)) + 2) >> 2; }
 ivec2 dos_gvtx(vec4 q) { vec2 p = q.xy / q.w * 0.5 * u_vp; ivec2 c = ivec2(u_vp) / 2; return ivec2(c.x + dos_q(p.x), c.y - dos_q(p.y)); }
@@ -96,7 +96,7 @@ ivec2 dos_gchain(ivec2 V[20], int C[20], int m, int top, int dir, int y, int ybo
 }
 vec3 dos_gouraud(float lev) {
   float g = (lev + 1.0) / 16.0, px = floor(glFragCoord.x), py = floor(glFragCoord.y);
-  float cc = v_gs.y + v_gs.x * g + 0.5, cmin = -1e9, cmax = 1e9;
+  float cc = v_gs.y + v_gs.x * dos_gouraud_level(lev) + 0.5, cmin = -1e9, cmax = 1e9;
   int k = int(px), r = int(py);
   uint val = 0u; bool exact = false;
   if (v_texsel > 0) {
@@ -205,10 +205,10 @@ void main() {
       float lp = length(d), fi = lp > 0.0 ? trunc(128.0 * dot(nf, d / lp)) : 127.0;
       if (fi > 0.0) light += fi;
     }
-    float lev = clamp(floor(floor(C / 2.0) * light / 1088.0), 0.0, 15.0);
+    float lev = dos_dnib(clamp(floor(floor(C / 2.0) * light / 1088.0), 0.0, 15.0), v_dnib);
     if (kind == 1 || (kind == 2 && v_texsel < 0 && ((-v_texsel) & u_notex) != 0)) { o_color = vec4(dos_colour(base + lev), 1.0); return; }
     if (kind == 3) { o_color = vec4(dos_gouraud(lev), 1.0); return; }
-    if (v_ticm == 4) lev = clamp(floor(v_tic.x + 0.5), 0.0, 15.0);   /* the vertices' levels across the polygon (0x4f6c8) */
+    if (v_ticm == 4) lev = clamp(floor(v_gs.x + 0.5), 0.0, 15.0);   /* the vertices' levels across the polygon (0x4f6c8), in screen space */
     if (u_dos_texture_linear != 0) { vec4 t = dos_texture_filtered(v_uv / u_texsize, lev, true); if (t.a < 0.5) discard; o_color = vec4(t.rgb, 1.0); return; }
     vec4 tx = texture(u_tex, v_uv / u_texsize); if (tx.a < 0.5) discard;
     float ti = floor(tx.r * 255.0 + 0.5);

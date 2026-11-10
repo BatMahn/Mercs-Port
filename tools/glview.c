@@ -3237,17 +3237,17 @@ static void draw_target_view(const mech3d *m, int part_lo, int part_hi, float bx
     }
     qsort(P, (size_t)np, sizeof *P, wire_poly_cmp);
     hud_clip(g_hud, bx, by, bw, bh);
+    /* Mercenaries' DOS viewer fills each polygon in the colour instead (DOSBox IVA3SCN1, the Mongoose: a solid
+     * silhouette in colour 7, (0, 24, 203), with no edges drawn; F4 then gives the shaded model, then off) - MW2's
+     * outline-on-black above does not apply. A damaged location's fill takes its damage colour (INFERRED: only an
+     * intact target was seen); a destroyed centre torso black */
     for (i = 0; i < np; i++) {
-        float seg[4 * WTB_MAX_POLY_VERTS], c[4];
+        float c[4];
         const float *cc = col;
-        if (P[i].n >= 3) hud_poly(g_hud, P[i].xy, P[i].n, bg);
-        if (P[i].lvl == 3) continue;
-        if (P[i].lvl) { c[0] = (float)(LOC_RGB[P[i].lvl] >> 16) / 255.0f; c[1] = (float)((LOC_RGB[P[i].lvl] >> 8) & 255) / 255.0f; c[2] = (float)(LOC_RGB[P[i].lvl] & 255) / 255.0f; c[3] = 1.0f; cc = c; }
-        for (a = 0; a < P[i].n; a++) {
-            int b2 = (a + 1) % P[i].n;
-            seg[a * 4] = P[i].xy[a * 2]; seg[a * 4 + 1] = P[i].xy[a * 2 + 1]; seg[a * 4 + 2] = P[i].xy[b2 * 2]; seg[a * 4 + 3] = P[i].xy[b2 * 2 + 1];
-        }
-        hud_lines(g_hud, seg, P[i].n, 1.0f, cc);
+        if (P[i].n < 3) continue;
+        if (P[i].lvl == 3) cc = bg;
+        else if (P[i].lvl) { c[0] = (float)(LOC_RGB[P[i].lvl] >> 16) / 255.0f; c[1] = (float)((LOC_RGB[P[i].lvl] >> 8) & 255) / 255.0f; c[2] = (float)(LOC_RGB[P[i].lvl] & 255) / 255.0f; c[3] = 1.0f; cc = c; }
+        hud_poly(g_hud, P[i].xy, P[i].n, cc);
     }
     hud_clip_off(g_hud);
 }
