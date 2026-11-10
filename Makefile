@@ -155,6 +155,9 @@ test_mercs_repair_view: tests/test_mercs_repair_view.c tools/mercsrepair_view.h 
 test_mercs_campaign: tests/test_mercs_campaign.c $(MERCS_CAMPAIGN_SRC) $(HDRS)
 	$(CC) $(CFLAGS) -Wno-conversion -Isrc $(filter %.c,$^) -o $@ -lm
 
+test_mercs_career_walk: tests/test_mercs_career_walk.c $(MERCS_CAMPAIGN_SRC) $(HDRS)
+	$(CC) $(CFLAGS) -Wno-conversion -Isrc $(filter %.c,$^) -o $@ -lm
+
 test_mercs_interchange: tests/test_mercs_interchange.c src/mercsinterchange.c src/mercsrepair.c $(MERCS_CAMPAIGN_SRC) $(HDRS)
 	$(CC) $(CFLAGS) -Wno-conversion -Dtime=mercs_interchange_test_time -Isrc $(filter %.c,$^) -o $@ -lm
 

@@ -1,5 +1,25 @@
 # Mercenaries development history
 
+## v1.0: both 3D editions' careers play past IVA1; whole-career walk; release — 2026-11-10
+
+- **The 3Dfx and Direct3D (Titanium) careers stopped at IVA1.** Accepting it, or NOVICE12 in the Mercenary career,
+  failed with "Cannot read actor loadout mon00std". Those editions' archives shipped 26 records whose stored checksum
+  is not their byte sum (MON00STD, the Mongoose in IVA1's ambush, among them; other MEKs, CELs, POLYs and MEKTABLE too),
+  and the port refused every such record except two it already knew. The original does not check: MERCSW.DLL's
+  record read (0x1001ead0) seeks past the header and reads the payload, with nothing summed. Each shipped record is
+  now accepted by its exact SHA-256, so a record changed in any other way is still refused.
+- **Whole careers walked to the end.** A new check (tests/test_mercs_career_walk.c, in run_campaign_checks.py) takes
+  both careers in every edition through every contract with recorded wins - accept, return, debriefing, continue -
+  until the original's career end: 36 contracts each, Mercenary and Commander, DOS, 3Dfx and Direct3D. It is what
+  found the IVA1 stop. It checks the career graph, pay and the ending, not the missions' combat.
+- **Every indexed record of every edition's archive loads** (tests/test_mercs_prj_checksum.c), apart from two
+  directory entries in the 3Dfx and Titanium archives (BLD01STD, SCDCHRCC) that point at other data and that
+  nothing names.
+
+Investigated, not changed (see KNOWN_ISSUES): GRA1's lower-left box in DOS is the target viewer's static - display
+damage - because DOS's Catapult engages the player about 15 s sooner, without the "Enemy power-up detected" call the
+port plays. Why it wakes earlier needs a trace of the DOS AI.
+
 ## v0.1.6: shell side by side with DOS; Mercenary landing and first-mech assignment — 2026-11-10
 
 The shell was walked through side by side with the DOS game in DOSBox, both careers: registration, the letter, the

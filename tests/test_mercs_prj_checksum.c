@@ -172,5 +172,25 @@ int main(int argc,char **argv)
     if(argc<3){fprintf(stderr,"usage: %s retail-MW2.PRJ accelerated-archive [accelerated-archive ...]\n",argv[0]);return 2;}
     check_record(argc,argv,"ASA00STD",6,496,0x41f3,0x41f4,3,2);
     check_record(argc,argv,"JEN50STD",248,504,0x460c,0x4763,5,1);
+    {   /* every indexed record of every supplied edition loads (the Titanium/3Dfx MON00STD stopped IVA1) */
+        int i,t,id,records=0,compat=0,fails=0,broken=0;char e[256];
+        for(i=1;i<argc;i++){
+            prj_archive *a=prj_open(argv[i],e,sizeof e);const char *tag;assert(a);
+            for(t=0;(tag=prj_type_tag(a,t))!=NULL;t++)
+                for(id=1;id<0xf000;id++){
+                    prj_record r;int rc;
+                    if(!prj_record_size(a,t,id))continue;
+                    rc=prj_read(a,t,id,&r);
+                    /* the 3Dfx and Titanium archives' BLD01STD and SCDCHRCC slots point at other data (no DATA
+                     * header); nothing else in any archive names them, and the port refuses them as malformed */
+                    if(rc==PRJ_ERR_FORMAT&&(prj_find_id(a,t,"BLD01STD")==id||prj_find_id(a,t,"SCDCHRCC")==id)){broken++;continue;}
+                    if(rc){fprintf(stderr,"%s: %s %d does not load (%d)\n",argv[i],tag,id,rc);fails++;continue;}
+                    records++;compat+=r.checksum_compat;prj_record_free(&r);
+                }
+            prj_close(a);
+        }
+        if(fails)return 1;
+        printf("PASS: %d indexed records load (%d shipped with a known wrong checksum); %d known broken slots refused\n",records,compat,broken);
+    }
     return 0;
 }

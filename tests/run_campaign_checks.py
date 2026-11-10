@@ -75,7 +75,8 @@ def main():
         run('build-campaign', ['make', '-j4', 'mercs', 'test_mercs_save', 'test_mercs_debrief',
                               'test_mercs_repair', 'test_mercs_repair_view', 'test_mercs_statistics',
                               'test_mercs_debrief_view', 'test_mercs_debrief_assets',
-                              'test_mercs_campaign', 'test_mercs_campaign_tail', 'test_mercs_frontend'], timeout=240)
+                              'test_mercs_campaign', 'test_mercs_campaign_tail', 'test_mercs_career_walk',
+                              'test_mercs_frontend'], timeout=240)
         for name in ('save', 'debrief', 'debrief_view', 'repair', 'repair_view', 'statistics'):
             run(name + '-original-goldens', [project / ('test_mercs_' + name)])
         for name, archive in archives.items():
@@ -84,6 +85,7 @@ def main():
             overlay = scratch / ('career-' + name); overlay.mkdir()
             run(name + '-campaign', [project / 'test_mercs_campaign', archive, overlay])
             run(name + '-campaign-tail', [project / 'test_mercs_campaign_tail', archive])
+            run(name + '-career-walk', [project / 'test_mercs_career_walk', archive], contains=('PASS: both careers',))
         private = scratch / 'Mercs-game'; private.mkdir()
         for root, dirs, files in os.walk(game):
             relative = Path(root).relative_to(game)
