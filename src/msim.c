@@ -5729,7 +5729,10 @@ int msim_can_move(const msim *s, float x0, float z0, float x, float z, float y, 
     return 1;
 }
 
-float msim_ground_n(const msim *s, float x, float z, float y, float *nout)
+static float ground_query(const msim *s, float x, float z, float y, float *nout, int fixed_only);
+float msim_ground_n(const msim *s, float x, float z, float y, float *nout) { return ground_query(s, x, z, y, nout, 0); }
+float msim_ground_fixed(const msim *s, float x, float z, float y) { return ground_query(s, x, z, y, NULL, 1); }
+static float ground_query(const msim *s, float x, float z, float y, float *nout, int fixed_only)
 {
     /* Mercs retail Windows 0x100142b4 over the collision list: type 5 terrain and type 0 box tops; the highest surface
      * within 10 m of y (y < h + 10 m and h - 10 m < y) wins, else (while none is within) the highest below y, else 0.
@@ -5752,7 +5755,7 @@ float msim_ground_n(const msim *s, float x, float z, float y, float *nout)
             if (c->moving || !qt_ground(t, c->root, x, z, &h, &pn)) continue;
             if (pn) ny = pn;
         } else if (c->type == 0) {
-            if (!cobj_now(s, c, box, sph) || x < box[0] || x > box[1] || z < box[4] || z > box[5]) continue;
+            if ((fixed_only && c->moving) || !cobj_now(s, c, box, sph) || x < box[0] || x > box[1] || z < box[4] || z > box[5]) continue;
             h = box[3];
         } else continue;
         if (win == -3.4e38f && h < y && h > below) { below = h; nbelow = ny; }

@@ -431,6 +431,8 @@ int  msim_nearest_enemy(const msim *s, float *distance);
  * polygon terrain (upward faces) and type 0 boxes (their tops), the highest surface within 10 m of y,
  * else the highest below y, else 0. */
 float msim_ground(const msim *s, float x, float z, float y);
+/* As msim_ground over the fixed surfaces only (no moving object: a DropShip in flight) - the external camera's floor */
+float msim_ground_fixed(const msim *s, float x, float z, float y);
 /* Actor placement baseline. mech3d_pose applies the controller's MGEO centre
  * once for flight classes; adding it here would separate the rendered hull
  * from weapon mounts, target points and the simulation's collision centre. */

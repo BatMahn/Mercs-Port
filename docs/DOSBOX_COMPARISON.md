@@ -34,7 +34,7 @@ Step commands: `sleep N`, `key K` (xdotool names: `c`, `Escape`, `F12`, ...), `d
 
 - **Where the game is in the capture.** DOSBox sits at 0,0. The game fills 0,0-639,479 (VESA480), 0,0-1023,767
   (VESA768), or 0,0-639,399 for the default 320 x 200 mode, which DOSBox doubles in both directions.
-- **When the mission is up.** About 30 s of wall time covers the boot and the load. DOSBox runs slower than real
+- **When the mission is up.** The boot and load take 6-30 s of wall time depending on the host (check with an early shot). DOSBox runs slower than real
   time, so match frames by game events, never by wall seconds.
 - **Useful keys:** `c` switches to the external view, which shows the player's mech. `Esc` opens the main menu;
   its option 4 is Combat Variables.
@@ -96,6 +96,11 @@ At 640 x 480 the HUD, cockpit outline, compass, weapon list, radar and skyline l
   fog distance 100 x in a PRJ copy shows it). The port now interpolates the vertex levels in screen space and lights
   the corners it makes on the near plane itself. Its 4 cm drawing lift of flat ground pieces is no longer in the
   collision (DOSBox BET2: Alt 0.00 m).
+- **External camera floor (DOU1).** The orbit camera's height floor left out moving objects: the DropShip leaving over
+  DOU1's start had pushed the port's camera 50 m up for two seconds. Shots after `c` at 0.15-4.5 s match DOSBox.
+- **Capture timing.** On this machine DOSBox has the mission up about 6 s after launch, so `sleep 34` frames are ~25 s
+  into the mission. Compare against the port at the same mission time (REC2's exhaust puffs and MYB1's Dragon were
+  only that).
 - **Damage shading in the DOS look.** 0x4689b darkens a damaged mech location's levels by (16 - n) / 16 (or brightens
   them, PLNT +52); the port had applied it only to the 3D editions. Traced, not yet captured in DOSBox.
 

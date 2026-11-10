@@ -1,5 +1,19 @@
 # Mercenaries development history
 
+## v0.1.4: external camera glide; mission-opening differences explained — 2026-11-09
+
+- **External camera on DOU1.** For its first two seconds after `c` the port's camera climbed 50 m and back, through
+  the rocks; DOSBox glides straight out behind the mech. The camera's floor counted the DropShip leaving overhead (a
+  moving object, its top 53 m over the start) as ground. It now takes fixed surfaces only. REC1's camera still perches
+  on its rock as in DOS.
+- **REC2's white shapes and MYB1's extra mech** (listed in v0.1.3) are not differences: both are timing. The earlier
+  DOSBox frames were taken about 25 s into the mission, the port's at 3 s. The REC2 shapes are the DropShip's
+  exhaust puffs, which the port draws too by 15-20 s; MYB1's is the allied Dragon, which walks off to its first nav
+  point in both (gone from the view by 10 s in the port, as in DOSBox).
+
+Tried and not kept (see KNOWN_ISSUES.md): walking a large textured polygon's light levels over its whole outline, and
+remapping shadowed ground texel by texel; neither came closer to DOSBox.
+
 ## v0.1.3: DOS look - Gouraud cockpits, night ground, damage shading — 2026-11-09
 
 Traced in MW2.EXE and checked against DOSBox with patched copies of the archive (see docs/DOSBOX_COMPARISON.md):

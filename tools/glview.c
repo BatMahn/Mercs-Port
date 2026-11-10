@@ -2411,7 +2411,8 @@ static void camera_modes(glr_view *v)
         v->free_cam = 1;
         v->eye[0] = tgt[0] + servo(&g_srv_x, -sinf(a) * d, now);
         v->eye[2] = tgt[2] + servo(&g_srv_z, -cosf(a) * d, now);
-        gy = msim_ground(&g_sim, v->eye[0], v->eye[2], g_cam_eye[1] + 10000.0f);
+        /* (moving objects left out: DOSBox DOU1 glides out low under the DropShip that leaves 53 m over the start) */
+        gy = msim_ground_fixed(&g_sim, v->eye[0], v->eye[2], g_cam_eye[1] + 10000.0f);
         gy += gy > 1e-7f ? 500.0f : 200.0f;
         v->eye[1] = tgt[1] + servo(&g_srv_y, tgt[1] + h < gy ? gy - tgt[1] : h, now);
         /* then the height kept between 200 - the centre height (DAT_1015f034) and 4 x the start distance (DAT_1015efd0) */
