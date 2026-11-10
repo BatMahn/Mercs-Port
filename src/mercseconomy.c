@@ -229,6 +229,30 @@ int mercs_economy_assign_pilot(mercs_save_state *state,size_t pilot_index,int me
     mercs_save_header_edit(next)[0]=1;mercs_save_swap(state,next);mercs_save_free(next);return 0;
 }
 
+/* Mission Command entry, MW2SHELL.EXE 0x3cb60 (event 0xc036) -> 0x3ca00 (career 0) / 0x3caa8 (career 1): an
+ * unassigned player (+0x20 == -1) takes owned mech 0 when the unit owns any mech (novice) or exactly one (regular).
+ * The mech's previous pilot (by +0x80c, 0x58d44) is unassigned. DOSBox: a new MERCENARY career's Duty Roster opens
+ * with MIKE "piloting COM-7X Commando" - the port had shown "no mech assigned". Returns 1 when it assigned. */
+int mercs_economy_command_assign(mercs_save_state *state)
+{
+    mercs_save_state *next;size_t player,i,n,pilots;uint8_t *p,*m;uint32_t owner,mode;int rc;
+    if(!state)return MERCS_ECONOMY_INVALID;
+    if((rc=mercs_save_player(state,&player,NULL,NULL,0)))return MERCS_ECONOMY_INVALID;
+    mode=u32(mercs_save_header(state)+0x23bb);n=mercs_save_list_count(state,MERCS_SAVE_OWNED_MECHS);
+    if(u32(mercs_save_list_record(state,MERCS_SAVE_OWNED_PILOTS,player)+0x20)!=UINT32_MAX)return 0;
+    if(mode==0?n<1:mode==1?n!=1:1)return 0;
+    next=mercs_save_clone(state);if(!next)return MERCS_ECONOMY_NOMEM;
+    m=mercs_save_list_record_edit(next,MERCS_SAVE_OWNED_MECHS,0);owner=u32(m+0x80c);
+    pilots=mercs_save_list_count(next,MERCS_SAVE_OWNED_PILOTS);
+    if(owner!=UINT32_MAX)for(i=0;i<pilots;i++){
+        uint8_t *q=mercs_save_list_record_edit(next,MERCS_SAVE_OWNED_PILOTS,i);
+        if(u32(q+0x24)==owner){p32(q+0x20,UINT32_MAX);break;}
+    }
+    p=mercs_save_list_record_edit(next,MERCS_SAVE_OWNED_PILOTS,player);
+    p32(m+0x80c,u32(p+0x24));p32(p+0x20,u32(m+0x810));
+    mercs_save_header_edit(next)[0]=1;mercs_save_swap(state,next);mercs_save_free(next);return 1;
+}
+
 int mercs_economy_cycle_pilot(mercs_save_state *state,size_t pilot_index,int direction)
 {
     int old,choice,rc;size_t i,n,free_count=0;

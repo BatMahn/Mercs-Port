@@ -1,5 +1,29 @@
 # Mercenaries development history
 
+## v0.1.6: shell side by side with DOS; Mercenary landing and first-mech assignment — 2026-11-10
+
+The shell was walked through side by side with the DOS game in DOSBox, both careers: registration, the letter, the
+DropShip, Mission Command, the Duty Roster and the Mech Lab for a Mercenary; the Office, its computer, contracts,
+personnel, inventory and finances for a Commander. Everything matched except two things, now fixed:
+
+- **A new Mercenary career skipped the DropShip landing.** MW2SHELL.EXE plays MLAND2 for both careers when transitions
+  are on (0x6e038 Commander, 0x6e0ec Mercenary); the port played it for the Commander only.
+- **The Mercenary pilot started with no 'Mech.** Entering Mission Command, the original gives a pilot without a 'Mech
+  the unit's first one (0x3cb60 -> 0x3ca00; a Commander only when the unit owns exactly one, 0x3caa8). DOSBox opens the
+  Duty Roster with the pilot "piloting COM-7X Commando"; the port showed "no mech assigned" until NEXT was pressed.
+
+Also checked, no change needed:
+
+- **Typing during a blocking sound cue** is dropped in DOS too (DOSBox with the SB16: MIKE typed while the terminal's
+  click sound plays never reaches the call sign), as the port does.
+- **Whole-mission sweep at HUD + 3 s**, cockpit and external, every fixed mission: cockpit frames within about 1 %, the
+  larger gaps being the DOS start-up message bar. REC1/REC2's perched external camera shows the rocks beside it darker in
+  DOS (open, see KNOWN_ISSUES).
+- **TRA1 on autopilot at full throttle:** nav arrivals within about 5 s and the mission completes the same way. The
+  instructor lines and the nav-point calls play within half a second of DOSBox's (SB16 capture).
+- **GRA1 on autopilot:** the Commando walks the same speed and is caught by the ambush in both, dead about a minute in
+  (DOS about 10 s earlier after brushing a wreck the port's mech passes clear of).
+
 ## v0.1.5: Windows run under Wine; shell artwork and movies on Vulkan; GPU fallback; GUI test — 2026-11-10
 
 The Windows build was run for the first time (Wine 9, Mesa's software Vulkan driver, Xvfb): the shell from the intro

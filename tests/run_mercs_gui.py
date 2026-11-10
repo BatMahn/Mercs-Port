@@ -359,23 +359,26 @@ try:
     register_commander()
     launch_profiles()
     escape_to_menu()
-    click(500, 135); wait_for('page=starport')
+    sp = log_text().count('page=starport') + 1
+    click(500, 135); skip_movie('MLAND2'); wait_for('page=starport', count=sp)
     time.sleep(3)   # (the StarPort's opening clips play before it takes clicks)
     go(260, 320, 'registration')
     type_text('cadet'); press('Return')
     go(550, 452, 'news'); go(558, 450, 'starport')
     click(465, 330); skip_movie('MTO'); wait_for('page=dropship')
     go(270, 250, 'mission-command'); go(120, 240, 'duty-roster')
-    capture('training-unassigned-original-roster')
-    # NEXT three times: Commando -> Jenner -> Panther (the shell logs no assignment; the launch's Player line checks it)
-    for _ in range(3):
+    capture('training-commando-original-roster')
+    # Mission Command gave the pilot the Commando (DOS 0x3ca00, shell log command-assigned); NEXT twice: Jenner ->
+    # Panther (the shell logs no roster change; the launch's Player line checks it)
+    assert 'command-assigned' in log_text()
+    for _ in range(2):
         click(560, 315); time.sleep(1.5)
     capture('training-panther-original-roster')
     go(550, 450, 'mission-command'); go(120, 330, 'briefing')
     click(420, 452); wait_for('mission-return=TRA1SCN1 result=0', timeout=60, count=4)
     assert 'Player: PANTHER / PNT00MER' in log_text()
     (OUT / 'native-first-mission.ppm').replace(OUT / 'native-training-panther.ppm')
-    report['checks'].append('Original Mercenary mode/letter/DropShip/Duty Roster; explicit NEXT selection cycles Commando -> Jenner -> Panther; actual Panther deployment returns normally')
+    report['checks'].append('Original Mercenary mode/letter/DropShip/Duty Roster; Mission Command assigns the Commando, NEXT cycles Jenner -> Panther; actual Panther deployment returns normally')
     # Changing one shell preference must merge the latest simulation settings.
     config = CFG.read_text().replace('hud_layout=wide', 'hud_layout=original').replace('dos_shading=dithered', 'dos_shading=smooth')
     CFG.write_text(config)

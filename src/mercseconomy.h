@@ -69,6 +69,8 @@ int mercs_economy_dismiss(mercs_save_state *state, enum mercs_personnel_kind kin
  * condition, instance IDs, filenames and equipment remain byte-exact. */
 int mercs_economy_assign_pilot(mercs_save_state *state,size_t pilot_index,int mech_index);
 int mercs_economy_cycle_pilot(mercs_save_state *state,size_t pilot_index,int direction);
+/* Mission Command entry's automatic player assignment (DOS 0x3ca00 / 0x3caa8). 1 = assigned, 0 = unchanged. */
+int mercs_economy_command_assign(mercs_save_state *state);
 /* Original0x3e318 support toggle and0x3ef10 mission roster gate. A mission
  * allowing three starmates may include one AeroTech; at most two ordinary
  * MechWarriors deploy. The caller presents original in-game notices. */

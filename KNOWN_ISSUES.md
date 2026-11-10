@@ -11,7 +11,14 @@ What is still open in the Mercenaries port, in plain language.
     by the shadow row's mean darkening, where DOS remaps each pixel through the row. Remapping texel by texel was tried;
     with the port's overlapping shadow polygons it came out no closer to DOSBox, so it was left out.
 
-  Combat has been compared only through whole-mission outcomes (BET1, DOU1, GRA1, IVA3), not shot by shot.
+  - **REC1/REC2's external camera**, perched on the rocks, shows the rock faces next to it darker in DOS. The fog
+    distance is not the cause; still open.
+  - **TRA1's friendly units** walk close to the player on the way back in DOS (one passes right beside the player at
+    about three minutes and the autopilot detours around it); the port's stay about 250 m away.
+  - **GRA1's lower-left display** shows a red/blue target-camera picture in DOS from about 30 s on, before any target
+    is selected; the port keeps the compass there. Not traced yet.
+
+  Combat has been compared only through whole-mission outcomes (BET1, DOU1, GRA1, IVA3, TRA1), not shot by shot.
 - **The full career has not been played from start to finish.** Individual contracts, the debriefing, salvage and
   repairs, and save exchange with the original are tested; the campaign end and the long tail of contracts are not.
 - **Windows has been run only under Wine** (Vulkan, through Mesa's software Vulkan driver): the menus, movies,

@@ -329,6 +329,7 @@ static void center_pointer(shell *s)
     SDL_WarpMouseInWindow(s->window, (float)w * 0.5f, (float)h * 0.5f);
 }
 
+static void command_auto_assign(shell *s);
 static void set_page(shell *s, int page)
 {
     if (s->save_editing) finish_save_description(s, 0);
@@ -344,6 +345,7 @@ static void set_page(shell *s, int page)
     mercs_shell_audio_enter(s->shell_audio, (mercs_shell_audio_page)page,
                            s->career.registered, (mercs_shell_audio_page)s->previous_page);
     if (page == PAGE_REGISTER) SDL_StartTextInput(s->window); else SDL_StopTextInput(s->window);
+    if (page == PAGE_COMMAND) command_auto_assign(s);
     prepare_lines(s);
     (void)prepare_economy_page(s, 1);
     fprintf(stderr, "mercs shell: page=%s\n", page_names[page]);
@@ -474,6 +476,31 @@ static void install_career(shell *s, mercs_campaign *next, const mercs_shell_sta
     s->training_choice = s->career.owned_index;
     snprintf(s->pilot, sizeof s->pilot, "%s", s->career.pilot);
     snprintf(s->unit, sizeof s->unit, "%s", s->career.unit);
+}
+
+/* Mission Command entry (DOS 0x3cb60 -> 0x3ca00 / 0x3caa8) gives an unassigned player owned mech 0; see
+ * mercs_economy_command_assign. Committed like a Duty Roster change; failure leaves the career unchanged. */
+static void command_auto_assign(shell *s)
+{
+    mercs_campaign next;
+    mercs_shell_state *view;
+    if (!s->career.registered || !s->campaign.document) return;
+    {
+        mercs_save_state *probe = mercs_save_clone(s->campaign.document);
+        int rc = probe ? mercs_economy_command_assign(probe) : -1;
+        mercs_save_free(probe);
+        if (rc != 1) return;
+    }
+    if (stage_career(s, &next, &view)) return;
+    if (mercs_economy_command_assign(next.document) == 1 &&
+        !mercs_campaign_hydrate(s->archive, &next, view, s->status, sizeof s->status)) {
+        next.resume_page = PAGE_COMMAND;
+        if (!mercs_store_write(s->save_dir, -1, &next, view, s->status, sizeof s->status)) {
+            install_career(s, &next, view);
+            fprintf(stderr, "mercs shell: command-assigned player=%s mech=%s\n", s->career.pilot, s->career.starter_name);
+        }
+    }
+    mercs_campaign_free(&next); free(view);
 }
 
 static int commit_career_cue(shell *s, mercs_campaign *next,
@@ -2245,7 +2272,10 @@ static void click(shell *s, int x, int y, int clicks)
             snprintf(s->unit, sizeof s->unit, "%s", s->mode ? "" : "HANSON'S ROUGHRIDERS");
             mercs_campaign_free(&s->campaign);
             memset(&s->career, 0, sizeof s->career); s->accepted = -1; s->letter_heard = 0; s->regular_unassigned = 0;
-            if (s->mode) play_movie(s, "MLAND2");
+            /* both careers land first: MW2SHELL.EXE 0x6e038 (Commander) and 0x6e0ec (Mercenary) each play MLAND2 while
+             * the transitions option is on ([0xb778c] == 1), then start their career (0x69074(0) / (1)). DOSBox:
+             * MERCENARY plays the DropShip landing before the StarPort (the port had played it for the Commander only) */
+            play_movie(s, "MLAND2");
             set_page(s, PAGE_HALL);
         } else if (at == 4) { if (play_cue(s, MSA_CUE_MENU_OPTIONS)) open_game_menu(s); }
         else if (at == 2) { if (play_cue(s, MSA_CUE_MENU_MERCNET)) unavailable(s, "MercNet multiplayer"); }

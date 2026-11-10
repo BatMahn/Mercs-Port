@@ -1,5 +1,6 @@
 #include "mercscampaign.h"
 #include "mercsstore.h"
+#include "mercseconomy.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -91,6 +92,17 @@ static void check_training(prj_archive *a)
     mercs_campaign c={0};mercs_shell_state *v=calloc(1,sizeof *v);char e[384]={0};mercs_career_mech ref;uint32_t id;int i;
     assert(v);check(mercs_campaign_new(a,0,"CADET","TEST UNIT",&c,v,e,sizeof e),e);
     assert(v->owned_count==3&&v->pilot_instance_id==19&&v->owned_index==-1);
+    {   /* Mission Command entry (DOS 0x3ca00) gives the unassigned novice owned mech 0 once */
+        mercs_campaign t={0};mercs_shell_state *w=calloc(1,sizeof *w);size_t player;
+        assert(w);*w=*v;check(mercs_campaign_clone(&c,&t),"clone");
+        assert(mercs_economy_command_assign(t.document)==1&&mercs_economy_command_assign(t.document)==0);
+        assert(!mercs_save_player(t.document,&player,NULL,NULL,0));
+        assert(u32(mercs_save_list_record(t.document,MERCS_SAVE_OWNED_PILOTS,player)+0x20)==
+               u32(mercs_save_list_record(t.document,MERCS_SAVE_OWNED_MECHS,0)+0x810));
+        assert(u32(mercs_save_list_record(t.document,MERCS_SAVE_OWNED_MECHS,0)+0x80c)==19);
+        check(mercs_campaign_hydrate(a,&t,w,e,sizeof e),e);assert(w->owned_index==0);
+        mercs_campaign_free(&t);free(w);
+    }
     check(mercs_shell_assign_owned(a,v,2,e,sizeof e),e);check(mercs_campaign_sync(&c,v,e,sizeof e),e);
     assert(mercs_career_instance_id(&v->owned[2].current)==22);id=mercs_career_instance_id(&v->owned[2].current);
     ref=v->owned[2].reference;p32(v->owned[2].current.bytes+0x768,1);
