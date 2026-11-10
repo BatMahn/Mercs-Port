@@ -274,13 +274,15 @@ static SDL_Texture *background(shell *s, int index)
     if (index < 0 || index >= 120) return NULL;
     if (s->backgrounds[index]) return s->backgrounds[index];
     length = shelldb_entry(&s->database, index, &data);
-    if (length <= 0 || shell_pcx(data, (size_t)length, &image, NULL)) { free(data); return NULL; }
+    if (length <= 0 || shell_pcx(data, (size_t)length, &image, NULL)) { fprintf(stderr, "mercs shell: DATABASE entry %d: %ld bytes, not a PCX\n", index, length); free(data); return NULL; }
     free(data);
-    rgb = malloc((size_t)image.w * (size_t)image.h * 3);
+    /* 32-bit: SDL's Vulkan renderer (Windows) has no 24-bit texture format */
+    rgb = malloc((size_t)image.w * (size_t)image.h * 4);
     if (!rgb) { shell_image_free(&image); return NULL; }
-    for (i = 0; i < image.w * image.h; i++) memcpy(rgb + (size_t)i * 3, image.pal[image.pix[i]], 3);
-    texture = SDL_CreateTexture(s->renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, image.w, image.h);
-    if (texture) { SDL_UpdateTexture(texture, NULL, rgb, image.w * 3); SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST); }
+    for (i = 0; i < image.w * image.h; i++) { memcpy(rgb + (size_t)i * 4, image.pal[image.pix[i]], 3); rgb[(size_t)i * 4 + 3] = 255; }
+    texture = SDL_CreateTexture(s->renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC, image.w, image.h);
+    if (texture) { SDL_UpdateTexture(texture, NULL, rgb, image.w * 4); SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST); }
+    else fprintf(stderr, "mercs shell: background %d (%d x %d): %s\n", index, image.w, image.h, SDL_GetError());
     free(rgb); shell_image_free(&image);
     s->backgrounds[index] = texture;
     return texture;

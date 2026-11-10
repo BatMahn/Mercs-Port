@@ -25,6 +25,9 @@ typedef struct {
     vidfx *filter;
     smk *decoder;
     uint8_t *doubled;
+    uint8_t *rgb;          /* a 24-bit frame for a renderer without 24-bit textures (SDL's Vulkan and GPU renderers) */
+    size_t rgb_size;
+    int rgba;              /* the texture is 32-bit: frames are drawn into rgb and widened */
     int width, height, raw_height, texture_w, texture_h, look, fit;
 } movie;
 
@@ -114,7 +117,17 @@ static int make_texture(movie *m, int w, int h)
     SDL_Texture *tx;
     if (m->texture && m->texture_w == w && m->texture_h == h) return 0;
     tx = SDL_CreateTexture(m->renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STREAMING, w, h);
-    if (!tx) return -1;
+    m->rgba = 0;
+    if (!tx) {   /* SDL's Vulkan renderer has no 24-bit format (Windows under the Vulkan driver): RGBA, widened per frame */
+        tx = SDL_CreateTexture(m->renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, w, h);
+        if (!tx) return -1;
+        if (m->rgb_size < (size_t)w * (size_t)h * 3) {
+            uint8_t *b = realloc(m->rgb, (size_t)w * (size_t)h * 3);
+            if (!b) { SDL_DestroyTexture(tx); return SDL_OutOfMemory(), -1; }
+            m->rgb = b; m->rgb_size = (size_t)w * (size_t)h * 3;
+        }
+        m->rgba = 1;
+    }
     SDL_SetTextureBlendMode(tx, SDL_BLENDMODE_NONE);
     SDL_SetTextureScaleMode(tx, m->look == PORTCFG_VID_ORIGINAL ? SDL_SCALEMODE_NEAREST : SDL_SCALEMODE_LINEAR);
     drop_texture(m);
@@ -180,7 +193,27 @@ static int present_movie(movie *m)
         if (make_texture(m, m->width, m->height) < 0) return -1;
     }
     if (!SDL_LockTexture(m->texture, NULL, &buffer, &pitch)) return -1;
-    if (m->look == PORTCFG_VID_ORIGINAL) {
+    if (m->rgba) {   /* draw the 24-bit frame aside, then widen it into the texture */
+        void *tex = buffer;
+        const int tpitch = pitch;
+        buffer = m->rgb; pitch = m->texture_w * 3;
+        if (m->look == PORTCFG_VID_ORIGINAL) {
+            for (y = 0; y < m->height; y++)
+                for (x = 0; x < m->width; x++)
+                    memcpy(m->rgb + (size_t)y * (size_t)pitch + (size_t)x * 3, pal[pix[(size_t)y * (size_t)m->width + (size_t)x]], 3);
+        } else if (vidfx_render(m->filter, m->look, pix, m->width, m->height, pal,
+                                buffer, m->texture_w, m->texture_h, pitch) < 0) {
+            SDL_UnlockTexture(m->texture);
+            SDL_SetError("unable to allocate movie filter buffers");
+            use_original(m);
+            return present_movie(m);
+        }
+        for (y = 0; y < m->texture_h; y++) {
+            const uint8_t *s3 = m->rgb + (size_t)y * (size_t)pitch;
+            uint8_t *d4 = (uint8_t *)tex + (size_t)y * (size_t)tpitch;
+            for (x = 0; x < m->texture_w; x++) { d4[x * 4] = s3[x * 3]; d4[x * 4 + 1] = s3[x * 3 + 1]; d4[x * 4 + 2] = s3[x * 3 + 2]; d4[x * 4 + 3] = 255; }
+        }
+    } else if (m->look == PORTCFG_VID_ORIGINAL) {
         for (y = 0; y < m->height; y++) {
             uint8_t *row = (uint8_t *)buffer + (size_t)y * (size_t)pitch;
             for (x = 0; x < m->width; x++) {
@@ -345,6 +378,7 @@ done:
     drop_texture(&m);
     vidfx_free(m.filter);
     free(m.doubled);
+    free(m.rgb);
     smk_close(m.decoder);
     SDL_free(file_data);
     if (saved) {

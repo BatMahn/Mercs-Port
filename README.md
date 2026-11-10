@@ -7,7 +7,7 @@ folder").
 
 The program is `mercs`.
 
-## Status (2026-11-09, v0.1.4)
+## Status (2026-11-10, v0.1.5)
 A development release. The single-player game runs from the original menus through missions and back:
 
 - **Shell:** the original menus and career, from the arrival sequence and pilot registration to the Office, contracts
@@ -33,7 +33,7 @@ The DOS game is the reference for all behaviour. The 3dfx and Titanium editions 
 - The full career has not been played from start to finish.
 - The port has not yet been compared side by side with the original running in DOSBox the way its sister ports have;
   expect differences in AI, combat and the DOS look until it is.
-- Windows has only been cross-built, never run. macOS (Metal) builds and plays; Linux (Vulkan) runs the tests.
+- Windows has been run only under Wine (Vulkan), not yet on Windows hardware. macOS (Metal) builds and plays; Linux (Vulkan) runs the tests.
 - MercNet multiplayer is not implemented.
 
 See [CHANGELOG.md](CHANGELOG.md) for what changed and [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for what is still open.
@@ -43,7 +43,7 @@ The game draws through SDL3's GPU API. There is no OpenGL renderer.
 
 | System | Graphics | Minimum |
 |---|---|---|
-| Windows 10 / 11 (64-bit) | Direct3D 12 (default) or Vulkan, the other one tried if the chosen one can't start | Direct3D 12 feature level 11_0, or Vulkan 1.0 |
+| Windows 10 / 11 (64-bit) | Direct3D 12 (default) or Vulkan, the other one tried if the chosen one can't start or can't build its shaders | Direct3D 12 feature level 11_0, or Vulkan 1.0 |
 | Linux (64-bit) | Vulkan | Vulkan 1.0 with a driver and the loader (`libvulkan1` / `vulkan-loader`) |
 | macOS | Metal | Apple Silicon or a Metal-capable Intel Mac |
 

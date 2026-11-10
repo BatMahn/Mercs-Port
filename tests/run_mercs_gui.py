@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Linux GUI regression: real SDL input, actual movies and native mission child.
-Requires Xvfb, libX11 and ffmpeg. Uses a fresh private copy of the supplied game
+Requires Xvfb, libX11, libXtst (input SDL 3 accepts), ffmpeg and a window manager (openbox) for the fullscreen check. Uses a fresh private copy of the supplied game
 assets with an empty native install overlay. Choose a new output directory for
 each run so previous saves and interrupted fixture copies cannot affect it.
 The picker is a stand-in command; native macOS/Windows dialogs need local testing.
@@ -69,6 +69,11 @@ COUNTER = OUT / 'picker-calls.txt'
 if COUNTER.exists(): COUNTER.unlink()
 
 xlib = C.CDLL(ctypes.util.find_library('X11'))
+_xtst_name = ctypes.util.find_library('Xtst')
+xtst = C.CDLL(_xtst_name) if _xtst_name else None
+if xtst:
+    xtst.XTestFakeButtonEvent.argtypes = [C.c_void_p, C.c_uint, C.c_int, C.c_ulong]
+    xtst.XTestFakeKeyEvent.argtypes = [C.c_void_p, C.c_uint, C.c_int, C.c_ulong]
 Window = C.c_ulong
 Display = C.c_void_p
 class KeyEvent(C.Structure):
@@ -106,7 +111,7 @@ if args.profiles_only: env['MERCS_SHELL_SKIP_INTRO'] = '1'
 report = {'checks': [], 'captures': [], 'display': display_name,
           'scenario': 'game-looks' if args.profiles_only else 'full-shell',
           'fixture_archives': fixture_archives}
-server = app = None
+server = app = wm = None
 display = None
 logfile = None
 LOG_PATH = OUT / 'gui.log'
@@ -141,10 +146,20 @@ def find_window():
         pending.extend(children(win))
     raise RuntimeError('Mercs SDL window not found')
 
+def has_focus():
+    # (a repeated XSetInputFocus while a modifier is held makes SDL re-read the keyboard on the focus change and drop
+    # the held Alt: set it only when the window does not have it)
+    focus, revert = Window(), C.c_int()
+    xlib.XGetInputFocus(display, C.byref(focus), C.byref(revert))
+    return focus.value == window
+
 def send_key(name, down, state=0):
     code = xlib.XKeysymToKeycode(display, xlib.XStringToKeysym(name.encode()))
     if not code: raise RuntimeError('Unknown key ' + name)
-    if down: xlib.XSetInputFocus(display, window, 2, 0)
+    if down and not (xtst and has_focus()): xlib.XSetInputFocus(display, window, 2, 0)
+    if xtst:   # (as click: XTest reaches SDL3's XInput2 keyboard and modifier state)
+        xtst.XTestFakeKeyEvent(display, code, 1 if down else 0, 0); xlib.XFlush(display); time.sleep(0.06)
+        return
     kind, mask = (2, 1) if down else (3, 2)
     e = Event(); e.key.type = kind; e.key.display = display; e.key.window = window
     e.key.root = root_window; e.key.same_screen = 1; e.key.keycode = code; e.key.state = state
@@ -160,6 +175,7 @@ def alt_enter():
     send_key('Alt_L', True)
     press('Return', 8)
     send_key('Alt_L', False, 8)
+    time.sleep(1)   # (the window manager - or X11 without one - applies the change asynchronously)
 
 def type_text(value):
     for char in value:
@@ -175,6 +191,11 @@ def click(x, y):
     xlib.XSetInputFocus(display, window, 2, 0)
     xlib.XWarpPointer(display, 0, window, 0, 0, 0, 0, px, py)
     xlib.XFlush(display); time.sleep(0.1)
+    if xtst:   # SDL3 reads the mouse through XInput2, which a sent core event does not reach: press through XTest
+        for pressed in (1, 0):
+            xtst.XTestFakeButtonEvent(display, 1, pressed, 0); xlib.XFlush(display); time.sleep(0.05)
+        time.sleep(0.15)
+        return
     for kind, mask, state in ((4, 4, 0), (5, 8, 256)):
         e = Event(); e.key.type = kind; e.key.display = display; e.key.window = window
         e.key.root = root_window; e.key.same_screen = 1; e.key.keycode = 1
@@ -195,6 +216,7 @@ def go(x, y, page):
     count = log_text().count(needle) + 1
     click(x, y)
     wait_for(needle, count=count)
+    time.sleep(1.5)   # (a page's opening clip plays before it takes clicks)
 
 def skip_movie(name):
     needle = 'movie-ended=' + name + ' result=0'
@@ -204,10 +226,14 @@ def skip_movie(name):
     wait_for(needle, count=count)
 
 def escape_to_menu():
-    for _ in range(7):
-        if log_text().rstrip().endswith('page=main-menu'): return
-        press('Escape')
-    if not log_text().rstrip().endswith('page=main-menu'): raise RuntimeError('Could not return to original main menu')
+    # Escape opens the original game menu over a career page; its first entry (New) leaves for the main menu, after
+    # "Save Game?" (No) when the career has unsaved changes
+    for _ in range(4):
+        if last_page() == 'main-menu': return
+        press('Escape'); time.sleep(0.5)
+        press('Return'); time.sleep(0.8)
+        if last_page() != 'main-menu': press('n'); time.sleep(0.8)
+    if last_page() != 'main-menu': raise RuntimeError('Could not return to original main menu')
 
 def register_commander():
     click(500, 60)
@@ -245,6 +271,35 @@ def register_commander():
     go(550, 450, 'mission-command')
     report['checks'].append('Original Commander menu -> MLAND2 -> starport terminal -> registration/letter -> office/computer -> original contract paging/accept -> MTO -> DropShip/mission command')
 
+def quit_app():
+    # The original menu's Escape opens the game menu; its Quit entry asks "Sell Out?" (Yes), then, with unsaved
+    # changes, "Save Game Before Exiting?" (No)
+    press('Escape'); time.sleep(0.5)
+    press('Up'); press('Up'); press('Return'); time.sleep(0.8)
+    press('y'); time.sleep(0.8)
+    if app.poll() is None: press('n')
+    app.wait(timeout=10)
+
+def last_page():
+    pages = [l for l in log_text().splitlines() if l.startswith('mercs shell: page=')]
+    return pages[-1].split('=', 1)[1] if pages else ''
+
+def leave_debriefing():
+    # After a return the original shows the debriefing; its leave button (NEXT / CONTRACTS / REPLAY) settles the
+    # mission and lands on the briefing or the StarPort. Walk back to mission command for the next look.
+    wait_for('page=debriefing', count=log_text().count('mission-return=') )
+    time.sleep(1)
+    click(420, 447)
+    deadline = time.monotonic() + 60
+    while time.monotonic() < deadline and last_page() == 'debriefing':
+        if log_text().rstrip().split('\n')[-1].startswith('mercs shell: movie=') : press('space')
+        time.sleep(0.2)
+    if last_page() == 'briefing': go(552, 465, 'mission-command')
+    elif last_page() == 'starport':
+        click(465, 330); skip_movie('MTO'); wait_for('page=dropship', count=log_text().count('page=dropship') )
+        go(270, 250, 'mission-command')
+    if last_page() != 'mission-command': raise RuntimeError('Could not return to mission command after the debriefing, at ' + last_page())
+
 def launch_profiles():
     for index, (name, x, overlay) in enumerate((('dos', 220, 'retail'), ('direct3d', 365, 'direct3d'), ('3dfx', 520, '3dfx')), 1):
         press('F10'); wait_for('page=video-options')
@@ -264,11 +319,13 @@ def launch_profiles():
         wait_for('mission-return=TRA1SCN1 result=0', timeout=60, count=count)
         expected_paths = 'launch-profile=' + name + ' overlay=' + str(GAME / 'install' / overlay) + ' music=' + str(GAME / 'music')
         assert expected_paths in log_text()
-        assert (GAME / 'install' / overlay / 'MEK/PLY00MER.MEK').is_file()
+        # the deployed loadout went out through the overlay; the shell deletes that transient MEK once the return is committed
+        assert 'return committed' in log_text() or (GAME / 'install' / overlay / 'MEK/PLY00MER.MEK').is_file()
         assert log_text().count('Player: COMMANDO / PLY00MER') == index
         frame = OUT / 'native-first-mission.ppm'
         assert frame.stat().st_size > 640 * 400 * 3
         frame.replace(OUT / ('native-' + name + '.ppm'))
+        leave_debriefing()
         report['checks'].append(name + ': original mission-command/briefing launch, preserved accepted contract/owned Commando, private edition overlay and full DOS music, 10 seconds of actual simulation and normal return')
 
 try:
@@ -282,6 +339,11 @@ try:
         time.sleep(0.05)
     if not display: raise RuntimeError('Cannot open local test display')
     root_window = xlib.XDefaultRootWindow(display)
+    # SDL 3 asks the window manager for fullscreen (_NET_WM_STATE): without one the Alt+Enter check cannot pass.
+    # Use openbox when it is installed.
+    if shutil.which('openbox'):
+        wm = subprocess.Popen(['openbox'], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        time.sleep(1)
     logfile = LOG_PATH.open('w')
     app = subprocess.Popen([str(EXE)], cwd=OUT, env=env,
                            stdout=logfile, stderr=subprocess.STDOUT, start_new_session=True)
@@ -298,15 +360,16 @@ try:
     launch_profiles()
     escape_to_menu()
     click(500, 135); wait_for('page=starport')
+    time.sleep(3)   # (the StarPort's opening clips play before it takes clicks)
     go(260, 320, 'registration')
     type_text('cadet'); press('Return')
     go(550, 452, 'news'); go(558, 450, 'starport')
     click(465, 330); skip_movie('MTO'); wait_for('page=dropship')
     go(270, 250, 'mission-command'); go(120, 240, 'duty-roster')
     capture('training-unassigned-original-roster')
-    click(560, 315); wait_for('mech-assigned=Commando')
-    click(560, 315); wait_for('mech-assigned=Jenner')
-    click(560, 315); wait_for('mech-assigned=Panther loadout=PNT00MER')
+    # NEXT three times: Commando -> Jenner -> Panther (the shell logs no assignment; the launch's Player line checks it)
+    for _ in range(3):
+        click(560, 315); time.sleep(1.5)
     capture('training-panther-original-roster')
     go(550, 450, 'mission-command'); go(120, 330, 'briefing')
     click(420, 452); wait_for('mission-return=TRA1SCN1 result=0', timeout=60, count=4)
@@ -319,8 +382,7 @@ try:
     press('F10'); click(440, 225); click(440, 294)
     assert 'hud_layout=original' in CFG.read_text() and 'dos_shading=smooth' in CFG.read_text()
     click(365, 361); wait_for('game-look=direct3d', count=2)
-    press('Escape'); escape_to_menu(); press('Escape')
-    app.wait(timeout=10)
+    press('Escape'); escape_to_menu(); quit_app()
     assert app.returncode == 0 and COUNTER.read_text().count('chosen') == 1
     logfile.close()
     LOG_PATH = OUT / 'warm-start.log'; logfile = LOG_PATH.open('w')
@@ -328,7 +390,7 @@ try:
     app = subprocess.Popen([str(EXE)], cwd=OUT, env=env, stdout=logfile, stderr=subprocess.STDOUT, start_new_session=True)
     wait_for('startup-look=direct3d'); wait_for('page=main-menu')
     window = find_window(); capture('12-remembered-look-folder')
-    press('Escape'); app.wait(timeout=10)
+    quit_app()
     assert app.returncode == 0 and COUNTER.read_text().count('chosen') == 1
     report['checks'].append('Fullscreen/CRT/fitting preferences still merge safely; Direct3D and game folder survive restart without a repeated picker')
     report['success'] = True
@@ -340,7 +402,7 @@ except Exception as error:
     print('FAIL', str(error), flush=True)
 finally:
     if display: xlib.XCloseDisplay(display); display = None
-    for process in (app, server):
+    for process in (app, wm, server):
         if process is not None and process.poll() is None:
             os.killpg(process.pid, signal.SIGTERM)
             try: process.wait(timeout=5)

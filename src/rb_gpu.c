@@ -88,6 +88,7 @@ static SDL_GPUShaderFormat g_fmt;
 static char g_devname[256];
 static SDL_GPUTextureFormat g_depth_fmt = SDL_GPU_TEXTUREFORMAT_INVALID;
 static SDL_GPUShader *g_sh[RB_SH_COUNT];
+static int g_probe;   /* rb_init's trial of a backend: a shader or pipeline that fails returns NULL instead of ending */
 static rtex *g_tex;
 static int g_ntex, g_captex;
 static rbuf *g_buf;
@@ -246,6 +247,37 @@ static SDL_PropertiesID device_props(int b)
     return p;
 }
 
+/* the depth buffer: 24 bits as the OpenGL renderer had (Apple GPUs have none: 32-bit float) */
+static void pick_depth_format(void)
+{
+    static const SDL_GPUTextureFormat DF[] = {SDL_GPU_TEXTUREFORMAT_D24_UNORM_S8_UINT, SDL_GPU_TEXTUREFORMAT_D24_UNORM,
+                                              SDL_GPU_TEXTUREFORMAT_D32_FLOAT, SDL_GPU_TEXTUREFORMAT_D32_FLOAT_S8_UINT};
+    int k;
+    g_depth_fmt = SDL_GPU_TEXTUREFORMAT_INVALID;
+    for (k = 0; k < 4 && g_depth_fmt == SDL_GPU_TEXTUREFORMAT_INVALID; k++)
+        if (SDL_GPUTextureSupportsFormat(g_dev, DF[k], SDL_GPU_TEXTURETYPE_2D, SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET)) g_depth_fmt = DF[k];
+}
+static SDL_GPUGraphicsPipeline *pipeline(int prog, int has_depth, int samples, int cmask, SDL_GPUTextureFormat cfmt);
+/* Build every program's pipeline once on a new device: a driver that takes the device but cannot compile the shaders
+ * (seen with Direct3D 12 through Wine's vkd3d; possible with old Direct3D 12 drivers) is then passed over for the
+ * next backend at the start, rather than ending the game at its first draw. 0 when all build */
+static int probe_programs(void)
+{
+    int prog, ok = 1, k;
+    g_probe = 1;
+    memset(&S, 0, sizeof S);
+    S.dtest = 0; S.dwrite = 1; S.dfunc = RB_LESS;
+    for (prog = 0; prog <= PROG_CLEAR && ok; prog++)
+        if (!pipeline(prog, g_depth_fmt != SDL_GPU_TEXTUREFORMAT_INVALID, 1, 15, COLOR_FMT)) ok = 0;
+    g_probe = 0;
+    if (ok) return 0;
+    for (k = 0; k < g_npipes; k++) if (g_pipes[k].p) SDL_ReleaseGPUGraphicsPipeline(g_dev, g_pipes[k].p);
+    for (k = 0; k < RB_SH_COUNT; k++) if (g_sh[k]) SDL_ReleaseGPUShader(g_dev, g_sh[k]);
+    g_npipes = 0;
+    memset(g_sh, 0, sizeof g_sh);
+    return -1;
+}
+
 int rb_init(SDL_Window *win, int pref, int samples, char *err, size_t errn)
 {
     int order[3], n, k;
@@ -269,10 +301,20 @@ int rb_init(SDL_Window *win, int pref, int samples, char *err, size_t errn)
             continue;
         }
         g_backend = order[k];
+        g_fmt = g_backend == RB_GPU_D3D12 ? SDL_GPU_SHADERFORMAT_DXIL : g_backend == RB_GPU_VULKAN ? SDL_GPU_SHADERFORMAT_SPIRV : SDL_GPU_SHADERFORMAT_MSL;
+        pick_depth_format();
+        if (k + 1 < n && probe_programs() != 0) {   /* another backend to try: this one cannot build the shaders */
+            if (err && errn) { size_t at = strlen(err); SDL_snprintf(err + at, errn - at, "%s%s (shaders): %s", at ? "; " : "", backend_sdl_name(order[k]), SDL_GetError()); }
+            fprintf(stderr, "gpu: %s cannot build the shaders; trying %s\n", backend_sdl_name(order[k]), backend_sdl_name(order[k + 1]));
+            if (win) SDL_ReleaseWindowFromGPUDevice(g_dev, win);
+            SDL_DestroyGPUDevice(g_dev);
+            g_dev = NULL;
+            g_depth_fmt = SDL_GPU_TEXTUREFORMAT_INVALID;
+            continue;
+        }
     }
     if (!g_dev) return -1;
     g_win = win;
-    g_fmt = g_backend == RB_GPU_D3D12 ? SDL_GPU_SHADERFORMAT_DXIL : g_backend == RB_GPU_VULKAN ? SDL_GPU_SHADERFORMAT_SPIRV : SDL_GPU_SHADERFORMAT_MSL;
 #if SDL_VERSION_ATLEAST(3, 4, 0)
     {   /* the GPU and its driver (SDL 3.4) */
         SDL_PropertiesID dp = SDL_GetGPUDeviceProperties(g_dev);
@@ -284,12 +326,6 @@ int rb_init(SDL_Window *win, int pref, int samples, char *err, size_t errn)
 #else
     SDL_snprintf(g_devname, sizeof g_devname, "SDL %s driver", SDL_GetGPUDeviceDriver(g_dev));
 #endif
-    {   /* the depth buffer: 24 bits as the OpenGL renderer had (Apple GPUs have none: 32-bit float) */
-        static const SDL_GPUTextureFormat DF[] = {SDL_GPU_TEXTUREFORMAT_D24_UNORM_S8_UINT, SDL_GPU_TEXTUREFORMAT_D24_UNORM,
-                                                  SDL_GPU_TEXTUREFORMAT_D32_FLOAT, SDL_GPU_TEXTUREFORMAT_D32_FLOAT_S8_UINT};
-        for (k = 0; k < 4 && g_depth_fmt == SDL_GPU_TEXTUREFORMAT_INVALID; k++)
-            if (SDL_GPUTextureSupportsFormat(g_dev, DF[k], SDL_GPU_TEXTURETYPE_2D, SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET)) g_depth_fmt = DF[k];
-    }
     if (win) {   /* vsync, as the OpenGL renderer's swap interval 1; with no display (SDL's offscreen video driver: the tests)
                   * nothing to wait for - frames as fast as the GPU makes them, as its OpenGL contexts did */
         const char *vd = SDL_GetCurrentVideoDriver();
@@ -362,7 +398,7 @@ static SDL_GPUShader *shader(int i)
     else if (g_fmt == SDL_GPU_SHADERFORMAT_DXIL) { ci.code = b->dxil; ci.code_size = b->dxil_size; ci.entrypoint = "main"; }
     else { ci.code = (const Uint8 *)b->msl; ci.code_size = b->msl_size; ci.entrypoint = "main0"; }
     g_sh[i] = SDL_CreateGPUShader(g_dev, &ci);
-    if (!g_sh[i]) { fprintf(stderr, "rb: shader %s: %s\n", b->name, SDL_GetError()); exit(1); }
+    if (!g_sh[i]) { fprintf(stderr, "rb: shader %s: %s\n", b->name, SDL_GetError()); if (g_probe) return NULL; exit(1); }
     return g_sh[i];
 }
 
@@ -393,6 +429,7 @@ static SDL_GPUGraphicsPipeline *pipeline(int prog, int has_depth, int samples, i
     memset(&ctd, 0, sizeof ctd);
     pi.vertex_shader = shader(PROG_VS[prog]);
     pi.fragment_shader = shader(PROG_FS[prog]);
+    if (!pi.vertex_shader || !pi.fragment_shader) return NULL;   /* (g_probe only) */
     for (k = 0; k < PROG_NV[prog]; k++) { vbd[k].slot = (Uint32)k; vbd[k].pitch = PROG_STRIDE[prog][k]; vbd[k].input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX; }
     if (prog == RB_PROG_PARTICLE) {
         va[0].location = 0; va[0].buffer_slot = 0; va[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4; va[0].offset = 0;
@@ -441,7 +478,7 @@ static SDL_GPUGraphicsPipeline *pipeline(int prog, int has_depth, int samples, i
     e->prog = prog; e->blend = blend; e->dtest = dtest; e->dwrite = dwrite; e->dfunc = dtest ? dfunc : 0; e->bias = bias;
     e->slope = bias ? S.slope : 0; e->units = bias ? S.units : 0; e->cmask = cmask & 15; e->samples = samples; e->dfmt = dfmt; e->cfmt = cfmt;
     e->p = SDL_CreateGPUGraphicsPipeline(g_dev, &pi);
-    if (!e->p) { fprintf(stderr, "rb: pipeline (program %d): %s\n", prog, SDL_GetError()); exit(1); }
+    if (!e->p) { fprintf(stderr, "rb: pipeline (program %d): %s\n", prog, SDL_GetError()); if (g_probe) return NULL; exit(1); }
     g_npipes++;
     return e->p;
 }

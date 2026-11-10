@@ -1,5 +1,28 @@
 # Mercenaries development history
 
+## v0.1.5: Windows run under Wine; shell artwork and movies on Vulkan; GPU fallback; GUI test — 2026-11-10
+
+The Windows build was run for the first time (Wine 9, Mesa's software Vulkan driver, Xvfb): the shell from the intro
+movie through registration, the letter, the DropShip, the Duty Roster and a launched career mission with its abort
+and debriefing, and Instant Action out and back. A direct mission frame is pixel-identical to the Linux build's.
+Fixed:
+
+- **The shell would not start on SDL's Vulkan renderer** ("The Mercenaries registration or mission artwork could not
+  be decoded"). Its backgrounds were 24-bit textures, a format SDL's Vulkan renderer does not have. They are 32-bit
+  now. The movies had the same format: they now fall back to a 32-bit texture, filled from the same 24-bit frame,
+  when the renderer has no 24-bit one.
+- **A Direct3D 12 device that cannot build the shaders ended the game** at its first draw ("Could not create graphics
+  pipeline state"). Every program's pipeline is now built once when the device is created; if that fails the next
+  backend (Vulkan) is tried, and the game says so on the console. Seen with Wine's vkd3d; a broken Direct3D 12 driver
+  on real Windows would be stepped over the same way.
+
+The Linux GUI test (tests/run_mercs_gui.py) passes again, full and --profiles-only. SDL 3 reads input through
+XInput2, which events sent with XSendEvent do not reach, so it now presses keys and the mouse through XTest; it starts
+openbox when installed (SDL 3 asks the window manager for fullscreen); it waits out each page's opening clip before
+clicking; and it follows the shell as it is now - the debriefing after each return, the game menu's New and Quit
+(Escape no longer leaves a page or the game by itself), the returned transient MEK deleted after the return is
+committed, and the Duty Roster checked through the launched mission's player line.
+
 ## v0.1.4: external camera glide; mission-opening differences explained — 2026-11-09
 
 - **External camera on DOU1.** For its first two seconds after `c` the port's camera climbed 50 m and back, through
