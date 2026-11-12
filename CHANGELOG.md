@@ -1,5 +1,10 @@
 # Mercenaries development history
 
+## v1.2.1: README - Titanium files for the Salvage Yard — 2026-11-12
+
+- The README's game-folder section now lists the extra Titanium disc files dynamic salvage needs
+  (`titanium/DATABASE.MW2` and `titanium/SMK/`) and what happens without them.
+
 ## v1.2.0: Salvage follow-ups, DOS light levels, damage outlines, AI traces — 2026-11-12
 
 - **Damaged salvaged items behave as in Titanium** (its arms dealer and Mech Lab): they can't be installed until

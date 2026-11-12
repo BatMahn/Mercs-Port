@@ -7,7 +7,7 @@ folder").
 
 The program is `mercs`.
 
-## Status (2026-11-12, v1.2.0)
+## Status (2026-11-12, v1.2.1)
 A development release. The single-player game runs from the original menus through missions and back:
 
 - **Shell:** the original menus and career, from the arrival sequence and pilot registration to the Office, contracts
@@ -26,7 +26,8 @@ A development release. The single-player game runs from the original menus throu
 - **Sound:** the original's menu and mission audio, and the disc's CD audio as the music from your own rips.
 - **Controls:** keyboard, mouse and joystick, set up in the original Cockpit Controls screens.
 
-The DOS game is the reference for all behaviour. The 3dfx and Titanium editions contribute looks only.
+The DOS game is the reference for all behaviour. The 3dfx and Titanium editions contribute looks, plus Titanium's
+optional Salvage Yard (dynamic salvage) and its damaged-item repairs.
 
 **Not yet done or not yet checked:**
 
@@ -72,10 +73,18 @@ part of this repository.
       music/      optional - the disc's CD audio, Track02..Track22 (FLAC, MP3 or WAV)
       3d/         optional - models.prj and skygnd.par from the Mercenaries 3dfx disc's MERCS\MW2.PRJ / SKYGND.PAR
       titanium/   optional - MW2.PRJ, SKYGND.PAR, particle.PID from the Titanium disc's INSTALL\16BIT\
+        DATABASE.MW2  optional - also from INSTALL\16BIT\; with SMK\ below, for the Salvage Yard
+        SMK\          optional - every file from the Titanium disc's INSTALL\DATA\SMK\ (*.SHP) and SMK\ (*.SMK)
 
 Use files from MechWarrior 2: Mercenaries only; files from the base game or Ghost Bear's Legacy belong to different
 games even where the names match. Keep the retail `MERCS\MW2SHELL.EXE` and `RMG\` in `cd/`: the generated contracts
 and Instant Action read them as data (the port never runs the old executable).
+
+**Dynamic salvage (the Salvage Yard)** is Titanium's: after a won contract you strip the mechs you destroyed for parts
+or recover whole chassis. It uses Titanium's own shell art, so it needs two more things from the **Titanium disc** in
+`titanium/`: `DATABASE.MW2` (from `INSTALL\16BIT\`) and an `SMK\` folder holding every file from the disc's
+`INSTALL\DATA\SMK\` and `SMK\` folders. Without them the debrief has no Salvage button and the contract's own salvage
+list is used, as in the DOS game. F10 -> Salvage chooses when it is used (Auto: with the Titanium look only).
 
 **See [FOLDER_SETUP.md](FOLDER_SETUP.md) for the details:** copying the disc or a BIN/CUE image (`make cdrip`),
 ripping the music, save locations and the common mistakes.
