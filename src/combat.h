@@ -263,6 +263,15 @@ void combat_damage_at(combat_unit *t, float dmg, int loc, unsigned *rng);   /* M
  * silent critical removal and original head/leg RNG guards. CRACK_MODE calls
  * this on location8. This is a forced loss request, not an armor damage hit. */
 void combat_destroy_location(combat_unit *t, int loc, unsigned *rng);
+/* A location's damage level 0-15 (loc 0-7), the value both Mercs engines
+ * give the damage outline and the mech's location pieces (DOS 0x3af08 /
+ * 0x303ec, Windows 0x100117f2 / 0x100065c4): per side,
+ * 15 - 3 x (armour / the unit's armour factor + structure) / baseline, where
+ * the baseline is the location's condition nibble ((MEK armour + structure)
+ * / 5, low nibble front, high nibble rear), 16.16 integer arithmetic,
+ * clamped 0-15; the larger of front and rear. Structure counts, so an
+ * armourless location with its structure whole is still yellow. */
+int combat_loc_level(const combat_unit *u, int loc);
 /* Mercs severed-leg controller (DOS319cd / Windows100205fd). Begin takes
  * one original signed Gaussian-table value. Frame returns bit1 ground
  * rotation/translation, bit2 airborne recovery, bit4 first ground impact.

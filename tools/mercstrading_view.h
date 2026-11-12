@@ -9,7 +9,7 @@
 #include "mek.h"
 
 enum { MERCS_TRADING_NONE,MERCS_TRADING_EXIT,MERCS_TRADING_CATEGORY,
-       MERCS_TRADING_SELECT,MERCS_TRADING_BUY,MERCS_TRADING_SELL };
+       MERCS_TRADING_SELECT,MERCS_TRADING_BUY,MERCS_TRADING_SELL,MERCS_TRADING_REPAIR };
 typedef struct mercs_trading_view {
     int category,side,restart,scroll[2];
     size_t selected,count[2];
@@ -69,6 +69,14 @@ static inline int mercs_trading_view_transaction(const mercs_trading_view *v,int
     if(index)*index=v->groups[buy][v->selected].first_index;
     return 0;
 }
+/* Damaged salvage in the inventory: Titanium's Repair button (Armsdlr.cpp:
+ * "repair" at 80,430, hotspot 80..165 x 430..455) appears with it. */
+static inline int mtv_damaged(const mercs_trading_view *v)
+{
+    size_t r;
+    for(r=0;r<v->count[0];r++)if(v->groups[0][r].damaged)return 1;
+    return 0;
+}
 static inline void mercs_trading_view_draw(mercs_trading_view *v,mercs_art *a,const mercs_save_state *s)
 {
     static const char *const movies[5]={"amissle","alaser","aproj","aequipt","aammo"};
@@ -83,6 +91,7 @@ static inline void mercs_trading_view_draw(mercs_trading_view *v,mercs_art *a,co
     for(i=0;i<5;i++)mercs_art_button(a,buttons[i],buttonx[i],12,i==cat);
     mercs_art_button(a,"baexit",497,440,0);mercs_art_button(a,"babuy",291,382,0);
     mercs_art_button(a,"basell",496,382,0);mev_funds(a,s);
+    if(mtv_damaged(v))mercs_art_button(a,"repair",80,430,0);
     if(h<=0)return;
     for(side=0;side<2;side++){
         int x=side?252:459,center=side?327:531;const char *qty=cat==4?"Tons":"Qty";
@@ -96,9 +105,13 @@ static inline void mercs_trading_view_draw(mercs_trading_view *v,mercs_art *a,co
             const mercs_item_group *row=&v->groups[side][r];char name[64],count[24],amount[24];
             int y=90+5*h+(int)(r-(size_t)v->scroll[side])*h,ink=v->side==side&&v->selected==r?17:22;
             if(y+h>373)break;
-            snprintf(count,sizeof count,"%lu",(unsigned long)row->count);mev_money(row->price,amount);
+            snprintf(count,sizeof count,row->damaged?"%lu /":"%lu",(unsigned long)(row->count-row->damaged));mev_money(row->price,amount);
             mercs_art_text(a,10,x,y,mtv_item_name(row,name),ink);
             mercs_art_text(a,10,x+100-mercs_art_width(a,10,count),y,count,ink);
+            if(row->damaged){   /* Titanium's damaged column, in its damage ink */
+                char dmg[24];snprintf(dmg,sizeof dmg,"%lu",(unsigned long)row->damaged);
+                mercs_art_text(a,10,x+101,y,dmg,143);
+            }
             mercs_art_text(a,10,x+160-mercs_art_width(a,10,amount),y,amount,ink);
         }
     }
@@ -111,6 +124,7 @@ static inline int mercs_trading_view_hit(const mercs_trading_view *v,mercs_art *
     if(mev_inside(x,y,502,432,603,473))return MERCS_TRADING_EXIT;
     if(mev_inside(x,y,285,380,382,413))return MERCS_TRADING_BUY;
     if(mev_inside(x,y,487,380,586,413))return MERCS_TRADING_SELL;
+    if(mtv_damaged(v)&&mev_inside(x,y,80,430,165,455))return MERCS_TRADING_REPAIR;
     for(i=0;i<5;i++)if(mev_inside(x,y,bounds[i][0],13,bounds[i][1],38)){
         if(value)*value=i;
         return MERCS_TRADING_CATEGORY;

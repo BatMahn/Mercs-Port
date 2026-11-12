@@ -1,5 +1,28 @@
 # Mercenaries development history
 
+## v1.2.0: Salvage follow-ups, DOS light levels, damage outlines, AI traces — 2026-11-12
+
+- **Damaged salvaged items behave as in Titanium** (its arms dealer and Mech Lab): they can't be installed until
+  repaired, they sell for 15% of their value and are scrapped, and the dealer's Repair button (Titanium's) fixes them
+  for 15%. Items without the damaged mark keep their DOS prices. The trading list shows the damaged count.
+- **A career saved during the debrief keeps its Salvage Yard wrecks** when loaded again (stored beside the native save;
+  the original save bytes and `mersaveN.sav` exports are unchanged). The ammunition type of a salvaged bin is now
+  traced from Titanium's code.
+- **Damage outlines grade locations as DOS and Mercs for Windows do:** remaining structure counts as well as armour
+  against the location's baseline, so a location no longer turns yellow on its first hit or red as soon as its armour
+  is gone. The target viewer, target outline and mech damage shading use the same levels. Damage itself was compared
+  hit by hit with DOS (about 1,400 hits in GRA1) and already matched.
+- **DOS look light levels:** polygons are now cut to the screen edges the way DOS does before their light and dither
+  are worked out (MW2.EXE 0x7fe9c), and corners made at the near plane use DOS's integer maths (0x4cd65). On DOSBox
+  level maps, pixels at DOS's exact level rose from 85% to 92% on LUT1, 74% to 97% on BET3 and 82% to 88% on MED1;
+  the 44-mission sweep's summed difference 217.80 -> 217.04.
+- **AI traced in DOSBox:** GRA1's Catapult and Hunchback stay powered down for the whole mission in DOS as in the port
+  (the earlier report was wrong; the Crab does the killing in both, within DOS's run-to-run spread). In TRA1 the
+  friendly star matches DOS; the instructor Catapult climbs a dune on the way to Nav Delta in DOS but sticks on its
+  45-degree face in the port (open, see KNOWN_ISSUES).
+- The accelerated looks' near plane is now documented exactly (Titanium: half the view width x 0.5 + 1, 161 cm at
+  640 x 480; cockpit 8); the port keeps its own value.
+
 ## v1.1.0: Titanium's dynamic salvage - the Salvage Yard — 2026-11-11
 
 Mercenaries Titanium salvages what you actually destroyed; the DOS and retail Windows games salvage only from each

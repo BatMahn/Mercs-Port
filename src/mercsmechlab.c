@@ -149,7 +149,9 @@ static int stock(mercs_mechlab_session *s,unsigned type,int id,int consume)
     if(mode(s)==2)return 0;
     for(i=0;i<n;i++){
         const uint8_t *p=mercs_save_list_record(s->document,list,i);
-        if(p[8]==type&&r(p,0)==id)
+        /* Titanium 0x10049802 installs only stock without the salvage
+         * damage mark; DOS rows never carry it */
+        if(p[8]==type&&r(p,0)==id&&(p[8]==1||r(p,0x16)!=1))
             return consume&&mode(s)==1?list_remove(s->document,list,i):0;
     }
     return MERCS_MECHLAB_NO_ITEM;

@@ -25,6 +25,13 @@ enum mercs_personnel_kind { MERCS_PERSONNEL_MECHWARRIOR, MERCS_PERSONNEL_AEROTEC
 int mercs_economy_item_price(const uint8_t item[MERCS_SAVE_ITEM_BYTES], int buy,
                             int32_t *price);
 int mercs_economy_trade_item(mercs_save_state *state, int ammo, int buy, size_t index);
+/* Titanium's salvage damage mark on an owned row (+0x16 == 1, not ammunition).
+ * Selling an item with a damaged copy owned sells that copy for (int)(value
+ * x 0.15f) and scraps it (Titanium Armsdlr.cpp 0x100050fb); repair clears the
+ * mark of the item's damaged copy for the same amount (0x10004fff). Repair
+ * returns MERCS_ECONOMY_EMPTY when no copy is damaged. */
+int mercs_economy_item_damaged(const uint8_t item[MERCS_SAVE_ITEM_BYTES]);
+int mercs_economy_repair_item(mercs_save_state *state, int ammo, size_t index);
 
 /* DOS0x4e3c1/0x4e673 whole-mech factory. Prices include current damage,
  * equipment and original depreciation. Buying allocates the next career ID
@@ -48,6 +55,7 @@ typedef struct mercs_item_group {
     int32_t id, price;
     size_t first_index, count;
     unsigned type;
+    size_t damaged;   /* of count: rows with Titanium's salvage damage mark */
 } mercs_item_group;
 /* DOS0x5aed8 category jump table, DOS0x27ab8 grouped trading rows. Group
  * preparation is read-only: unlike the old pointer-list scratch flags it

@@ -157,12 +157,12 @@ static void mercs_mfd_draw_one(int slot, int w, int h)
                  * the side torsos' lower edges - are drawn; the port had drawn the regions alone) */
                 hud_draw(g_hud, &g_hs_dmg_lvl[0], dx, dy, NULL);
                 for (q = 0; q < 15; q++) {
-                    int loc = REG_LOC[q] - 1, lf = 0, lr = 0, lv, pick;
+                    int loc = REG_LOC[q] - 1, lv, pick;
                     const int *rg = g_dmg_regions[q];
                     if (rg[2] <= 0 || rg[3] <= 0) continue;
-                    if (pu->armor_max[loc] > 0) lf = 15 - 15 * (int)pu->armor[loc] / pu->armor_max[loc];
-                    if (pu->rear_max[loc] > 0) lr = 15 - 15 * (int)pu->rear[loc] / pu->rear_max[loc];
-                    lv = lf > lr ? lf : lr;
+                    /* DOS 0x3af08 / Windows 0x100117f2: 15 - 3 x (armour / 4 + structure) / the condition baseline -
+                     * the port had graded armour lost alone, turning a location yellow on its first hit */
+                    lv = combat_loc_level(pu, loc);
                     pick = pu->loc_gone[loc] ? 3 : lv <= 0 ? 0 : lv < 12 ? 1 : 2;
                     if (pick == 0) continue;
                     hud_draw_region(g_hud, &g_hs_dmg_lvl[pick], dx, dy, (float)rg[0] * 2.0f * g_hud_s, (float)rg[1] * 2.0f * g_hud_s, (float)rg[2] * 2.0f * g_hud_s, (float)rg[3] * 2.0f * g_hud_s);

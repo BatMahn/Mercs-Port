@@ -9,6 +9,15 @@ int mercs_store_directory(const char *retail_overlay,char *out,size_t capacity);
 int mercs_store_write(const char *directory,int slot,
                        const mercs_campaign *campaign,const mercs_shell_state *view,
                        char *error,size_t error_size);
+/* Native-only attachment: Titanium's wreck list (salvage.mw2 bytes) kept in
+ * the same generation, so a career saved during its debrief keeps its
+ * Salvage Yard. The original save bytes are unchanged. */
+int mercs_store_write_attached(const char *directory,int slot,
+                       const mercs_campaign *campaign,const mercs_shell_state *view,
+                       const uint8_t *salvage,size_t salvage_size,
+                       char *error,size_t error_size);
+/* The selected generation's attachment: 1 none, 0 read, -1 invalid. */
+int mercs_store_read_salvage(const char *directory,int slot,uint8_t *out,size_t capacity,size_t *size);
 /* slot -1 is the working career; slots0..9 are the original ten user slots.
  * Returns1 when absent,0 on success,-1 for invalid/failed data. */
 int mercs_store_read(const char *directory,int slot,prj_archive *archive,

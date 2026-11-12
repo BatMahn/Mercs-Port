@@ -104,7 +104,8 @@ int mercs_salvage_item_slots(int32_t code)
 
 void mercs_salvage_item_name(int32_t code,char *out,size_t cap)
 {
-    /* ammunition: 10000 + its weapon's code (type x 100 + instance) x 100 + bin */
+    /* ammunition: 10000 + its weapon's code (type x 100 + instance) x 100 + n;
+     * the name is the weapon type's, as 0x1004a6fe derives it */
     if(code>=10000&&(code-10000)/10000<mek_weapon_count)snprintf(out,cap,"%s Ammo",mek_weapons[(code-10000)/10000].name);
     else if(code>0&&code<7000&&code/100<mek_weapon_count)snprintf(out,cap,"%s",mek_weapons[code/100].name);
     else if(code/10*10==8000)snprintf(out,cap,"Heat Sink");
@@ -346,7 +347,14 @@ int mercs_salvage_take_component(mercs_salvage_yard *y,size_t entry,int loc,int 
     }
     if(id<7000){kind=0;row_id=id/100;}
     else if(id<10000){kind=2;row_id=t==8000?(count==1?1:2):t==8500?6:5;}
-    else{kind=1;row_id=(id-10000)/10000;damaged=0;}   /* INFERRED: the weapon type of the bin's weapon code */
+    /* Ammo bins carry 10000 + weapon code (type x 100 + instance) x 100 + n
+     * (MEK loader 0x10047700 / 0x1004839b); Titanium's item-type helper
+     * 0x1004a6fe takes (code-10000)/10000 as the ammo row's weapon type.
+     * Titanium's salvage copy 0x10064537 uses (code-10000)/100, which yields
+     * the weapon code (e.g. 401), past its 66-entry weapon table: the port
+     * uses the type, as every other Titanium ammo path does. Salvaged ammo
+     * is never marked damaged (+0x16 = 0). */
+    else{kind=1;row_id=(id-10000)/10000;damaged=0;}
     make_row(row,kind,row_id,damaged);
     rc=list_append(y->document,kind==1?MERCS_SAVE_OWNED_AMMO:MERCS_SAVE_OWNED_WEAPONS,row);
     if(rc)return rc;

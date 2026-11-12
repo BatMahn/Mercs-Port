@@ -2856,12 +2856,10 @@ static void draw_outline(const hud_sprite lvl[4], const int regions[15][4], cons
     int q;
     hud_draw(g_hud, &lvl[0], dx, dy, NULL);   /* the whole outline, then the damaged regions over it (0x1001b620) */
     for (q = 0; q < 15; q++) {
-        int loc = REG_LOC[q] - 1, lf = 0, lr = 0, lv, pick;
+        int loc = REG_LOC[q] - 1, lv, pick;
         const int *rg = regions[q];
         if (rg[2] <= 0 || rg[3] <= 0) continue;
-        if (u->armor_max[loc] > 0) lf = 15 - 15 * (int)u->armor[loc] / u->armor_max[loc];
-        if (u->rear_max[loc] > 0) lr = 15 - 15 * (int)u->rear[loc] / u->rear_max[loc];
-        lv = lf > lr ? lf : lr;
+        lv = combat_loc_level(u, loc);   /* armour and structure against the condition baseline (DOS 0x3af08) */
         pick = u->loc_gone[loc] ? 3 : lv <= 0 ? 0 : lv < 12 ? 1 : 2;
         if (pick == 0) continue;
         hud_draw_region(g_hud, &lvl[pick], dx, dy, (float)rg[0] * 2.0f * g_hud_s, (float)rg[1] * 2.0f * g_hud_s, (float)rg[2] * 2.0f * g_hud_s, (float)rg[3] * 2.0f * g_hud_s);
@@ -3156,18 +3154,14 @@ static void wire_camera(float tx, float ty, float tz, float R)
  * itself, 0x10021300, so lost limbs are gone there too) */
 static const combat_unit *g_wire_unit;
 /* a location's colour in the target view, as the damage outline (0x1001b620: levels 6 / 3 / 11 / 0 - here the HUD
- * blue, yellow, red, black): armour lost front or rear in fifteenths, 0 intact, 1-11 yellow, 12+ red; the centre torso
+ * blue, yellow, red, black): the location's damage level (combat_loc_level), 0 intact, 1-11 yellow, 12+ red; the centre torso
  * of a destroyed unit black. Returns 0 blue, 1 yellow, 2 red, 3 black; tu NULL or gq outside 1-8: blue */
-/* a location's damage nibble 0-15 (the fifteenths of armour lost, front or rear - the location objects' +0 bits 4-7) */
+/* a location's damage nibble 0-15 (combat_loc_level: armour and structure against the condition baseline - the
+ * location objects' +0 bits 4-7) */
 static int loc_nibble(const combat_unit *tu, int gq)
 {
-    int loc, lf = 0, lr = 0;
     if (!tu || gq < 1 || gq > 8) return 0;
-    loc = gq - 1;
-    if (tu->armor_max[loc] > 0) lf = 15 - 15 * (int)tu->armor[loc] / tu->armor_max[loc];
-    if (tu->rear_max[loc] > 0) lr = 15 - 15 * (int)tu->rear[loc] / tu->rear_max[loc];
-    lf = lf > lr ? lf : lr;
-    return lf < 0 ? 0 : lf > 15 ? 15 : lf;
+    return combat_loc_level(tu, gq - 1);   /* DOS 0x303ec / Windows 0x100065c4 push this to the location's pieces */
 }
 static int loc_level(const combat_unit *tu, int gq)
 {

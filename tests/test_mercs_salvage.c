@@ -8,6 +8,9 @@
 #include "shelldb.h"
 #include "datapath.h"
 #include "mercsexchange.h"
+#include "mercseconomy.h"
+#include "mercsmechlab.h"
+#include "mercsstore.h"
 #include <sys/stat.h>
 #include <assert.h>
 #include <stdio.h>
@@ -157,7 +160,99 @@ int main(int argc, char **argv)
         T(!mercs_salvage_discard_owned(&y, owned) && y.count == before && y.entries[before - 1].owned);
         T(!mercs_salvage_recover(&y, a, before - 1) && mercs_save_list_count(y.document, MERCS_SAVE_OWNED_MECHS) == owned + 1);
     }
+    {   /* an ammunition bin becomes an ammo row of its weapon's type (0x1004a6fe) */
+        int taken = 0;
+        size_t e2;
+        for (e2 = 0; e2 < y.count && !taken; e2++)
+            for (l = 0; l < 8 && !taken; l++) for (k = 0; k < 12 && !taken; k++) {
+                int32_t id = r32(y.entries[e2].current.bytes, 0x368 + 48 * l + 4 * k);
+                size_t ammo = mercs_save_list_count(y.document, MERCS_SAVE_OWNED_AMMO);
+                if (id >= 10000 && !mercs_salvage_take_component(&y, e2, l, k)) {
+                    const uint8_t *p;
+                    taken = 1;
+                    T(mercs_save_list_count(y.document, MERCS_SAVE_OWNED_AMMO) == ammo + 1);
+                    p = mercs_save_list_record(y.document, MERCS_SAVE_OWNED_AMMO, ammo);
+                    T(r32(p, 0) == (id - 10000) / 10000 && p[8] == 1 && !mercs_economy_item_damaged(p));
+                }
+            }
+        T(taken);
+    }
     mercs_salvage_yard_free(&y);
+    {   /* Titanium's damaged salvage (Armsdlr.cpp, Mech Lab 0x10049802) */
+        mercs_save_state *d = mercs_save_clone(c.document);
+        uint8_t row[MERCS_SAVE_ITEM_BYTES], *list;
+        mercs_item_group *groups = NULL;
+        mercs_mechlab_session *lab = NULL;
+        size_t n, g, count = 0, at;
+        int32_t funds, price = 10000, cut = (int32_t)((float)price * 0.15f);
+        int found = 0, rc_damaged = 0, loc;
+        T(d != NULL);
+        n = mercs_save_list_count(d, MERCS_SAVE_OWNED_WEAPONS);
+        memset(row, 0, sizeof row);
+        w32(row, 0, 4); w32(row, 4, price); row[8] = 0; w32(row, 0xa, -1); w32(row, 0x12, 100); w32(row, 0x16, 1);
+        T(mercs_economy_item_damaged(row));
+        list = malloc((n + 2) * MERCS_SAVE_ITEM_BYTES); T(list != NULL);
+        for (i = 0; i < n; i++) memcpy(list + i * MERCS_SAVE_ITEM_BYTES, mercs_save_list_record(d, MERCS_SAVE_OWNED_WEAPONS, i), MERCS_SAVE_ITEM_BYTES);
+        for (i = 0; i < n; i++) T(!mercs_economy_item_damaged(list + i * MERCS_SAVE_ITEM_BYTES));
+        memcpy(list + n * MERCS_SAVE_ITEM_BYTES, row, sizeof row);
+        memcpy(list + (n + 1) * MERCS_SAVE_ITEM_BYTES, row, sizeof row);
+        T(!mercs_save_set_list(d, MERCS_SAVE_OWNED_WEAPONS, list, n + 2)); free(list);
+        /* ammunition is never damaged (its +0x16 is a count) */
+        row[8] = 1; T(!mercs_economy_item_damaged(row)); row[8] = 0;
+        /* trading lists the damaged copies separately */
+        T(!mercs_economy_item_groups(d, 0, (enum mercs_item_category)mercs_economy_item_category(row), &groups, &count));
+        for (g = 0; g < count; g++) if (groups[g].id == 4 && groups[g].price == price) { found = 1; T(groups[g].damaged == 2); }
+        T(found); free(groups);
+        /* the Mech Lab installs only intact stock */
+        for (k = 0; k < 2; k++) {   /* damaged copies only, then the same rows intact */
+            mercs_save_state *probe = mercs_save_clone(d);
+            int rc = -1;
+            T(probe != NULL);
+            if (k) for (i = n; i < n + 2; i++) w32(mercs_save_list_record_edit(probe, MERCS_SAVE_OWNED_WEAPONS, i), 0x16, 0);
+            T(!mercs_mechlab_begin(probe, 0, &lab));
+            for (loc = 0; loc < 8 && rc; loc++)
+                if (!mercs_mechlab_select_location(lab, loc)) rc = mercs_mechlab_add(lab, 0, 4);
+            if (!k) rc_damaged = rc; else T(!rc && rc_damaged);
+            mercs_mechlab_free(lab); mercs_save_free(probe);
+        }
+        /* repair: 15% of value, clears the mark; no funds, no repair */
+        at = n;
+        funds = (int32_t)r32(mercs_save_header(d), 0x12a);
+        T(!mercs_economy_repair_item(d, 0, at));
+        T((int32_t)r32(mercs_save_header(d), 0x12a) == funds - cut);
+        T(mercs_save_list_count(d, MERCS_SAVE_OWNED_WEAPONS) == n + 2);
+        T(!mercs_economy_item_damaged(mercs_save_list_record(d, MERCS_SAVE_OWNED_WEAPONS, n)) +
+          !mercs_economy_item_damaged(mercs_save_list_record(d, MERCS_SAVE_OWNED_WEAPONS, n + 1)) == 1);
+        /* selling prefers the damaged copy: 15% and scrapped */
+        funds = (int32_t)r32(mercs_save_header(d), 0x12a);
+        T(!mercs_economy_trade_item(d, 0, 0, n));
+        T((int32_t)r32(mercs_save_header(d), 0x12a) == funds + cut);
+        T(mercs_save_list_count(d, MERCS_SAVE_OWNED_WEAPONS) == n + 1);
+        T(!mercs_economy_item_damaged(mercs_save_list_record(d, MERCS_SAVE_OWNED_WEAPONS, n)));
+        T(mercs_economy_repair_item(d, 0, n) == MERCS_ECONOMY_EMPTY);
+        /* an intact sale keeps the DOS price (stored value) */
+        funds = (int32_t)r32(mercs_save_header(d), 0x12a);
+        T(!mercs_economy_trade_item(d, 0, 0, n));
+        T((int32_t)r32(mercs_save_header(d), 0x12a) == funds + price);
+        mercs_save_free(d);
+    }
+    {   /* the wreck list kept in a native generation with the career */
+        char dir[] = "/tmp/mercs_salvage_storeXXXXXX";
+        static uint8_t bytes[MERCS_SALVAGE_FILE_MAX], back[MERCS_SALVAGE_FILE_MAX];
+        size_t size, got;
+        T(mkdtemp(dir) != NULL);
+        T(!mercs_salvage_encode(w, 3, bytes, sizeof bytes, &size));
+        T(mercs_store_read_salvage(dir, -1, back, sizeof back, &got) == 1);
+        T(!mercs_store_write_attached(dir, -1, &c, v, bytes, size, e, sizeof e));
+        T(!mercs_store_read_salvage(dir, -1, back, sizeof back, &got) && got == size && !memcmp(back, bytes, size));
+        T(mercs_store_read_salvage(dir, -1, back, size - 1, &got) == -1);
+        T(!mercs_store_write_attached(dir, 3, &c, v, bytes, size, e, sizeof e));
+        T(!mercs_store_read_salvage(dir, 3, back, sizeof back, &got) && got == size);
+        /* a later generation without wrecks (the debrief left) drops them */
+        T(!mercs_store_write(dir, -1, &c, v, e, sizeof e));
+        T(mercs_store_read_salvage(dir, -1, back, sizeof back, &got) == 1);
+        T(!mercs_store_read_salvage(dir, 3, back, sizeof back, &got));
+    }
     if (argc >= 5) {
         shelldb db, tdb;
         shell_image bg;

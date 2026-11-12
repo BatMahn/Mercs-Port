@@ -643,6 +643,29 @@ void combat_destroy_location(combat_unit *t, int loc, unsigned *rng)
     if (t) destroy_location(t, loc, rng ? rng : &t->rng);
 }
 
+static int loc_side_level(float armour, float internal, int mult, int nibble)
+{
+    int64_t a, s, lv;
+    if (nibble <= 0) return 0;
+    a = (int64_t)llroundf(armour * 65536.0f);
+    s = (int64_t)llroundf(internal * 65536.0f);
+    lv = 15 - ((s + a / mult) * 3) / ((int64_t)nibble << 16);   /* C division truncates, as the originals' idiv */
+    return lv < 1 ? 0 : lv > 15 ? 15 : (int)lv;
+}
+int combat_loc_level(const combat_unit *u, int loc)
+{
+    int mult, f, r;
+    if (!u || loc < 0 || loc >= MEK_LOC_COUNT) return 0;
+    mult = (int)(u->armor_mult + 0.5f);
+    if (mult < 1) mult = 1;
+    /* DOS 0x3af08 grades both sides of every location (Windows 0x100117f2
+     * only the torsos' rear); a limb's rear (no armour, same structure, a
+     * baseline no larger) never exceeds its front, so the result agrees. */
+    f = loc_side_level(u->armor[loc], u->internal[loc], mult, u->return_flags[loc] & 0xf);
+    r = loc_side_level(u->rear[loc], u->internal[loc], mult, (u->return_flags[loc] >> 4) & 0xf);
+    return f > r ? f : r;
+}
+
 /* engine 0x100167b0: entry `idx` of location `loc`'s item list takes a critical (silent: a location being destroyed);
  * the entry is then removed from the list */
 static void crit_item(combat_unit *t, int loc, int idx, int silent)

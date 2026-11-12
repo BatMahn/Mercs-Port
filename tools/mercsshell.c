@@ -168,6 +168,7 @@ typedef struct {
      * overlay on the debrief page) and Titanium's background picture */
     mercs_salvage_wreck salvage_wrecks[MERCS_SALVAGE_MAX_WRECKS];
     int salvage_wreck_count, salvage_open, salvage_used, salvage_bg_ok;
+    size_t salvage_raw_size;   /* the wrecks' salvage.mw2 bytes, in salvage_raw */
     mercs_salvage_yard salvage_yard;
     mercs_salvage_view salvage_view;
     shell_image salvage_bg;
@@ -474,6 +475,31 @@ static int stage_career(shell *s, mercs_campaign *next, mercs_shell_state **view
     return 0;
 }
 
+static uint8_t salvage_raw[MERCS_SALVAGE_FILE_MAX];
+
+/* Every native save carries the unsalvaged wreck list while the career is
+ * between its return and leaving the debrief (Titanium keeps salvage.mw2 on
+ * disk until then), so quitting there does not lose the Salvage Yard. */
+static int store_write(shell *s, int slot, const mercs_campaign *c, const mercs_shell_state *v)
+{
+    int keep = s->salvage_wreck_count > 0 && !s->salvage_used && s->salvage_raw_size &&
+               (c->phase == MERCS_CAMPAIGN_RETURN || c->phase == MERCS_CAMPAIGN_DEBRIEF);
+    return mercs_store_write_attached(s->save_dir, slot, c, v, keep ? salvage_raw : NULL,
+                                      keep ? s->salvage_raw_size : 0, s->status, sizeof s->status);
+}
+
+/* A loaded generation's wreck list, restored only before the debrief is left. */
+static void restore_salvage(shell *s, int slot, const mercs_campaign *c)
+{
+    size_t size = 0, count = 0;
+    s->salvage_wreck_count = 0; s->salvage_used = 0; s->salvage_raw_size = 0;
+    if ((c->phase != MERCS_CAMPAIGN_RETURN && c->phase != MERCS_CAMPAIGN_DEBRIEF) ||
+        mercs_store_read_salvage(s->save_dir, slot, salvage_raw, sizeof salvage_raw, &size) ||
+        mercs_salvage_decode(salvage_raw, size, s->salvage_wrecks, MERCS_SALVAGE_MAX_WRECKS, &count)) return;
+    s->salvage_wreck_count = (int)count; s->salvage_raw_size = size;
+    fprintf(stderr, "mercs shell: restored salvage wrecks=%d\n", s->salvage_wreck_count);
+}
+
 static void install_career(shell *s, mercs_campaign *next, const mercs_shell_state *view)
 {
     mercs_campaign_free(&s->campaign);
@@ -504,7 +530,7 @@ static void command_auto_assign(shell *s)
     if (mercs_economy_command_assign(next.document) == 1 &&
         !mercs_campaign_hydrate(s->archive, &next, view, s->status, sizeof s->status)) {
         next.resume_page = PAGE_COMMAND;
-        if (!mercs_store_write(s->save_dir, -1, &next, view, s->status, sizeof s->status)) {
+        if (!store_write(s, -1, &next, view)) {
             install_career(s, &next, view);
             fprintf(stderr, "mercs shell: command-assigned player=%s mech=%s\n", s->career.pilot, s->career.starter_name);
         }
@@ -526,7 +552,7 @@ static int commit_career_cue(shell *s, mercs_campaign *next,
                 scene, s->status, sizeof s->status)) return -1;
     }
     next->resume_page = page;
-    if (mercs_store_write(s->save_dir, -1, next, view, s->status, sizeof s->status)) {
+    if (store_write(s, -1, next, view)) {
         mercs_debrief_view_free(&prepared); return -1;
     }
     install_career(s, next, view);
@@ -589,7 +615,7 @@ static void roster_change(shell *s, int direction, int aero)
     } else if (rc) snprintf(s->status, sizeof s->status, "The selected pilot's assignment could not be changed.");
     else if (!mercs_campaign_hydrate(s->archive, &next, view, s->status, sizeof s->status)) {
         next.resume_page = PAGE_ROSTER;
-        if (!mercs_store_write(s->save_dir, -1, &next, view, s->status, sizeof s->status)) {
+        if (!store_write(s, -1, &next, view)) {
             install_career(s, &next, view);
             mercs_roster_view_prepare(&s->roster_view, s->campaign.document, 0);
         }
@@ -796,8 +822,10 @@ static void exit_salvage(shell *s)
     if (!game_question(s, "Accept Salvage?|", 0)) return;
     if (stage_career(s, &next, &view)) return;
     mercs_save_swap(next.document, s->salvage_yard.document);
+    s->salvage_used = 1;   /* the accepted yard's generation no longer carries the wrecks */
     if (mercs_campaign_hydrate(s->archive, &next, view, s->status, sizeof s->status) ||
         commit_career(s, &next, view, PAGE_DEBRIEF)) {
+        s->salvage_used = 0;
         mercs_save_swap(next.document, s->salvage_yard.document);
         mercs_campaign_free(&next); free(view); return;
     }
@@ -972,7 +1000,7 @@ static void economy_transaction(shell *s, int action)
             }
         }
         next.resume_page = disband ? PAGE_MENU : s->page;
-        if (!mercs_store_write(s->save_dir, -1, &next, view, s->status, sizeof s->status)) {
+        if (!store_write(s, -1, &next, view)) {
             install_career(s, &next, view);
             (void)prepare_economy_page(s, 0);
             fprintf(stderr, "mercs shell: career transaction page=%s action=%d funds=%ld\n",
@@ -988,6 +1016,32 @@ done:
     mercs_campaign_free(&next); free(view);
 }
 
+/* Titanium Armsdlr.cpp repair (0x10004fff): the selected item's damaged copy
+ * is repaired for 15% of its value. */
+static void trading_repair(shell *s)
+{
+    mercs_campaign next;
+    mercs_shell_state *view;
+    int ammo = 0, rc;
+    size_t index = 0;
+    if (mercs_trading_view_transaction(&s->trading_view, 0, &ammo, &index)) {
+        game_notice(s, "No repairs are required!#Ok"); return;
+    }
+    if (stage_career(s, &next, &view)) return;
+    rc = mercs_economy_repair_item(next.document, ammo, index);
+    if (rc == MERCS_ECONOMY_EMPTY) game_notice(s, "No repairs are required!#Ok");
+    else if (rc == MERCS_ECONOMY_FUNDS) game_notice(s, "Insufficent funds!#Ok");
+    else if (rc) snprintf(s->status, sizeof s->status, "The selected repair could not be completed.");
+    else if (!mercs_campaign_hydrate(s->archive, &next, view, s->status, sizeof s->status)) {
+        next.resume_page = s->page;
+        if (!store_write(s, -1, &next, view)) {
+            install_career(s, &next, view);
+            (void)prepare_economy_page(s, 0);
+        }
+    }
+    mercs_campaign_free(&next); free(view);
+}
+
 static void change_weapon_group(shell *s, int slot)
 {
     mercs_campaign next;
@@ -997,7 +1051,7 @@ static void change_weapon_group(shell *s, int slot)
         snprintf(s->status, sizeof s->status, "The selected weapon group could not be changed.");
     else if (!mercs_campaign_hydrate(s->archive, &next, view, s->status, sizeof s->status)) {
         next.resume_page = PAGE_GROUPS;
-        if (!mercs_store_write(s->save_dir, -1, &next, view, s->status, sizeof s->status))
+        if (!store_write(s, -1, &next, view))
             install_career(s, &next, view);
     }
     mercs_campaign_free(&next); free(view);
@@ -1147,7 +1201,7 @@ static void save_slot(shell *s)
     if(mercs_interchange_prepare(&next,view,original_save_screen(s,next.resume_page),s->status,sizeof s->status)){
         mercs_campaign_free(&next);free(view);return;
     }
-    if (!mercs_store_write(s->save_dir, s->save_slot, &next, view, s->status, sizeof s->status)) {
+    if (!store_write(s, s->save_slot, &next, view)) {
         fprintf(stderr, "mercs shell: saved slot=%d campaign=%s phase=%d\n",
                 s->save_slot, next.campaign, next.phase);
         install_career(s, &next, view);
@@ -1203,6 +1257,10 @@ static void load_slot(shell *s, int slot, int autosave)
         rc=mercs_store_import_original(path,s->archive,&next,view,&original_event,s->status,sizeof s->status);
         if(!rc)next.resume_page=imported_save_page(original_event);
     }else rc = mercs_store_read(s->save_dir, slot, s->archive, &next, view, s->status, sizeof s->status);
+    if (!rc) {
+        if (original) { s->salvage_wreck_count = 0; s->salvage_used = 0; s->salvage_raw_size = 0; }
+        else restore_salvage(s, slot, &next);
+    }
     if (rc == 1 && !autosave) snprintf(s->status, sizeof s->status, "No saved games...");
     if (!rc) {
         int page = restored_page(&next);
@@ -1541,8 +1599,21 @@ static int consume_return(shell *s, const char *overlay, const mercs_exchange_la
     if (mercs_shell_apply_return(view, next.accepted, launch, returned, &imported, s->status, sizeof s->status)) {
         rc = 1; goto done;
     }
+    s->salvage_wreck_count = 0; s->salvage_used = 0; s->salvage_raw_size = 0;
+    {   /* Titanium's wreck list, for the debrief's Salvage Yard; read before the
+         * return commits so the RETURN generation already carries it */
+        int i, renderer = -1;
+        size_t size = 0, count = 0;
+        for (i = 0; i < 3; i++) if (!strcmp(launch->edition, portcfg_mercs_name(shell_looks[i]))) renderer = shell_looks[i];
+        if (renderer >= 0 && portcfg_dynamic_salvage(s->cfg, renderer) &&
+            !mercs_exchange_read_salvage(overlay, launch, salvage_raw, sizeof salvage_raw, &size) &&
+            !mercs_salvage_decode(salvage_raw, size, s->salvage_wrecks, MERCS_SALVAGE_MAX_WRECKS, &count)) {
+            s->salvage_wreck_count = (int)count; s->salvage_raw_size = size;
+        }
+        fprintf(stderr, "mercs shell: salvage wrecks=%d\n", s->salvage_wreck_count);
+    }
     if (mercs_campaign_return(&next, view, s->status, sizeof s->status) ||
-        commit_career(s, &next, view, PAGE_COMMAND)) { rc = -1; goto done; }
+        commit_career(s, &next, view, PAGE_COMMAND)) { s->salvage_wreck_count = 0; s->salvage_raw_size = 0; rc = -1; goto done; }
     /* Only a committed career may acknowledge or delete a transient import. */
     if (imported.request_delete || returned->mech_count) {
         size_t i;
@@ -1553,18 +1624,6 @@ static int consume_return(shell *s, const char *overlay, const mercs_exchange_la
         if (!dp_resolve_in(overlay, logical, actual, sizeof actual) && remove(actual))
             fprintf(stderr, "mercs shell: retained imported transient %s: %s\n", logical, strerror(errno));
         }
-    }
-    s->salvage_wreck_count = 0; s->salvage_used = 0;
-    {   /* Titanium's wreck list, for the debrief's Salvage Yard */
-        int i, renderer = -1;
-        static uint8_t bytes[MERCS_SALVAGE_FILE_MAX];
-        size_t size = 0, count = 0;
-        for (i = 0; i < 3; i++) if (!strcmp(launch->edition, portcfg_mercs_name(shell_looks[i]))) renderer = shell_looks[i];
-        if (renderer >= 0 && portcfg_dynamic_salvage(s->cfg, renderer) &&
-            !mercs_exchange_read_salvage(overlay, launch, bytes, sizeof bytes, &size) &&
-            !mercs_salvage_decode(bytes, size, s->salvage_wrecks, MERCS_SALVAGE_MAX_WRECKS, &count))
-            s->salvage_wreck_count = (int)count;
-        fprintf(stderr, "mercs shell: salvage wrecks=%d\n", s->salvage_wreck_count);
     }
     if (mercs_exchange_acknowledge(overlay, launch))
         fprintf(stderr, "mercs shell: durable return retained; its applied receipt could not be finalized\n");
@@ -2591,6 +2650,7 @@ static void click(shell *s, int x, int y, int clicks)
             if (clicks > 1) economy_transaction(s, value);
         } else if ((at == MERCS_TRADING_BUY || at == MERCS_TRADING_SELL) && play_cue(s, MSA_CUE_TRADING_SELECT))
             economy_transaction(s, at == MERCS_TRADING_BUY);
+        else if (at == MERCS_TRADING_REPAIR && play_cue(s, MSA_CUE_TRADING_SELECT)) trading_repair(s);
     } else if (s->page == PAGE_FACTORY) {
         int side; size_t index;
         at = mercs_factory_view_hit(&s->factory_view, s->art, x, y, &side, &index);
@@ -3348,6 +3408,11 @@ int mercs_shell_run(const char *exe, portcfg *cfg, int edition)
     }
     s->art = mercs_art_create(&s->database, s->renderer);
     if (!s->art) { mercs_gui_error("Could not create the original shell compositor."); goto cleanup; }
+    {   /* Titanium-only shell clips (the arms dealer's repair button for
+         * salvaged damaged items) are looked up after the game's own */
+        char database[PORTCFG_PATH * 2], dir[PORTCFG_PATH];
+        if (!salvage_assets(s, database, dir)) mercs_art_set_extra_dir(s->art, dir);
+    }
     s->audio = sfx_create(NULL); mercs_art_set_audio(s->art, s->audio);
     s->shell_audio = mercs_shell_audio_create(s->audio, &s->database);
     if (mercs_options_load(&s->options, cfg->install, cfg->cd, s->status, sizeof s->status)) {

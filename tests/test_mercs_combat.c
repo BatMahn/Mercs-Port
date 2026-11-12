@@ -136,6 +136,26 @@ static void check_location_survival_items(void)
     assert(!u.destroyed && u.internal[MEK_CT]==0);
 }
 
+/* DOS 0x3af08 / Windows 0x100117f2 damage outline level, values from a
+ * DOSBox GRA1SCN1 trace of the player's Commando (armour x4, location flags
+ * low nibble 2): a front-torso hit leaves the outline blue, structure counts. */
+static void check_loc_level(void)
+{
+    combat_unit u;
+    memset(&u,0,sizeof u);
+    u.armor_mult=4; u.return_flags[1]=0x0812; u.return_flags[4]=0x0802;
+    u.armor[1]=16; u.rear[1]=12; u.internal[1]=6;
+    assert(combat_loc_level(&u,1)==0);                 /* 24 -> 16 front: still blue */
+    u.armor[1]=0; u.internal[1]=5.305f;
+    assert(combat_loc_level(&u,1)==8);                 /* armour gone, structure nearly whole: yellow */
+    u.armor[4]=4.371f; u.internal[4]=4;
+    assert(combat_loc_level(&u,4)==8);
+    u.armor[4]=0; u.internal[4]=1.039f;
+    assert(combat_loc_level(&u,4)==14);                /* red */
+    u.return_flags[4]=0x0800;
+    assert(combat_loc_level(&u,4)==0);                 /* no baseline: level 0, as the originals skip it */
+}
+
 int main(void)
 {
     size_t i;
@@ -143,6 +163,7 @@ int main(void)
     check_weapon_slots(0); check_weapon_slots(1); check_torso_spread();
     for(i=0;i<sizeof original_locations/sizeof original_locations[0];i++) check_location(&original_locations[i]);
     check_location_survival_items();
-    printf("Mercs combat:62 original DOS/Windows heat cases,17 location-loss cases, weapon slots and torso spread pass\n");
+    check_loc_level();
+    printf("Mercs combat:62 original DOS/Windows heat cases,17 location-loss cases, weapon slots, torso spread and damage levels pass\n");
     return 0;
 }

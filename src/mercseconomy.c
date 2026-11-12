@@ -49,6 +49,57 @@ int mercs_economy_item_price(const uint8_t item[MERCS_SAVE_ITEM_BYTES],int buy,i
     return 0;
 }
 
+/* Titanium's salvage damage mark (+0x16 == 1; never on ammunition rows).
+ * Rows without it keep the DOS rules exactly. */
+int mercs_economy_item_damaged(const uint8_t item[MERCS_SAVE_ITEM_BYTES])
+{ return item&&item[8]!=1&&u32(item+0x16)==1u; }
+
+/* Titanium Armsdlr.cpp: a damaged item sells and repairs for (int)(value x
+ * 0.15f) (0x10005245 / 0x1000502d, float 0x10093018). */
+static int32_t damaged_value(const uint8_t *item)
+{
+    volatile float f=(float)s32(u32(item+4))*0.15f;
+    return (int32_t)f;
+}
+
+/* Another owned row of the same item, damaged (Titanium 0x100050fb: a sale
+ * takes a damaged copy first). */
+static int damaged_twin(const mercs_save_state *s,enum mercs_save_list list,const uint8_t *row,size_t *at)
+{
+    size_t i,n=mercs_save_list_count(s,list);
+    for(i=0;i<n;i++){
+        const uint8_t *p=mercs_save_list_record(s,list,i);
+        if(p[8]==row[8]&&u32(p)==u32(row)&&mercs_economy_item_damaged(p)){*at=i;return 1;}
+    }
+    return 0;
+}
+
+static int remove_row(mercs_save_state *s,enum mercs_save_list list,size_t at)
+{
+    size_t n=mercs_save_list_count(s,list),st=mercs_save_list_stride(list),i,k=0;uint8_t *p;int rc;
+    if(at>=n)return MERCS_ECONOMY_INVALID;
+    p=malloc(n*st+1);if(!p)return MERCS_ECONOMY_NOMEM;
+    for(i=0;i<n;i++)if(i!=at)memcpy(p+(k++)*st,mercs_save_list_record(s,list,i),st);
+    rc=mercs_save_set_list(s,list,p,k);free(p);
+    return rc?MERCS_ECONOMY_NOMEM:0;
+}
+
+int mercs_economy_repair_item(mercs_save_state *state,int ammo,size_t index)
+{
+    enum mercs_save_list owned=ammo?MERCS_SAVE_OWNED_AMMO:MERCS_SAVE_OWNED_WEAPONS;
+    const uint8_t *row=state?mercs_save_list_record(state,owned,index):NULL;
+    size_t at;int32_t cost;uint8_t *h,*p;
+    if(!row)return MERCS_ECONOMY_INVALID;
+    if(!mercs_economy_item_damaged(row)&&!damaged_twin(state,owned,row,&at))return MERCS_ECONOMY_EMPTY;
+    if(mercs_economy_item_damaged(row))at=index;
+    cost=damaged_value(mercs_save_list_record(state,owned,at));
+    h=mercs_save_header_edit(state);
+    if(s32(u32(h+0x12a))<cost)return MERCS_ECONOMY_FUNDS;
+    p=mercs_save_list_record_edit(state,owned,at);p32(p+0x16,0);
+    p32(h+0x12a,u32(h+0x12a)-(uint32_t)cost);h[0]=1;
+    return 0;
+}
+
 int mercs_economy_trade_item(mercs_save_state *state,int ammo,int buy,size_t index)
 {
     enum mercs_save_list shop,owned,from,to;
@@ -65,8 +116,18 @@ int mercs_economy_trade_item(mercs_save_state *state,int ammo,int buy,size_t ind
     if(buy&&s32(u32(h+0x12a))<price)return MERCS_ECONOMY_FUNDS;
     if(mercs_save_list_count(state,to)>=MERCS_SAVE_MAX_LIST_RECORDS)return MERCS_ECONOMY_CAPACITY;
     s=mercs_save_clone(state);if(!s)return MERCS_ECONOMY_NOMEM;
-    if(!buy&&row[8]==0)p32(mercs_save_list_record_edit(s,from,index)+0xa,UINT32_MAX);
-    rc=move_row(s,from,to,index);
+    if(!buy&&!mercs_economy_item_damaged(row)){
+        size_t at;
+        if(damaged_twin(state,from,row,&at)){index=at;row=mercs_save_list_record(state,from,index);}
+    }
+    if(!buy&&mercs_economy_item_damaged(row)){
+        /* Titanium sells the damaged copy for 15% and scraps it */
+        price=damaged_value(row);
+        rc=remove_row(s,from,index);
+    }else{
+        if(!buy&&row[8]==0)p32(mercs_save_list_record_edit(s,from,index)+0xa,UINT32_MAX);
+        rc=move_row(s,from,to,index);
+    }
     if(!rc){
         uint8_t *header=mercs_save_header_edit(s);
         p32(header+0x12a,buy?u32(header+0x12a)-(uint32_t)price:u32(header+0x12a)+(uint32_t)price);
@@ -338,12 +399,13 @@ int mercs_economy_item_groups(const mercs_save_state *state,int shop,
         const uint8_t *item=mercs_save_list_record(state,list,i);
         if(mercs_economy_item_category(item)!=(int)category)continue;
         p[used].id=s32(u32(item));p[used].first_index=i;p[used].count=1;p[used].type=item[8];
+        p[used].damaged=mercs_economy_item_damaged(item)?1u:0u;
         if(mercs_economy_item_price(item,shop,&p[used].price)){free(p);return MERCS_ECONOMY_INVALID;}
         used++;
     }
     if(used)qsort(p,used,sizeof *p,group_compare);
     for(i=0;i<used;i++){
-        if(out&&p[out-1].id==p[i].id){p[out-1].count++;continue;}
+        if(out&&p[out-1].id==p[i].id){p[out-1].count++;p[out-1].damaged+=p[i].damaged;continue;}
         p[out++]=p[i];
     }
     *groups=p;*count=out;return 0;

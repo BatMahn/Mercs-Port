@@ -121,6 +121,11 @@ static int token_ok(const uint8_t *p,size_t n)
 
 int mercs_store_write(const char *dir,int slot,const mercs_campaign *c,
                        const mercs_shell_state *v,char *e,size_t n)
+{return mercs_store_write_attached(dir,slot,c,v,NULL,0,e,n);}
+
+int mercs_store_write_attached(const char *dir,int slot,const mercs_campaign *c,
+                       const mercs_shell_state *v,const uint8_t *salvage,size_t salvage_size,
+                       char *e,size_t n)
 {
     mercs_launch_lock *lock=NULL;
     mercs_campaign snapshot;
@@ -150,6 +155,7 @@ int mercs_store_write(const char *dir,int slot,const mercs_campaign *c,
     if(attempt==16)goto done;
     if(path_join(generation,payload,path,sizeof path)||write_new(path,original,size)||
        path_join(generation,"NATIVE.DAT",path,sizeof path)||write_new(path,resume,sizeof resume))goto done;
+    if(salvage&&salvage_size&&(path_join(generation,"SALVAGE.DAT",path,sizeof path)||write_new(path,salvage,salvage_size)))goto done;
     if(sync_dir(generation))goto done;
     memcpy(ref,token,32);ref[32]='\n';snprintf(leaf,sizeof leaf,"%s.%s.TMP",index,token);
     if(path_join(dir,leaf,temp,sizeof temp)||write_new(temp,ref,sizeof ref)||path_join(dir,index,index_path,sizeof index_path))goto done;
@@ -191,6 +197,19 @@ int mercs_store_read(const char *dir,int slot,prj_archive *a,mercs_campaign *c,
     if(rc==1)return 1;
     rc=mercs_campaign_decode_resume(a,original,size,resume,rsize,c,v,e,n);
     free(original);free(resume);return rc;
+}
+int mercs_store_read_salvage(const char *dir,int slot,uint8_t *out,size_t capacity,size_t *size)
+{
+    char index[32],payload[32],path[4096],generation[4096];uint8_t *ref=NULL,*bytes=NULL;size_t n;int rc;
+    if(size)*size=0;
+    if(!out||!size||!dir||!directory(dir)||slot_names(slot,index,sizeof index,payload,sizeof payload)||
+       path_join(dir,index,path,sizeof path))return -1;
+    rc=read_all(path,33,&ref,&n);if(rc)return rc;
+    if(!token_ok(ref,n)){free(ref);return -1;}ref[32]=0;
+    rc=path_join(dir,(const char *)ref,generation,sizeof generation);free(ref);
+    if(rc||!directory(generation)||path_join(generation,"SALVAGE.DAT",path,sizeof path))return -1;
+    rc=read_all(path,capacity,&bytes,&n);if(rc)return rc;
+    memcpy(out,bytes,n);*size=n;free(bytes);return 0;
 }
 int mercs_store_title(const char *dir,int slot,char *out,size_t capacity)
 {

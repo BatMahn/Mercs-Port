@@ -109,6 +109,96 @@ int dos_udiv(int n, int d) {
   int q = int(un / ud); return (n < 0) != (d < 0) ? -q : q;
 }
 ivec2 dos_tV[24]; int dos_tA[24], dos_tB[24]; float dos_tT[24];   /* the walked corners: screen point, source corners, near-plane t */
+int dos_tLv[24]; ivec3 dos_cB[24];   /* the corners' levels (16.16); the 2D clipper's output buffer */
+/* signed (d * f + 0x20000000) >> 30 over the full 64-bit product, as 0x7fe9c's imul / adc / shld 2 (no int64 in
+ * the shader targets: 16-bit partial products) */
+int dos_q30mul(int d, int f) {
+  bool neg = (d < 0) != (f < 0);
+  uint ua = d < 0 ? uint(-(d + 1)) + 1u : uint(d), ub = f < 0 ? uint(-(f + 1)) + 1u : uint(f);
+  uint al = ua & 0xffffu, ah = ua >> 16, bl = ub & 0xffffu, bh = ub >> 16;
+  uint ll = al * bl, m1 = ah * bl, m2 = al * bh, hi = ah * bh;
+  uint mid = (ll >> 16) + (m1 & 0xffffu) + (m2 & 0xffffu);
+  uint lo = (ll & 0xffffu) | (mid << 16);
+  hi += (m1 >> 16) + (m2 >> 16) + (mid >> 16);
+  if (neg) { lo = ~lo + 1u; hi = ~hi + (lo == 0u ? 1u : 0u); }
+  uint lo2 = lo + 0x20000000u; hi += lo2 < lo ? 1u : 0u;
+  return int((hi << 2) | (lo2 >> 30));
+}
+/* 0x7fe9c's clip fraction: (num << 30) / den in Q30, rounded up when the remainder is over ceil(|den| / 2) - 1 */
+int dos_q30div(int num, int den) {
+  bool neg = (num < 0) != (den < 0);
+  uint un = num < 0 ? uint(-(num + 1)) + 1u : uint(num), ud = den < 0 ? uint(-(den + 1)) + 1u : uint(den);
+  if (ud == 0u) return 0;
+  uint q = un / ud, rem = un - q * ud;
+  for (int i = 0; i < 30; i++) { rem <<= 1; q <<= 1; if (rem >= ud) { rem -= ud; q |= 1u; } }
+  if (((ud >> 1) + (ud & 1u) - 1u) < rem) q++;
+  return neg ? -int(q) : int(q);
+}
+/* trunc(a * b / c) over a 64-bit product (MW2.EXE's imul / idiv pairs) */
+int dos_muldiv(int a, int b, int c) {
+  bool neg = ((a < 0) != (b < 0)) != (c < 0);
+  uint ua = a < 0 ? uint(-(a + 1)) + 1u : uint(a), ub = b < 0 ? uint(-(b + 1)) + 1u : uint(b), uc = c < 0 ? uint(-(c + 1)) + 1u : uint(c);
+  if (uc == 0u) return 0;
+  uint al = ua & 0xffffu, ah = ua >> 16, bl = ub & 0xffffu, bh = ub >> 16;
+  uint ll = al * bl, m1 = ah * bl, m2 = al * bh;
+  uint mid = (ll >> 16) + (m1 & 0xffffu) + (m2 & 0xffffu);
+  uint lo = (ll & 0xffffu) | (mid << 16), hi = ah * bh + (m1 >> 16) + (m2 >> 16) + (mid >> 16);
+  uint q = 0u, rem = hi % uc;   /* (the quotient fits 32 bits: the cut lies between the corners) */
+  for (int i = 31; i >= 0; i--) { bool top = (rem & 0x80000000u) != 0u; rem = (rem << 1) | ((lo >> uint(i)) & 1u); q <<= 1; if (top || rem >= uc) { rem -= uc; q |= 1u; } }
+  return neg ? -int(q) : int(q);
+}
+/* a corner's camera-space point as dos_scr makes it (before the divide) */
+ivec3 dos_cam(vec3 w) {
+  vec3 d = vec3(dos_rnd(w.x) - dos_rnd(u_dos_eye.x), dos_rnd(w.y) - dos_rnd(u_dos_eye.y), dos_rnd(-w.z) - dos_rnd(-u_dos_eye.z));
+  return ivec3(int(dos_rnd(dot(u_dos_rx, d))), int(dos_rnd(dot(u_dos_ry, d))), int(dos_rnd(dot(u_dos_rz, d))));
+}
+/* MW2.EXE 0x4cd65: the corner a near-plane crossing makes - camera x and y from the nearer-z corner, (other - it) *
+ * (near - its z) / (z difference) truncated, z the near; then projected as any corner */
+ivec2 dos_nvtx(vec3 wa, vec3 wc, int nz) {
+  ivec3 a = dos_cam(wa), c = dos_cam(wc);
+  if (a.z >= c.z) { ivec3 t = a; a = c; c = t; }
+  int dz = c.z - a.z, x = a.x, y = a.y;
+  if (dz != 0) { x += dos_muldiv(c.x - a.x, nz - a.z, dz); y += dos_muldiv(c.y - a.y, nz - a.z, dz); }
+  int zc = max(nz, 1); if (u_dos_ortho > 0) zc = u_dos_ortho;
+  ivec2 cc = ivec2(u_vp) / 2;
+  return ivec2(cc.x + dos_pq(x, u_dos_ps.x, zc), cc.y - dos_pq(y, u_dos_ps.y, zc));
+}
+/* MW2.EXE 0x7fe9c: the polygon clipped against the view window in 2D before it is walked - Sutherland-Hodgman,
+ * only when a corner is outside, the bounds in the order x > right, y < top, x < left, y > bottom (each only if a
+ * source corner was outside it); every pass starts its output with the last corner. A cut corner sits on the bound,
+ * the other coordinate and the level are (other - this) * f + 0x20000000 >> 30 from the edge's second corner. */
+int dos_tclip2d(int m) {
+  int xr = int(u_vp.x) - 1, yb = int(u_vp.y) - 1, code = 0;
+  for (int i = 0; i < 20; i++) {
+    if (i >= m) break;
+    ivec2 v = dos_tV[i];
+    code |= (v.x > xr ? 8 : 0) | (v.x < 0 ? 4 : 0) | (v.y > yb ? 2 : 0) | (v.y < 0 ? 1 : 0);
+  }
+  if (code == 0) return m;
+  for (int p = 0; p < 4; p++) {
+    int bit = p == 0 ? 8 : p == 1 ? 1 : p == 2 ? 4 : 2;
+    if ((code & bit) == 0) continue;
+    bool ax = bit == 8 || bit == 4, hi = bit == 8 || bit == 2;
+    int bound = bit == 8 ? xr : bit == 2 ? yb : 0, o = 0;
+    for (int i = 0; i < 24; i++) {
+      if (i >= m) break;
+      int ia = i == 0 ? m - 1 : i - 1;
+      ivec3 a = ivec3(dos_tV[ia], dos_tLv[ia]), b = ivec3(dos_tV[i], dos_tLv[i]);
+      int ca = ax ? a.x : a.y, cb = ax ? b.x : b.y;
+      bool ina = hi ? ca <= bound : ca >= bound, inb = hi ? cb <= bound : cb >= bound;
+      if (ina && o < 24) { dos_cB[o] = a; o++; }
+      if (ina != inb && o < 24) {
+        int f = dos_q30div(bound - cb, ca - cb);
+        int oc = ax ? b.y + dos_q30mul(a.y - b.y, f) : b.x + dos_q30mul(a.x - b.x, f);
+        dos_cB[o] = ivec3(ax ? bound : oc, ax ? oc : bound, b.z + dos_q30mul(a.z - b.z, f)); o++;
+      }
+    }
+    m = o;
+    for (int i = 0; i < 24; i++) { if (i >= m) break; dos_tV[i] = dos_cB[i].xy; dos_tLv[i] = dos_cB[i].z; }
+    if (m < 3) return m;
+  }
+  return m;
+}
 /* one walked corner's level, 16.16 (0x4f6c8 at the corner, or at the near-plane point 0x4cd65 makes) */
 int dos_tlevel(int k) {
   k = clamp(k, 0, 23);
@@ -130,7 +220,7 @@ ivec2 dos_tchain(int m, int top, int dir, int y, int ybot) {
   for (int g = 0; g < 22 && yq >= r0 + cnt && b != top; g++) { r0 += cnt; a = b; b = (a + dir + m) % m; cnt = dos_tV[b].y - dos_tV[a].y; if (cnt == 0) cnt = 1; }
   if (cnt == 0) cnt = 1;
   uint t = uint(y - r0);
-  int ca = dos_tlevel(a), cb = dos_tlevel(b);
+  int ca = dos_tLv[clamp(a, 0, 23)], cb = dos_tLv[clamp(b, 0, 23)];
   return ivec2(int(uint(dos_tV[a].x * 65536 + 0x8000) + t * uint(dos_udiv((dos_tV[b].x - dos_tV[a].x) * 65536, cnt))),
                int(uint(ca) + t * uint(dos_udiv(cb - ca, cnt))));
 }
@@ -145,7 +235,7 @@ int dos_fan(int s, int n, int k) { return k == 0 ? s : k == n - 1 ? s + 3 * (n -
 float dos_tex_level() {
   int s = v_pstart - 1;
   if (s < 0) return -1.0;
-  for (int i = 0; i < 24; i++) { dos_tV[i] = ivec2(0); dos_tA[i] = s; dos_tB[i] = s; dos_tT[i] = 0.0; }   /* (every lane's reads stay in the buffer) */
+  for (int i = 0; i < 24; i++) { dos_tV[i] = ivec2(0); dos_tA[i] = s; dos_tB[i] = s; dos_tT[i] = 0.0; dos_tLv[i] = 0; }   /* (every lane's reads stay in the buffer) */
   int n = 0, m = 0;
   for (int t = 0; t < 16; t++) {   /* the fan's corners: s, then each triangle's second, the last one's third too */
     if (((int(dos_float((s + 3 * t) * 13 + 12) + 0.5) % 32 / 3) & 2) != 0) { n = t + 3; break; }
@@ -164,10 +254,13 @@ float dos_tex_level() {
     if (ina) { dos_tV[m] = dos_scr(wa); dos_tA[m] = ia; dos_tB[m] = ia; dos_tT[m] = 0.0; m++; }
     if (ina != inc && m < 20) {
       float t = (nz - za) / (zc - za);
-      dos_tV[m] = dos_gvtx(u_mvp * vec4(mix(wa, wc, t), 1.0)); dos_tA[m] = ia; dos_tB[m] = ic; dos_tT[m] = max(t, 1e-6); m++;
+      dos_tV[m] = dos_nvtx(wa, wc, int(nz)); dos_tA[m] = ia; dos_tB[m] = ic; dos_tT[m] = max(t, 1e-6); m++;
     }
     if (m >= 20) break;
   }
+  if (m < 3) return -1.0;
+  for (int i = 0; i < 20; i++) { if (i >= m) break; dos_tLv[i] = dos_tlevel(i); }
+  if (v_pit == 0) m = dos_tclip2d(m);   /* (not the cockpit: see dos_gouraud) */
   if (m < 3) return -1.0;
   int top = 0, ybot = dos_tV[0].y;
   for (int i = 0; i < m; i++) { if (dos_tV[i].y <= dos_tV[top].y) top = i; ybot = max(ybot, dos_tV[i].y); }
@@ -202,6 +295,11 @@ vec3 dos_gouraud(float lev) {
       cmin = min(cmin, C[i]); cmax = max(cmax, C[i]);
       if (da >= 0.0) { int b2 = I[i] * 13; V[m] = dos_scr(vec3(dos_float(b2), dos_float(b2 + 1), dos_float(b2 + 2))); CF[m] = int(floor(C[i] * 65536.0 + 0.5)); m++; }
       if ((da >= 0.0) != (db >= 0.0)) { float t = da / (da - db); V[m] = dos_gvtx(mix(a, b, t)); CF[m] = int(floor(mix(C[i], C[(i + 1) % n], t) * 65536.0 + 0.5)); m++; }
+    }
+    if (m >= 3 && v_pit == 0) {   /* the 2D screen clip first (0x7fe9c, as dos_tex_level); not the cockpit (DOSBox sweep: clipping its struts moves their levels away from DOS) */
+      for (int i = 0; i < 20; i++) { if (i >= m) break; dos_tV[i] = V[i]; dos_tLv[i] = CF[i]; }
+      m = min(dos_tclip2d(m), 20);
+      for (int i = 0; i < 20; i++) { if (i >= m) break; V[i] = dos_tV[i]; CF[i] = dos_tLv[i]; }
     }
     if (m >= 3) {
       int top = 0, ybot = V[0].y;

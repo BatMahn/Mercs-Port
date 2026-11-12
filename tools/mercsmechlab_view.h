@@ -215,7 +215,7 @@ static inline void mercs_mechlab_view_draw(mercs_mechlab_view *v,mercs_art *a,co
         if(y+height>(v->panel||pending?222:373))break;
         snprintf(text,sizeof text,"%s%s",mtv_item_name(g,label),g->type==2?"":":");
         mercs_art_text(a,10,460,y,text,(size_t)i==v->selected?17:22);
-        if(game_mode==1)mlv_number(a,611,y,(int32_t)g->count,1);
+        if(game_mode==1)mlv_number(a,611,y,(int32_t)(g->count-g->damaged),1);   /* intact stock (Titanium 0x10049802) */
         if(mlv_crits(g,m)>=0)mlv_number(a,game_mode==1?561:611,y,mlv_crits(g,m),1);
     }
     if(pending){
