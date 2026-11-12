@@ -374,3 +374,28 @@ int mercs_exchange_acknowledge(const char *overlay,const mercs_exchange_launch *
     put32(bytes+EX_CONTEXT,checksum(bytes,EX_CONTEXT));
     return publish_bytes(dir,"APPLIED.DAT",bytes,sizeof bytes);
 }
+
+/* Titanium's wreck file beside the result (published first, so a readable
+ * RESULT.DAT always has its SALVAGE.MW2 when the mission recorded one). */
+int mercs_exchange_publish_salvage(const char *overlay,const mercs_exchange_launch *launch,
+                                   const uint8_t *bytes,size_t size)
+{
+    mercs_exchange_launch saved;
+    char dir[4096];
+    if(!launch||!bytes||!size||mercs_exchange_load(overlay,launch->token,&saved)||
+       directory_path(overlay,launch->token,dir,sizeof dir)) return MERCS_EXCHANGE_INVALID;
+    return publish_bytes(dir,"SALVAGE.MW2",bytes,size);
+}
+
+int mercs_exchange_read_salvage(const char *overlay,const mercs_exchange_launch *launch,
+                                uint8_t *bytes,size_t capacity,size_t *size)
+{
+    char dir[4096],path[4096];
+    int rc;
+    if(!launch||!bytes||!size) return MERCS_EXCHANGE_INVALID;
+    rc=directory_path(overlay,launch->token,dir,sizeof dir);
+    if(rc) return rc;
+    if(path_for(dir,"SALVAGE.MW2",path,sizeof path)) return MERCS_EXCHANGE_INVALID;
+    return read_bytes(path,bytes,capacity,size);
+}
+

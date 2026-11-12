@@ -122,10 +122,21 @@ Titanium Edition** disc's **`INSTALL/16BIT/`** folder:
 | `INSTALL/16BIT/MW2.PRJ` | `Mercs-game/titanium/MW2.PRJ` | Required for Titanium Direct3D. |
 | `INSTALL/16BIT/SKYGND.PAR` | `Mercs-game/titanium/SKYGND.PAR` | Required; keep it paired with that archive. |
 | `INSTALL/16BIT/PARTICLE.PID` | `Mercs-game/titanium/particle.PID` | Optional missile-smoke asset; include it for that effect. |
+| `INSTALL/16BIT/DATABASE.MW2` | `Mercs-game/titanium/DATABASE.MW2` | For the Salvage Yard (dynamic salvage). |
+| `INSTALL/DATA/SMK/*.SHP` and `SMK/*.SMK` | `Mercs-game/titanium/SMK/` | For the Salvage Yard; copy both folders' files into this one folder. |
 
 Use the 16-bit files from **Mercenaries**, not the original MW2 Titanium disc or
 its 8-bit installation. The selected Mercs profile keeps its mission, model,
 texture and environment data together; it is not a separate texture overlay.
+
+The **Salvage Yard** is Titanium's dynamic salvage: after a won mercenary
+contract, the debrief's **Salvage** button opens a screen where you strip the
+wrecks you made (and lancemates you lost) for parts or recover whole chassis.
+It uses Titanium's own shell art, so it appears only when `titanium/DATABASE.MW2`
+and `titanium/SMK/` are present. Press **F10** and use **Salvage** to choose it
+for every look (Auto turns it on for Titanium Direct3D only, as the original
+editions had it); the DOS and 3dfx editions otherwise keep the contract's
+salvage list.
 
 Select the look through **Combat Variables → Graphics Options (G) → Renderer**,
 or press **F10** and use **Game Look** in Video Options. A look chosen during a mission
@@ -238,6 +249,7 @@ on disk after the active lock is released.
 | 3dfx or Titanium cannot be selected | Check the matching archive and sky file for that Mercenaries edition and the destination spellings above. |
 | No CD soundtrack | Check `music/`, supported formats and original `Track02`–`Track22` numbering. Avoid duplicate files for a track. |
 | Titanium missile smoke is missing | Add its matching `titanium/particle.PID`. |
+| No Salvage button after a won contract | Add `titanium/DATABASE.MW2` and `titanium/SMK/`; check F10 → Salvage. The mission must allow salvage, and you must have killed an enemy mech or lost a lancemate (OUT3 always opens). |
 | Saves or installation state cannot be written | Make the game folder writable and keep `install/` and its edition directories as ordinary directories. |
 
 For the current graphics options and remaining game issues, see

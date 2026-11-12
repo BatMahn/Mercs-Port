@@ -77,11 +77,11 @@ cdrip: tools/cdrip.c
 
 HDRS = $(wildcard src/*.h tools/*.h)
 RB_SRC = src/rb_gpu.c src/rb_shaders.c
-RENDER_SRC = $(RB_SRC) src/hud.c src/mercshud.c src/mercsfiregroups.c src/mercscockpit.c src/mercsoptions.c src/mercsparticles.c src/shp.c src/glr.c src/mercsground.c src/skygnd.c src/anim.c src/mek.c src/mtbl.c src/msim.c src/mercsresult.c src/fx.c src/combat.c src/mercsreturn.c src/mercsmissionreturn.c src/mercsexchange.c src/mercsbridge.c src/mercsscene.c src/ai.c src/mech3d.c src/render.c src/tex.c src/wtb.c src/bwd.c src/bwdplace.c src/prj.c src/datapath.c
+RENDER_SRC = $(RB_SRC) src/hud.c src/mercshud.c src/mercsfiregroups.c src/mercscockpit.c src/mercsoptions.c src/mercsparticles.c src/shp.c src/glr.c src/mercsground.c src/skygnd.c src/anim.c src/mek.c src/mtbl.c src/msim.c src/mercsresult.c src/fx.c src/combat.c src/mercsreturn.c src/mercsmissionreturn.c src/mercsexchange.c src/mercsbridge.c src/mercssalvage_file.c src/mercsscene.c src/ai.c src/mech3d.c src/render.c src/tex.c src/wtb.c src/bwd.c src/bwdplace.c src/prj.c src/datapath.c
 
 # Mercenaries starts in its native folder-picker / registration / contract shell.
 MERCS_SRC = tools/mercs.c tools/mercsshell.c src/mercsart.c src/mercsviewport.c src/mercsshell_audio.c src/mercstext.c src/mercspicker.c src/mercslock.c src/mercsshell_data.c src/mercscareer.c \
-            src/mercsdebrief.c src/mercssave.c src/mercssave_init.c src/mercsinterchange.c src/mercsmechlab.c src/mercsinstant.c src/mercscampaign.c src/mercsrmg.c src/mercsstore.c src/mercsrepair.c src/mercspanels.c src/mercsscores.c src/mercseconomy.c src/mercscontrols.c \
+            src/mercsdebrief.c src/mercssave.c src/mercssave_init.c src/mercsinterchange.c src/mercsmechlab.c src/mercssalvage.c src/mercsinstant.c src/mercscampaign.c src/mercsrmg.c src/mercsstore.c src/mercsrepair.c src/mercspanels.c src/mercsscores.c src/mercseconomy.c src/mercscontrols.c \
             src/mercsvideo.c src/vidfx.c src/smk.c src/shelldb.c src/ttext.c src/lance.c \
             src/sfx.c src/portcfg.c src/cdaudio.c $(RENDER_SRC) $(WINSRC)
 MERCS_OBJ = $(patsubst %.c,build/mercs/%.o,$(sort $(MERCS_SRC)))
@@ -137,7 +137,7 @@ test_mercs_camo: tests/test_mercs_camo.c src/bwd.c src/bwdplace.c src/prj.c src/
 test_mercs_lance: tests/test_mercs_lance.c src/lance.c src/bwd.c src/bwdplace.c src/prj.c src/datapath.c $(HDRS)
 	$(CC) $(CFLAGS) -Isrc $(filter %.c,$^) -o $@ -lm
 
-MERCS_CAMPAIGN_SRC = src/mercscampaign.c src/mercsstore.c src/mercssave.c src/mercssave_init.c src/mercsinterchange.c src/mercsmechlab.c src/mercsrmg.c \
+MERCS_CAMPAIGN_SRC = src/mercscampaign.c src/mercsstore.c src/mercssave.c src/mercssave_init.c src/mercsinterchange.c src/mercsmechlab.c src/mercssalvage.c src/mercsrmg.c \
                      src/mercsdebrief.c src/mercsshell_data.c src/mercsscene.c src/mercscareer.c src/mercsresult.c \
                      src/mercslock.c src/mercseconomy.c src/lance.c src/mek.c src/bwd.c src/bwdplace.c src/prj.c src/datapath.c
 test_mercs_save: tests/test_mercs_save.c src/mercssave.c src/mercssave_init.c src/mercsrmg.c src/mercscareer.c src/prj.c src/mek.c src/datapath.c $(HDRS)
@@ -152,6 +152,8 @@ test_mercs_repair: tests/test_mercs_repair.c src/mercsrepair.c tests/fixtures/ca
 	$(CC) $(CFLAGS) -Isrc $(filter %.c,$^) -o $@
 test_mercs_repair_view: tests/test_mercs_repair_view.c tools/mercsrepair_view.h tests/fixtures/career-return/repair_view_original_fixtures.h $(HDRS)
 	$(CC) $(CFLAGS) $(MERCS_SDL_CFLAGS) -Isrc $(filter %.c,$^) -o $@
+test_mercs_salvage: tests/test_mercs_salvage.c tools/mercssalvage_view.h $(MERCS_CAMPAIGN_SRC) src/mercssalvage_file.c src/mercsexchange.c src/mercsart.c src/shelldb.c src/shp.c src/smk.c $(HDRS)
+	$(CC) $(CFLAGS) -Wno-conversion -DSDL_MAIN_HANDLED -Isrc $(MERCS_SDL_CFLAGS) $(filter %.c,$^) -o $@ $(SDL3_LIBS) -lm
 test_mercs_campaign: tests/test_mercs_campaign.c $(MERCS_CAMPAIGN_SRC) $(HDRS)
 	$(CC) $(CFLAGS) -Wno-conversion -Isrc $(filter %.c,$^) -o $@ -lm
 
@@ -505,7 +507,7 @@ test_mercs_shell_data: tests/test_mercs_shell_data.c tests/mercs_career_original
 test_mercs_shell_sim: tests/test_mercs_shell_sim.c $(MERCS_SHELL_DATA_SRC) src/msim.c src/fx.c src/ai.c src/combat.c src/mtbl.c src/anim.c src/mech3d.c src/wtb.c $(HDRS)
 	$(CC) $(CFLAGS) -Wno-conversion -Isrc $(filter %.c,$^) -o $@ -lm
 
-MERCS_RETURN_TEST_SRC = src/mercsmissionreturn.c src/mercsreturn.c src/mercsexchange.c src/mercsbridge.c $(MERCS_SHELL_DATA_SRC) src/msim.c src/fx.c src/ai.c src/combat.c src/mtbl.c src/anim.c src/mech3d.c src/wtb.c
+MERCS_RETURN_TEST_SRC = src/mercsmissionreturn.c src/mercsreturn.c src/mercsexchange.c src/mercsbridge.c src/mercssalvage_file.c $(MERCS_SHELL_DATA_SRC) src/msim.c src/fx.c src/ai.c src/combat.c src/mtbl.c src/anim.c src/mech3d.c src/wtb.c
 
 test_mercs_statistics: tests/test_mercs_statistics.c tests/fixtures/result-audit/statistics_original_fixtures.h $(MERCS_RETURN_TEST_SRC) $(HDRS)
 	$(CC) $(CFLAGS) -Wno-conversion -Isrc $(filter %.c,$^) -o $@ -lm
@@ -599,6 +601,7 @@ MERCS_TEST_BIN += test_mercs_ammo_capacity
 MERCS_TEST_BIN += test_mercs_palette_cards 
 MERCS_TEST_BIN += test_mercs_fall
 MERCS_TEST_BIN += test_mercs_hud_controls test_mercs_bwdplace test_mercs_map test_mercs_map_render
+MERCS_TEST_BIN += test_mercs_salvage
 MERCS_TEST_BIN += test_mercs_firegroups
 MERCS_TEST_BIN += test_mercs_hardware_weapons test_mercs_rmg test_mercs_ortho test_mercs_scores
 MERCS_TEST_BIN += test_mercs_economy_ui

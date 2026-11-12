@@ -1,5 +1,28 @@
 # Mercenaries development history
 
+## v1.1.0: Titanium's dynamic salvage - the Salvage Yard — 2026-11-11
+
+Mercenaries Titanium salvages what you actually destroyed; the DOS and retail Windows games salvage only from each
+contract's fixed list (both of their mission programs write the wreck file, but neither shell reads it). Traced from the
+Titanium disc's mission engine and shell (Salvage.cpp), the port now has it:
+
+- **Wrecks are recorded in the mission** as Titanium's engine does: every enemy mech the player kills and every mech of
+  the player's star that is lost, with its armour and structure per location (armour divided by the difficulty's
+  factor). They travel with the mission's return as Titanium's SALVAGE.MW2.
+- **The debrief's Salvage button** (Titanium's layout: Aftermath, Salvage, leave) appears after a won mercenary contract
+  whose mission allows salvage - Titanium's per-mission table, every generated contract, and OUT3, which always opens
+  with its Kodiak. Otherwise the debrief says "No opportunity for salvage was available."
+- **The Salvage Yard**, on Titanium's own background and art: pick a wreck, click a location on its diagram, and take its
+  components into the dropship (200 critical slots); components roll against how badly their location was hit -
+  intact, damaged (shown in red) or destroyed. Missiles, Energy, Projectile, Equipment, Ammo and Chassis pages list the
+  dropship's stock; Leave puts items on the discard pile (Take brings them back); Recover Chassis takes a whole wreck
+  when it is sound enough (Titanium's odds), up to 12 mechs; on the Chassis page Leave puts an owned mech back among the
+  wrecks. Exit asks "Accept Salvage?" and the debrief continues.
+- **Setting:** F10 -> Salvage: Auto (the Salvage Yard with the Titanium Direct3D look, the contract list otherwise, as
+  the original editions had it), Contract List, or Salvage Yard for every look. The contract's own salvage list still
+  applies on top, as in Titanium.
+- It needs Titanium's shell files: `titanium/DATABASE.MW2` and `titanium/SMK/` (see FOLDER_SETUP).
+
 ## v1.0.4: Instant Action in the 3Dfx and Direct3D editions — 2026-11-11
 
 - **The player's own mech is drawn again in Instant Action on the 3Dfx and Direct3D editions** (and with the Titanium

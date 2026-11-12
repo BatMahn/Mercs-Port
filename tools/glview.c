@@ -6457,7 +6457,10 @@ int main(int argc, char **argv)
                         g_pl.heading = 0;
                         g_sim.player[0] = (float)g_pl.origin[0]; g_sim.player[2] = (float)g_pl.origin[2];
                     }
-                    if (kc && g_sim.now >= (int32_t)(atof(kc + 1) * 1000) && !g_sim.units[ka].destroyed) g_sim.units[ka].destroyed = 1;
+                    if (kc && g_sim.now >= (int32_t)(atof(kc + 1) * 1000) && !g_sim.units[ka].destroyed) {
+                        g_sim.units[ka].destroyed = 1;
+                        if (strchr(kc + 1, 'p')) msim_record_unit_loss(&g_sim, ka, -1, 4);   /* "k,secs,p": as the player's kill */
+                    }
                 }
             }
             if (g_sim_ok && getenv("MERCS_TEST_STRAFE")) {   /* TEST ONLY: "k,cm_per_s,t0,t1" - actor k slides sideways (world +x)

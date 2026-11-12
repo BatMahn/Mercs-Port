@@ -1898,6 +1898,30 @@ static void stats_loss_context(const msim *s, int victim, int source,
     e->killer_is_player = source == -1;
 }
 
+/* 0x10059a10: the wreck's design prefix (shell: <name>STD), its armour per
+ * location divided by the difficulty's armour factor (DAT_100aea44+5: 1, 3, 4 -
+ * every wreck alike, whatever its side's factor was) and its structure; a
+ * location with no structure and no front or rear armour left keeps nothing. */
+static void salvage_record(msim *s, int victim)
+{
+    static const int K[3] = {1, 3, 4};
+    const combat_unit *u = victim == -1 ? &s->player_unit : &s->units[victim];
+    const char *loadout = victim == -1 ? s->player_loadout : s->actors[victim].loadout;
+    mercs_salvage_wreck *w;
+    int l, k = K[s->difficulty >= 0 && s->difficulty <= 2 ? s->difficulty : 2];
+    if (s->salvage_count >= MERCS_SALVAGE_MAX_WRECKS || !loadout || strlen(loadout) < 5) return;
+    w = &s->salvage[s->salvage_count++];
+    memset(w, 0, sizeof *w);
+    snprintf(w->name, sizeof w->name, "%.5s", loadout);
+    for (l = 0; l < 8; l++) {
+        w->front[l] = (int32_t)(u->armor[l] / (float)k);
+        w->rear[l] = (int32_t)(u->rear[l] / (float)k);
+        w->internal[l] = (int32_t)u->internal[l];
+        if (u->internal[l] <= 0 && (u->armor[l] / (float)k <= 0 || u->rear[l] / (float)k <= 0))
+            w->front[l] = w->rear[l] = w->internal[l] = 0;
+    }
+}
+
 int msim_record_unit_loss(msim *s, int victim, int source, int32_t state)
 {
     mercs_car_record car;
@@ -1915,6 +1939,10 @@ int msim_record_unit_loss(msim *s, int victim, int source, int32_t state)
     memcpy(car.bytes, s->career, sizeof car.bytes);
     if (mercs_car_count_unit_loss(&car, &event)) return -1;
     memcpy(s->career, car.bytes, sizeof s->career);
+    /* mercsw.dll 0x10035ef6 -> 0x10059a10: a unit of the player's star, or an
+     * enemy (alliance 1) mech (class 1) the player killed */
+    if (event.same_player_star || (event.killer_is_player && event.unit_class == 1 && event.alliance == 1))
+        salvage_record(s, victim);
     if (victim == -1) s->player_counted = 1;
     else s->msg_seen[victim] |= 4;
     return 1;

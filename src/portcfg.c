@@ -107,6 +107,9 @@ int portcfg_load(const char *unused, portcfg *c)
         } else if (strcmp(line, "video_fit") == 0) {
             int fit;
             for (fit = 0; fit < PORTCFG_FIT_COUNT; fit++) if (strcmp(v, PORTCFG_FIT_NAME[fit]) == 0) c->video_fit = fit;
+        } else if (strcmp(line, "salvage") == 0) {
+            int k;
+            for (k = 0; k < PORTCFG_SALVAGE_COUNT; k++) if (strcmp(v, PORTCFG_SALVAGE_NAME[k]) == 0) c->salvage = k;
         }
         else if (strcmp(line, "renderer") == 0 || strcmp(line, "edition") == 0) {   /* (edition=: the old single look) */
             int e;
@@ -153,6 +156,7 @@ int portcfg_save(const char *unused, const portcfg *c)
     fprintf(f, "dos_shading=%s\n", c->dos_sky_smooth ? "smooth" : "dithered");
     fprintf(f, "videos=%s\n", PORTCFG_VID_NAME[c->videos >= 0 && c->videos < PORTCFG_VID_COUNT ? c->videos : PORTCFG_VID_ORIGINAL]);
     fprintf(f, "video_fit=%s\n", PORTCFG_FIT_NAME[c->video_fit >= 0 && c->video_fit < PORTCFG_FIT_COUNT ? c->video_fit : PORTCFG_FIT_43]);
+    fprintf(f, "salvage=%s\n", PORTCFG_SALVAGE_NAME[c->salvage >= 0 && c->salvage < PORTCFG_SALVAGE_COUNT ? c->salvage : PORTCFG_SALVAGE_AUTO]);
     fclose(f);
     return 0;
 }
@@ -401,6 +405,14 @@ const char *const PORTCFG_FILTER_NAME[PORTCFG_FILTER_COUNT] = {"original", "near
 const char *const PORTCFG_GPU_NAME[PORTCFG_GPU_COUNT] = {"auto", "d3d12", "vulkan"};
 const char *const PORTCFG_VID_NAME[PORTCFG_VID_COUNT] = {"original", "smooth", "scanlines", "crt", "crt_curved"};
 const char *const PORTCFG_FIT_NAME[PORTCFG_FIT_COUNT] = {"4:3", "fill", "stretch"};
+const char *const PORTCFG_SALVAGE_NAME[PORTCFG_SALVAGE_COUNT] = {"auto", "contract", "dynamic"};
+int portcfg_dynamic_salvage(const portcfg *c, int renderer)
+{
+    int k = c ? c->salvage : PORTCFG_SALVAGE_AUTO;
+    if (k == PORTCFG_SALVAGE_DYNAMIC) return 1;
+    if (k == PORTCFG_SALVAGE_CONTRACT) return 0;
+    return renderer == PORTCFG_ED_D3D;
+}
 
 static void cp(char *dst, const char *src) { snprintf(dst, PORTCFG_PATH, "%s", src ? src : ""); }
 

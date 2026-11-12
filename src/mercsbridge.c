@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <strings.h>
 
 static int user_design(const char *name)
@@ -173,6 +174,18 @@ int mercs_bridge_publish(msim *s, const char *overlay,
         for (i=0;i<launch.unit_count;i++)
             if (retained_owned(overlay,&launch.units[i],&packet->mechs[i])) goto done;
         packet->mech_count=launch.unit_count;
+    }
+    if (s->salvage_count > 0) {
+        /* mercsw.dll 0x10059d0f: srand(time) and 96 rand() draws a wreck */
+        static uint8_t salvage[MERCS_SALVAGE_FILE_MAX];
+        uint32_t seed = (uint32_t)time(NULL);
+        size_t size, k;
+        int d;
+        for (k = 0; k < (size_t)s->salvage_count; k++)
+            for (d = 0; d < 96; d++) s->salvage[k].rnd[d] = mercs_salvage_rand(&seed);
+        stage = "publish the wreck list";
+        if ((detail = mercs_salvage_encode(s->salvage, (size_t)s->salvage_count, salvage, sizeof salvage, &size)) ||
+            (detail = mercs_exchange_publish_salvage(overlay, &launch, salvage, size))) goto done;
     }
     stage = "publish complete return packet";
     if ((detail = mercs_exchange_publish(overlay, &launch, packet))) goto done;

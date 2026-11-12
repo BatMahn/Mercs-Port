@@ -80,4 +80,10 @@ int mercs_exchange_read(const char *overlay, const mercs_exchange_launch *launch
 int mercs_exchange_acknowledge(const char *overlay,
                                const mercs_exchange_launch *launch);
 
+/* Titanium SALVAGE.MW2 beside the result; read returns PENDING when absent. */
+int mercs_exchange_publish_salvage(const char *overlay, const mercs_exchange_launch *launch,
+                                   const uint8_t *bytes, size_t size);
+int mercs_exchange_read_salvage(const char *overlay, const mercs_exchange_launch *launch,
+                                uint8_t *bytes, size_t capacity, size_t *size);
+
 #endif

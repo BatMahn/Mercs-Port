@@ -77,4 +77,9 @@ int mercs_mechlab_finish(mercs_mechlab_session *session, int accept,
 int mercs_mechlab_finish_mek(mercs_mechlab_session *session, int accept,
                               uint8_t *out, size_t capacity, size_t *written);
 
+/* Original weight recalculation and armor-condition baselines on one bare
+ * career mech (used by the Titanium Salvage Yard). */
+int mercs_mechlab_recalculate(uint8_t *mech);
+void mercs_mechlab_armor_condition(uint8_t *mech);
+
 #endif

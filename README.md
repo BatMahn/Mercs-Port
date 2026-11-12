@@ -7,12 +7,12 @@ folder").
 
 The program is `mercs`.
 
-## Status (2026-11-11, v1.0.4)
+## Status (2026-11-11, v1.1.0)
 A development release. The single-player game runs from the original menus through missions and back:
 
 - **Shell:** the original menus and career, from the arrival sequence and pilot registration to the Office, contracts
   (including the procedurally generated ones), the DropShip and Mission Command: Duty Roster, finances, trading, hiring,
-  Mech Ops, the Mech Lab, deployment, briefing, debriefing, salvage and repairs. Careers are saved in the original
+  Mech Ops, the Mech Lab, deployment, briefing, debriefing, salvage (with Titanium's Salvage Yard as an option) and repairs. Careers are saved in the original
   ten-slot Load/Save screen and can be exchanged with the original DOS and Windows saves. Instant Action has its own
   selections, parameters and custom designs.
 - **Simulation:** movement, combat, heat, jump jets, AI, lancemate orders, AeroTech support, mission objectives, the

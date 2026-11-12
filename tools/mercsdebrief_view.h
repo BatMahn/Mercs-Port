@@ -26,7 +26,8 @@ enum {
     MERCS_DEBRIEF_VIEW_TOGGLE,
     MERCS_DEBRIEF_VIEW_NEXT,
     MERCS_DEBRIEF_VIEW_CONTRACTS,
-    MERCS_DEBRIEF_VIEW_REPLAY
+    MERCS_DEBRIEF_VIEW_REPLAY,
+    MERCS_DEBRIEF_VIEW_SALVAGE   /* Titanium's Salvage button (dynamic salvage) */
 };
 enum { MERCS_DEBRIEF_VIEW_FONT=10, MERCS_DEBRIEF_VIEW_WIDTH=558,
        MERCS_DEBRIEF_VIEW_HEIGHT=355, MERCS_DEBRIEF_VIEW_LIMIT=1024*1024 };
@@ -37,6 +38,10 @@ typedef struct {
 } mercs_debrief_view;
 
 typedef struct { char *data; size_t size, capacity; int failed; } mdv_buffer;
+/* Titanium's dynamic-salvage line after the salvage report (0x1001d4ec), set by
+ * the shell before preparing; NULL adds nothing. */
+static const char *mdv_salvage_note;
+static int mdv_salvage_button;   /* set by the shell each frame */
 
 static inline uint32_t mdv_u32(const uint8_t *p)
 { return (uint32_t)p[0]|(uint32_t)p[1]<<8|(uint32_t)p[2]<<16|(uint32_t)p[3]<<24; }
@@ -363,7 +368,9 @@ static inline int mercs_debrief_view_prepare(mercs_debrief_view *view,mercs_art 
     if(mdv_objectives(&objectives,art,terms,report,&shell_view->last_msn))goto malformed;
     if(terms->mode==1) {
         if(mdv_finances(&tail,art,terms,report)||
-           (report->success&&mdv_salvage(&tail,document))||mdv_losses(&tail,document))goto malformed;
+           (report->success&&mdv_salvage(&tail,document))||
+           (report->success&&mdv_salvage_note&&mdv_append(&tail,mdv_salvage_note))||
+           mdv_losses(&tail,document))goto malformed;
     }
     /* Locate authored section before substitution, so a literal player name
      * cannot be interpreted as an extra original page boundary. */
@@ -401,14 +408,17 @@ static inline void mercs_debrief_view_draw(const mercs_debrief_view *view,mercs_
     if(view->portrait[0])mercs_art_clip_flags(art,view->portrait,355,22,0x68u,0);
     mercs_text_draw(&view->text[view->content_mode?1:0],art,46,38,
                    MERCS_DEBRIEF_VIEW_HEIGHT,view->scroll[view->content_mode?1:0],22);
-    mercs_art_button(art,view->content_mode?"lbbdb":"lbba",114,422,0);
+    /* With the Salvage button the controls take Titanium's places (0x10020000:
+     * toggle 45, Salvage 250, leave 451) */
+    mercs_art_button(art,view->content_mode?"lbbdb":"lbba",mdv_salvage_button?45:114,422,0);
+    if(mdv_salvage_button)mercs_art_button(art,"salv",250,422,0);
     switch(view->leave_action) {
     case MERCS_DEBRIEF_VIEW_NEXT:leave="lbbn";break;
     case MERCS_DEBRIEF_VIEW_CONTRACTS:leave="lbcsp";break;
     case MERCS_DEBRIEF_VIEW_REPLAY:leave="lbrp";break;
     default:break;
     }
-    if(leave)mercs_art_button(art,leave,351,433,0);
+    if(leave)mercs_art_button(art,leave,mdv_salvage_button?451:351,433,0);
 }
 
 static inline void mercs_debrief_view_draw_rows(const mercs_debrief_view *view,
@@ -430,6 +440,12 @@ static inline void mercs_debrief_view_draw_rows(const mercs_debrief_view *view,
 static inline int mercs_debrief_view_click(mercs_debrief_view *view,int x,int y)
 {
     if(!view||!view->ready)return MERCS_DEBRIEF_VIEW_NONE;
+    if(mdv_salvage_button) {   /* Titanium's hotspots (table 0x100a1c58) */
+        if(x>=50&&x<=220&&y>=416&&y<=470){view->content_mode=!view->content_mode;return MERCS_DEBRIEF_VIEW_TOGGLE;}
+        if(x>=251&&x<=421&&y>=423&&y<=471)return MERCS_DEBRIEF_VIEW_SALVAGE;
+        if(x>=451&&x<=616&&y>=423&&y<=471)return view->leave_action;
+        return MERCS_DEBRIEF_VIEW_NONE;
+    }
     if(x>=104&&x<=275&&y>=416&&y<=470) {
         view->content_mode=!view->content_mode;return MERCS_DEBRIEF_VIEW_TOGGLE;
     }

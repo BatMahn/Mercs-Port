@@ -22,6 +22,11 @@ void mercs_art_restore(mercs_art *art, const mercs_art_snapshot *snapshot);
 void mercs_art_snapshot_free(mercs_art_snapshot *snapshot);
 void mercs_art_begin_page(mercs_art *art);
 int mercs_art_background(mercs_art *art, int entry);
+/* A full-screen picture from another shell database (Titanium's own). */
+int mercs_art_background_image(mercs_art *art, const shell_image *image);
+/* A second folder searched for named clips (SMK\\NAME.SMK / .SHP) after the
+ * game's own: Titanium's shell art. Empty clears it. */
+void mercs_art_set_extra_dir(mercs_art *art, const char *dir);
 int mercs_art_width(mercs_art *art, int font_entry, const char *text);
 int mercs_art_height(mercs_art *art, int font_entry);
 void mercs_art_text(mercs_art *art, int font_entry, int x, int y,

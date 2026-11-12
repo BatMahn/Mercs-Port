@@ -514,3 +514,10 @@ int mercs_mechlab_finish_mek(mercs_mechlab_session *s,int accept,uint8_t *out,si
     if(n>capacity)return MERCS_MECHLAB_LIMIT;
     memcpy(out,bytes,n);*written=n;return 0;
 }
+
+/* Shared with the Titanium Salvage Yard (mercssalvage.c): the original weight
+ * recalculation (0x5c580) and the armor condition baselines (0x5c488 /
+ * Titanium 0x1004b041). Both act on a bare 0x850-byte career mech. */
+int mercs_mechlab_recalculate(uint8_t *mech){return recalculate(mech);}
+void mercs_mechlab_armor_condition(uint8_t *mech){if(mech)armor_condition(mech);}
+

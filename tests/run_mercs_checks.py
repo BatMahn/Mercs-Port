@@ -125,6 +125,13 @@ def main():
         run("test_mercs_mission_return", archive)
         run("test_mercs_exchange", private("exchange"))
         run("test_mercs_roundtrip", archive, private("roundtrip"), "dos")
+        # Titanium dynamic salvage: rules, exchange and yard actions on the
+        # retail archive; the screen itself needs Titanium's shell files.
+        ti_shell = game / "titanium"
+        if (ti_shell / "DATABASE.MW2").is_file() and (ti_shell / "SMK").is_dir():
+            run("test_mercs_salvage", archive, game / "cd/MERCS", ti_shell, private("salvage") / "shot")
+        else:
+            run("test_mercs_salvage", archive, game / "cd/MERCS")
 
         # Native GL fixtures run against real shaders as well as numerical
         # boundary cases. The provided archives supply edition-specific art.

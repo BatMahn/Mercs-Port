@@ -16,6 +16,7 @@
 #include "mtbl.h"
 #include "prj.h"
 #include "mercsresult.h"
+#include "mercssalvage.h"
 
 #define MSIM_MAX_NAVS 64
 
@@ -314,6 +315,11 @@ typedef struct {
         float pos[3];
         int32_t radius_cm, radius_cap_cm, remaining_ticks;
     } nuclear_wave;
+    /* Titanium's wreck list (mercsw.dll 0x10059a10): a mech of the player's star
+     * lost, or an enemy mech the player kills. Written as SALVAGE.MW2 with the
+     * mission's return (mercs_bridge_publish). */
+    mercs_salvage_wreck salvage[MERCS_SALVAGE_MAX_WRECKS];
+    int          salvage_count;
 } msim;
 
 /* Mercs DOS0x2d408 / 0x2d23c. point0 addresses the player's group,1/2 the

@@ -44,6 +44,7 @@ struct mercs_art {
     int clip_count;
     unsigned page;
     sfx *audio;
+    char extra_dir[2048];   /* a second folder for named clips (Titanium's shell art), searched after the game's */
 };
 struct mercs_art_snapshot {
     Uint32 frame[ART_W * ART_H];
@@ -161,6 +162,22 @@ int mercs_art_background(mercs_art *a, int index)
     return 0;
 }
 
+int mercs_art_background_image(mercs_art *a, const shell_image *image)
+{
+    int x, y, i;
+    if (!a || !image || !image->pix) return -1;
+    for (i = 0; i < 256; i++) a->palette[i] = rgba(image->pal[i]);
+    for (y = 0; y < ART_H; y++) for (x = 0; x < ART_W; x++)
+        a->frame[y * ART_W + x] = x < image->w && y < image->h ?
+            a->palette[image->pix[y * image->w + x]] : 0xff000000u;
+    return 0;
+}
+
+void mercs_art_set_extra_dir(mercs_art *a, const char *dir)
+{
+    if (a) snprintf(a->extra_dir, sizeof a->extra_dir, "%s", dir ? dir : "");
+}
+
 static const unsigned char *glyph(art_entry *e, unsigned c, int *width, int *height, int *key)
 {
     uint32_t off, count;
@@ -257,13 +274,15 @@ static art_clip *open_clip(mercs_art *a, const char *name)
     clip->page = a->page - 1;
     snprintf(clip->name, sizeof clip->name, "%s", name);
     snprintf(relative, sizeof relative, "SMK\\%s.SMK", name);
-    if (!dp_resolve(relative, path, sizeof path)) clip->movie = smk_open_file(path);
+    if (!dp_resolve(relative, path, sizeof path) ||
+        (a->extra_dir[0] && !dp_resolve_in(a->extra_dir, relative, path, sizeof path))) clip->movie = smk_open_file(path);
     if (clip->movie) {
         smk_next(clip->movie); clip->last_tick = SDL_GetTicks();
         return clip;
     }
     snprintf(relative, sizeof relative, "SMK\\%s.SHP", name);
-    if (!dp_resolve(relative, path, sizeof path) && (file = fopen(path, "rb"))) {
+    if ((!dp_resolve(relative, path, sizeof path) ||
+         (a->extra_dir[0] && !dp_resolve_in(a->extra_dir, relative, path, sizeof path))) && (file = fopen(path, "rb"))) {
         long length;
         unsigned char *data = NULL;
         if (!fseek(file, 0, SEEK_END) && (length = ftell(file)) > 0 && length < 16 * 1024 * 1024 && !fseek(file, 0, SEEK_SET)) {

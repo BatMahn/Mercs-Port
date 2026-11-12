@@ -24,6 +24,11 @@ What is still open in the Mercenaries port, in plain language.
     Catapult earlier when the player walks the autopilot's route is still open.
 
   Combat has been compared only through whole-mission outcomes (BET1, DOU1, GRA1, IVA3, TRA1), not shot by shot.
+- **The Salvage Yard (Titanium's dynamic salvage, v1.1.0)** is built from Titanium's code and art but has not been
+  compared with the running Titanium game, and no career has been played through it by a person. Salvaged weapons
+  and equipment keep Titanium's damaged mark, but the port's Mech Lab and repair bay do not yet treat a damaged item
+  differently. The wrecks of a return live until the debrief is left: closing the game during the debrief loses them
+  (Titanium keeps its file until then). Which ammunition type a salvaged bin becomes is inferred.
 - **The full career has not been played by a person from start to finish.** Both careers are walked to the ending in
   every edition with recorded wins (every contract accepted, returned, debriefed and continued), and individual
   contracts, salvage, repairs and save exchange are tested; the missions after the first few have not been fought.

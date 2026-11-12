@@ -58,6 +58,7 @@ extern char **environ;
 #include "mercsinstant_view.h"
 #include "mercsmechlab_view.h"
 #include "mercscrew_view.h"
+#include "mercssalvage_view.h"
 
 enum { PAGE_MENU, PAGE_HALL, PAGE_REGISTER, PAGE_NEWS, PAGE_OFFICE,
        PAGE_COMPUTER, PAGE_CONTRACTS, PAGE_DROPSHIP, PAGE_COMMAND,
@@ -163,6 +164,13 @@ typedef struct {
     int (*mechlab_complete)(void *,const uint8_t *,size_t);
     void *mechlab_complete_user;
     int personnel_return, room_restart;
+    /* Titanium's dynamic salvage: the wrecks of the last return, its yard (an
+     * overlay on the debrief page) and Titanium's background picture */
+    mercs_salvage_wreck salvage_wrecks[MERCS_SALVAGE_MAX_WRECKS];
+    int salvage_wreck_count, salvage_open, salvage_used, salvage_bg_ok;
+    mercs_salvage_yard salvage_yard;
+    mercs_salvage_view salvage_view;
+    shell_image salvage_bg;
 } shell;
 
 static void apply_shell_volumes(shell *s);
@@ -352,7 +360,7 @@ static void set_page(shell *s, int page)
 }
 
 enum { SAVE_DISPLAY = 1, SAVE_MOVIE_LOOK = 2, SAVE_MOVIE_FIT = 4, SAVE_GAME_LOOK = 8,
-       SAVE_RENDER_SIZE = 16, SAVE_GRAPHICS = 32, SAVE_GPU = 64 };
+       SAVE_RENDER_SIZE = 16, SAVE_GRAPHICS = 32, SAVE_GPU = 64, SAVE_SALVAGE = 128 };
 
 static void save_settings_fields(shell *s, unsigned changed)
 {
@@ -377,6 +385,7 @@ static void save_settings_fields(shell *s, unsigned changed)
     if (changed & SAVE_DISPLAY) { current.mode = s->cfg->mode; current.w = s->cfg->w; current.h = s->cfg->h; }
     if (changed & SAVE_MOVIE_LOOK) current.videos = s->cfg->videos;
     if (changed & SAVE_MOVIE_FIT) current.video_fit = s->cfg->video_fit;
+    if (changed & SAVE_SALVAGE) current.salvage = s->cfg->salvage;
     if (changed & SAVE_GAME_LOOK) { current.renderer = s->cfg->renderer; current.texset = s->cfg->texset; }
     if (changed & SAVE_RENDER_SIZE) { current.render_w = s->cfg->render_w; current.render_h = s->cfg->render_h; }
     if (changed & SAVE_GPU) current.gpu = s->cfg->gpu;
@@ -676,6 +685,10 @@ static int record_disband_score(shell *s,const mercs_save_state *staged)
     return record_earned_score_document(s,staged,token);
 }
 
+static void salvage_debrief_note(shell *s);
+static int game_question(shell *s, const char *message, int default_choice);
+static void game_notice(shell *s, const char *message);
+
 static void enter_debrief(shell *s)
 {
     mercs_campaign next;
@@ -684,10 +697,122 @@ static void enter_debrief(shell *s)
     if (s->campaign.entry.movie == MERCS_DEBRIEF_MOVIE_EJECT) play_movie(s, "MEJECT");
     else if (s->campaign.entry.movie == MERCS_DEBRIEF_MOVIE_DEATH) play_movie(s, "MDEATH");
     if (!s->running || stage_career(s, &next, &view)) return;
+    salvage_debrief_note(s);
     if (!mercs_campaign_enter_debrief(s->archive, &next, view, s->status, sizeof s->status))
         commit_career(s, &next, view,
                        next.phase == MERCS_CAMPAIGN_ENDED ? PAGE_MENU : PAGE_DEBRIEF);
     mercs_campaign_free(&next); free(view);
+}
+
+/* ---- Titanium's dynamic salvage (see mercssalvage.h) ---- */
+
+static const char *salvage_scene(const shell *s)
+{
+    return s->campaign.accepted >= 0 && s->campaign.accepted < s->career.mission_count ?
+           s->career.missions[s->campaign.accepted].scene : "";
+}
+
+/* Titanium's shell art: its DATABASE.MW2 (the Salvage background) and SMK\ */
+static int salvage_assets(const shell *s, char database[PORTCFG_PATH * 2], char dir[PORTCFG_PATH])
+{
+    char probe[PORTCFG_PATH * 2];
+    if (!s->cfg->titanium[0]) return -1;
+    snprintf(dir, PORTCFG_PATH, "%s", s->cfg->titanium);
+    if (dp_resolve_in(dir, "DATABASE.MW2", database, PORTCFG_PATH * 2) ||
+        dp_resolve_in(dir, "SMK\\MSBACK.SHP", probe, sizeof probe)) return -1;
+    return 0;
+}
+
+/* The debrief's Salvage button (Titanium 0x10020000 area): a won mercenary
+ * contract whose mission allows salvage, with wrecks recorded - or OUT3, which
+ * always opens (the Kodiak). Once per return. */
+static int salvage_available(const shell *s)
+{
+    char database[PORTCFG_PATH * 2], dir[PORTCFG_PATH];
+    const char *scene = salvage_scene(s);
+    if (s->salvage_used || s->campaign.phase != MERCS_CAMPAIGN_DEBRIEF || s->career.mode != 1 ||
+        !s->campaign.report.success || salvage_assets(s, database, dir)) return 0;
+    if (mercs_salvage_is_out3(scene)) return 1;
+    return s->salvage_wreck_count > 0 &&
+           mercs_salvage_allowed(scene, !strncasecmp(s->campaign.campaign, "RAN", 3));
+}
+
+/* Debrief text (0x1001d4ec): wrecks were recorded but the mission gave no
+ * opportunity for salvage. */
+static void salvage_debrief_note(shell *s)
+{
+    const char *scene = salvage_scene(s);
+    mdv_salvage_note = s->salvage_wreck_count > 0 && !s->salvage_used && s->career.mode == 1 &&
+        !mercs_salvage_is_out3(scene) &&
+        !mercs_salvage_allowed(scene, !strncasecmp(s->campaign.campaign, "RAN", 3)) ?
+        "\\nNo opportunity for salvage was available.\\n" : NULL;
+}
+
+static void close_salvage(shell *s)
+{
+    mercs_salvage_yard_free(&s->salvage_yard);
+    memset(&s->salvage_view, 0, sizeof s->salvage_view);
+    s->salvage_open = 0;
+    mercs_art_begin_page(s->art);
+}
+
+static void open_salvage(shell *s)
+{
+    char database[PORTCFG_PATH * 2], dir[PORTCFG_PATH];
+    int rc;
+    if (!salvage_available(s)) return;
+    if (salvage_assets(s, database, dir)) return;
+    if (!s->salvage_bg_ok) {
+        shelldb db;
+        uint8_t *bytes = NULL;
+        long length;
+        if (shelldb_open(database, &db) == 0) {
+            /* resource 47, one-based (Titanium 0x10069bc0: DAT_100b9e00) */
+            length = shelldb_entry(&db, 46, &bytes);
+            if (length > 0 && !shell_pcx(bytes, (size_t)length, &s->salvage_bg, NULL)) s->salvage_bg_ok = 1;
+            free(bytes); shelldb_close(&db);
+        }
+        if (!s->salvage_bg_ok) { game_notice(s, "Titanium's Salvage background could not be read.#Ok"); return; }
+    }
+    rc = mercs_salvage_yard_open(&s->salvage_yard, s->archive, s->salvage_wrecks,
+                                 (size_t)s->salvage_wreck_count, mercs_salvage_is_out3(salvage_scene(s)),
+                                 s->campaign.document);
+    if (rc) { game_notice(s, "No salvage.|#Ok"); s->salvage_used = 1; return; }
+    mercs_art_set_extra_dir(s->art, dir);
+    mercs_art_begin_page(s->art);
+    mercs_salvage_view_open(&s->salvage_view, &s->salvage_yard, &s->salvage_bg);
+    s->salvage_open = 1;
+    fprintf(stderr, "mercs shell: salvage-yard wrecks=%zu\n", s->salvage_yard.count);
+}
+
+static void continue_debrief(shell *s);
+
+/* Exit: "Accept Salvage?" (0x10065e2f case 0). Yes commits the yard's career
+ * and leaves the debrief, as Titanium does; No stays in the yard. */
+static void exit_salvage(shell *s)
+{
+    mercs_campaign next;
+    mercs_shell_state *view;
+    if (!game_question(s, "Accept Salvage?|", 0)) return;
+    if (stage_career(s, &next, &view)) return;
+    mercs_save_swap(next.document, s->salvage_yard.document);
+    if (mercs_campaign_hydrate(s->archive, &next, view, s->status, sizeof s->status) ||
+        commit_career(s, &next, view, PAGE_DEBRIEF)) {
+        mercs_save_swap(next.document, s->salvage_yard.document);
+        mercs_campaign_free(&next); free(view); return;
+    }
+    mercs_campaign_free(&next); free(view);
+    s->salvage_used = 1; s->salvage_wreck_count = 0;
+    close_salvage(s);
+    continue_debrief(s);
+}
+
+static void salvage_click(shell *s, int x, int y)
+{
+    const char *notice = NULL;
+    int at = mercs_salvage_view_click(&s->salvage_view, &s->salvage_yard, s->archive, x, y, &notice);
+    if (at == MSV_NOTICE && notice) game_notice(s, notice);
+    else if (at == MSV_EXIT) exit_salvage(s);
 }
 
 static void continue_debrief(shell *s)
@@ -714,6 +839,7 @@ static void continue_debrief(shell *s)
     }
     if (!s->running || stage_career(s, &next, &view)) return;
     if (!mercs_campaign_continue(s->archive, &next, view, s->status, sizeof s->status)) {
+        s->salvage_wreck_count = 0; s->salvage_used = 0;   /* Titanium removes salvage.mw2 on leaving the debrief */
         page = next.phase == MERCS_CAMPAIGN_ENDED ? PAGE_MENU : next.active ? PAGE_BRIEFING : PAGE_HALL;
         if (page == PAGE_BRIEFING) s->brief_tab = 0;
         commit_career(s, &next, view, page);
@@ -1428,6 +1554,18 @@ static int consume_return(shell *s, const char *overlay, const mercs_exchange_la
             fprintf(stderr, "mercs shell: retained imported transient %s: %s\n", logical, strerror(errno));
         }
     }
+    s->salvage_wreck_count = 0; s->salvage_used = 0;
+    {   /* Titanium's wreck list, for the debrief's Salvage Yard */
+        int i, renderer = -1;
+        static uint8_t bytes[MERCS_SALVAGE_FILE_MAX];
+        size_t size = 0, count = 0;
+        for (i = 0; i < 3; i++) if (!strcmp(launch->edition, portcfg_mercs_name(shell_looks[i]))) renderer = shell_looks[i];
+        if (renderer >= 0 && portcfg_dynamic_salvage(s->cfg, renderer) &&
+            !mercs_exchange_read_salvage(overlay, launch, bytes, sizeof bytes, &size) &&
+            !mercs_salvage_decode(bytes, size, s->salvage_wrecks, MERCS_SALVAGE_MAX_WRECKS, &count))
+            s->salvage_wreck_count = (int)count;
+        fprintf(stderr, "mercs shell: salvage wrecks=%d\n", s->salvage_wreck_count);
+    }
     if (mercs_exchange_acknowledge(overlay, launch))
         fprintf(stderr, "mercs shell: durable return retained; its applied receipt could not be finalized\n");
     fprintf(stderr, "mercs shell: return committed; outcome=%u status=%d mech-action=%d\n",
@@ -2093,7 +2231,10 @@ static void draw_original(shell *s)
             mercs_art_text(s->art, 5, 42, 92 + 35 * i, description,
                            i == s->save_slot ? 17 : 22);
         }
+    } else if (s->page == PAGE_DEBRIEF && s->salvage_open) {
+        mercs_salvage_view_draw(&s->salvage_view, s->art, &s->salvage_yard);
     } else if (s->page == PAGE_DEBRIEF) {
+        mdv_salvage_button = salvage_available(s);
         mercs_debrief_view_draw_rows(&s->debrief_view, s->art, s->reveal_rows);
     } else if (s->page == PAGE_REPAIR && s->repair) {
         mercs_repair_view_draw(s->art, &s->repair_view, s->repair);
@@ -2155,12 +2296,15 @@ static void draw_settings(shell *s)
     page_background(s, 26);
     box(s, 8, 70, 624, 362, 0x050a13, 255);
     centered(s, 320, 91, 18, 0xe6eaf1, "VIDEO OPTIONS");
-    text(s, 65, 151, 12, 0xc0cde0, "DISPLAY");
-    button(s, 316, 140, 250, 34, fullscreen ? "FULLSCREEN" : "WINDOWED", 0, 1);
-    text(s, 65, 220, 12, 0xc0cde0, "MOVIE FILTER");
-    button(s, 316, 209, 250, 34, looks[s->cfg->videos], 0, 1);
-    text(s, 65, 289, 12, 0xc0cde0, "MOVIE SIZE");
-    button(s, 316, 278, 250, 34, fits[s->cfg->video_fit], 0, 1);
+    static const char *salvage[] = {"AUTO (TITANIUM)", "CONTRACT LIST", "SALVAGE YARD"};
+    text(s, 65, 137, 12, 0xc0cde0, "DISPLAY");
+    button(s, 316, 126, 250, 34, fullscreen ? "FULLSCREEN" : "WINDOWED", 0, 1);
+    text(s, 65, 189, 12, 0xc0cde0, "MOVIE FILTER");
+    button(s, 316, 178, 250, 34, looks[s->cfg->videos], 0, 1);
+    text(s, 65, 241, 12, 0xc0cde0, "MOVIE SIZE");
+    button(s, 316, 230, 250, 34, fits[s->cfg->video_fit], 0, 1);
+    text(s, 65, 293, 12, 0xc0cde0, "SALVAGE");
+    button(s, 316, 282, 250, 34, salvage[s->cfg->salvage >= 0 && s->cfg->salvage < PORTCFG_SALVAGE_COUNT ? s->cfg->salvage : 0], 0, 1);
     text(s, 65, 356, 11, 0xc0cde0, "GAME LOOK");
     for (i = 0; i < 3; i++)
         button(s, look_x[i], 346, look_w[i], 31, portcfg_mercs_label(shell_looks[i]),
@@ -2255,9 +2399,10 @@ static void click(shell *s, int x, int y, int clicks)
     (void)clicks;
     if (s->transition >= 0) return;
     if (s->page == PAGE_SETTINGS) {
-        if (hit(x,y,316,140,250,34)) toggle_fullscreen(s);
-        else if (hit(x,y,316,209,250,34)) { s->cfg->videos = (s->cfg->videos + 1) % PORTCFG_VID_COUNT; save_settings_fields(s, SAVE_MOVIE_LOOK); }
-        else if (hit(x,y,316,278,250,34)) { s->cfg->video_fit = (s->cfg->video_fit + 1) % PORTCFG_FIT_COUNT; save_settings_fields(s, SAVE_MOVIE_FIT); }
+        if (hit(x,y,316,126,250,34)) toggle_fullscreen(s);
+        else if (hit(x,y,316,178,250,34)) { s->cfg->videos = (s->cfg->videos + 1) % PORTCFG_VID_COUNT; save_settings_fields(s, SAVE_MOVIE_LOOK); }
+        else if (hit(x,y,316,230,250,34)) { s->cfg->video_fit = (s->cfg->video_fit + 1) % PORTCFG_FIT_COUNT; save_settings_fields(s, SAVE_MOVIE_FIT); }
+        else if (hit(x,y,316,282,250,34)) { s->cfg->salvage = (s->cfg->salvage + 1) % PORTCFG_SALVAGE_COUNT; save_settings_fields(s, SAVE_SALVAGE); }
         else if (hit(x,y,175,346,90,31)) change_game_look(s, PORTCFG_ED_DOS);
         else if (hit(x,y,275,346,180,31)) change_game_look(s, PORTCFG_ED_D3D);
         else if (hit(x,y,465,346,110,31)) change_game_look(s, PORTCFG_ED_3DFX);
@@ -2491,9 +2636,16 @@ static void click(shell *s, int x, int y, int clicks)
             if (mercs_save_list_count(s->campaign.document, MERCS_SAVE_OWNED_MECHS)) set_page(s, PAGE_GROUPS);
             else game_notice(s, "You have no mechs in inventory!#Ok");
         }
+    } else if (s->page == PAGE_DEBRIEF && s->salvage_open) {
+        salvage_click(s, x, y);
     } else if (s->page == PAGE_DEBRIEF) {
         mercs_debrief_view selected = s->debrief_view;
+        mdv_salvage_button = salvage_available(s);
         at = mercs_debrief_view_click(&selected, x, y);
+        if (at == MERCS_DEBRIEF_VIEW_SALVAGE) {
+            if (play_cue(s, MSA_CUE_DEBRIEF_SELECT)) open_salvage(s);
+            return;
+        }
         if (at != MERCS_DEBRIEF_VIEW_NONE && !play_cue(s, MSA_CUE_DEBRIEF_SELECT)) return;
         if (at == MERCS_DEBRIEF_VIEW_TOGGLE) {
             s->debrief_view.content_mode = selected.content_mode;
@@ -3170,6 +3322,7 @@ int mercs_shell_run(const char *exe, portcfg *cfg, int edition)
     fprintf(stderr, "mercs shell: startup-look=%s\n", portcfg_mercs_name(edition));
     if (cfg->videos < 0 || cfg->videos >= PORTCFG_VID_COUNT) cfg->videos = PORTCFG_VID_ORIGINAL;
     if (cfg->video_fit < 0 || cfg->video_fit >= PORTCFG_FIT_COUNT) cfg->video_fit = PORTCFG_FIT_43;
+    if (cfg->salvage < 0 || cfg->salvage >= PORTCFG_SALVAGE_COUNT) cfg->salvage = PORTCFG_SALVAGE_AUTO;
     if (dp_resolve("DATABASE.MW2", path, sizeof path) || shelldb_open(path, &s->database) || s->database.count != 120) {
         mercs_gui_error("The retail Mercenaries menu data could not be opened. Choose the complete Mercs-game folder."); goto cleanup;
     }

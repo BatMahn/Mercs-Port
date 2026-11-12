@@ -28,6 +28,9 @@
  *                          original's RESOLUTION choices, drawn at that size and scaled up in blocks to 4:3)
  *   videos=original | smooth | scanlines | crt | crt_curved   (full-screen movie presentation; original by default)
  *   video_fit=4:3 | fill | stretch   (movie layout: a centred 4:3 display, aspect-preserving crop to fill, or stretch)
+ *   salvage=auto | contract | dynamic   (auto, the default: Titanium's dynamic salvage - the Salvage Yard after a won
+ *                          contract - with the Titanium Direct3D look, the contract's salvage list alone (DOS, 3dfx) otherwise;
+ *                          contract / dynamic choose one for every look)
  *   hud_layout=wide | original   (wide, the default: on a window wider than 4:3 the HUD's left-hand instruments - radar,
  *                          altitude tape, target display - sit at the window's left edge and the right-hand ones - weapon
  *                          list, damage display / viewport, throttle bar, speed - at its right edge, each as far from
@@ -72,6 +75,7 @@ typedef struct {
                                * Gouraud polygons and haze band blended) */
     int  videos;              /* PORTCFG_VID_*: optional full-screen movie filter; original by default */
     int  video_fit;           /* PORTCFG_FIT_*: movie layout; 4:3 by default */
+    int  salvage;             /* PORTCFG_SALVAGE_*: auto by default */
 } portcfg;
 /* RENDITION: the Titanium edition's own renderer plugin for the Rendition Verite (plugin/zredline.dll, loaded by mercsw.dll):
  * the enhanced mix's archives beside the Titanium archive, whose textures, sky dome, ground and fog it always draws */
@@ -97,6 +101,10 @@ enum { PORTCFG_VID_ORIGINAL, PORTCFG_VID_SMOOTH, PORTCFG_VID_SCANLINES, PORTCFG_
 extern const char *const PORTCFG_VID_NAME[PORTCFG_VID_COUNT];
 enum { PORTCFG_FIT_43, PORTCFG_FIT_FILL, PORTCFG_FIT_STRETCH, PORTCFG_FIT_COUNT };
 extern const char *const PORTCFG_FIT_NAME[PORTCFG_FIT_COUNT];
+enum { PORTCFG_SALVAGE_AUTO, PORTCFG_SALVAGE_CONTRACT, PORTCFG_SALVAGE_DYNAMIC, PORTCFG_SALVAGE_COUNT };
+extern const char *const PORTCFG_SALVAGE_NAME[PORTCFG_SALVAGE_COUNT];
+/* Whether a mission played with this look offers Titanium's Salvage Yard. */
+int portcfg_dynamic_salvage(const portcfg *c, int renderer);
 /* An edition's files: the archive for models and data, the archive for textures and its kind ("ati", "3dfx", "pvr",
  * "dos", "mercs16"), the sky / ground file and the fog file ("" = no fog). Mercs direct3d and 3dfx both use
  * their own 1.2x palette CELs, never the base MW2 packed-3dfx format. Availability requires a valid 1.2x CEL
