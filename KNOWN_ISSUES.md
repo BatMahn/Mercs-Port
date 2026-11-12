@@ -4,15 +4,18 @@ What is still open in the Mercenaries port, in plain language.
 
 - **Side-by-side comparison with the original.** Every fixed mission's opening has been compared with the DOS game in
   DOSBox (docs/DOSBOX_COMPARISON.md). Differences found and not yet fixed:
-  - **Light levels across large textured polygons** can differ slightly (OUT3's hangar roof is a little lighter than in
-    DOS). The port lights them per triangle; walking the whole polygon's outline as one span list was tried and matched
-    DOSBox worse on MED1 and OUT3, so how DOS interpolates there is still not pinned down.
+  - **Light levels** follow DOS's span walk, cosine and near plane (v1.0.1, v1.0.2). Still off: on LUT1 15 % of the
+    terrain's pixels sit one level off (the half-level dither boundary lands a few pixels from DOS's); the distant
+    ground at the horizon, where DOS keeps one level (BET3: 6) and the port's ground fades lower; and on the fog-table
+    mission MED1 9 % of pixels are two or more levels off (the near buildings).
   - **Camo stripe edges** land a texel or two off (texture coordinate rounding), and **shadow interiors** are a multiply
     by the shadow row's mean darkening, where DOS remaps each pixel through the row. Remapping texel by texel was tried;
     with the port's overlapping shadow polygons it came out no closer to DOSBox, so it was left out.
 
-  - **REC1/REC2's external camera**, perched on the rocks, shows the rock faces next to it darker in DOS, and from a
-    slightly different spot (DOS sees more of the rock's shaded side). The fog distance is not the cause; still open.
+  - **REC1/REC2's external camera**, perched on the rocks: DOS shows dark, shaded rock faces beside the camera where the
+    port shows the lit face nearest it. The rest of the view lines up, so the camera is in the same place. Neither the
+    fog nor DOS's near plane (v1.0.2) is the cause; DOS draws without a depth buffer, in its sorted polygon order, and
+    the likeliest cause is that order letting faces behind the near rock paint over it. Not reproduced.
   - **TRA1's friendly units** walk close to the player on the way back in DOS (one passes right beside the player at
     about three minutes and the autopilot detours around it); the port's stay about 250 m away.
   - **GRA1's Catapult engages sooner in DOS.** On autopilot the player is hit about 15 s earlier in DOS (the

@@ -44,6 +44,7 @@ layout(std140, set = UBO_SET, binding = 0) uniform WorldFrame {
     float u_dos_intensity;
     int   u_dos_fogpal;   // the LUMA table is a fog table (its [0][0] not 0, Mercs 0x49d06 -> 0xb3f6c)
     int   u_dos_mlit_n;   // the mission's MLIT point lights (0 with Multiple Lights off): xyz GL position, w the box half size
+    int   u_dos_near;     // the DOS world polygons' near plane, camera z in quarter cm: the view's +0x3c x 4 (0x504c1 -> 0x49fbc)
     vec4  u_dos_mlit[4];
     ivec4 u_pit_rank4[128];   // u_pit_rank[512] (GLR_PIT_MAX), four to an ivec4
 };
@@ -97,6 +98,46 @@ float dos_dnib(float lev, int n) {
   return float(l + ((n * t + 32768) >> 16));
 }
 float dos_gouraud_level(float lev) { return u_dos_fogpal != 0 ? 15.0 - lev : lev; }
+/* 64-bit helpers for dos_cos (no int64 in every target): (hi, lo) two's complement */
+uvec2 dos_mul64(int a, int b) {
+  uint ua = uint(abs(a)), ub = uint(abs(b));
+  uint a0 = ua & 0xffffu, a1 = ua >> 16, b0 = ub & 0xffffu, b1 = ub >> 16;
+  uint p0 = a0 * b0, p1 = a0 * b1, p2 = a1 * b0, p3 = a1 * b1;
+  uint mid = (p0 >> 16) + (p1 & 0xffffu) + (p2 & 0xffffu);
+  uint lo = (p0 & 0xffffu) | (mid << 16), hi = p3 + (p1 >> 16) + (p2 >> 16) + (mid >> 16);
+  if ((a < 0) != (b < 0)) { lo = ~lo + 1u; hi = ~hi + (lo == 0u ? 1u : 0u); }
+  return uvec2(hi, lo);
+}
+uvec2 dos_add64(uvec2 x, uvec2 y) { uint lo = x.y + y.y; return uvec2(x.x + y.x + (lo < x.y ? 1u : 0u), lo); }
+int dos_sar64(uvec2 x, int r) {   /* the low 32 bits of x >> r, arithmetic, 0 <= r < 64 */
+  if (r == 0) return int(x.y);
+  if (r >= 32) return int(x.x) >> min(r - 32, 31);
+  return int((x.y >> uint(r)) | (x.x << uint(32 - r)));
+}
+/* MW2.EXE 0x4d246: the light's cosine as the original works it out - the light vector's components scaled so the
+ * largest has 8 bits, its length from a table of trunc(sqrt(i) * 1024) at (x^2 + y^2 + z^2) >> 8 (0x486d4), the dot
+ * product with the Q29 normal >> 16 shifted the same way, divided (truncating). About 128 x the cosine, but not
+ * exactly: one more than the port's trunc(128 cos) for many directions. L: the light minus the vertex, n: unit. */
+float dos_cos(vec3 Lf, vec3 n) {
+  ivec3 L = ivec3(floor(Lf + 0.5));
+  ivec3 a = abs(L);
+  int o = a.x | a.y | a.z;
+  if (o == 0) return 127.0;
+  int hb = findMSB(o), sh = hb - 7;
+  ivec3 nq = ivec3(trunc(n * 536870912.0));
+  uvec2 d = dos_add64(dos_add64(dos_mul64(L.x, nq.x), dos_mul64(L.y, nq.y)), dos_mul64(L.z, nq.z));
+  int v; ivec3 b;
+  if (sh >= 0) { v = dos_sar64(d, 16 + sh); b = a >> sh; }
+  else { v = dos_sar64(d, 16) << (-sh); b = a << (-sh); }
+  b &= 0xff;
+  int S = b.x * b.x + b.y * b.y + b.z * b.z, idx = S >> 8;
+  int t = int(floor(sqrt(float(idx)) * 1024.0)), q = idx << 20;
+  if ((t + 1) * (t + 1) <= q) t++;
+  if (t * t > q) t--;
+  if (t <= 0) return 127.0;
+  int r = abs(v) / t; r = v < 0 ? -r : r;
+  return float((r << 16) >> 16);   /* (a short) */
+}
 float dos_vertex_level(vec3 p, vec3 tn, float C) {
   /* 0x4f79f pushes the vertex normal +0x28, +0x24, +0x20 to 0x4d246 (the polygon's 0x4d20e: +0x14, +0x18, +0x1c), so a
    * vertex sees the light's x against its normal's z and z against x: in game axes nv = (nz, ny, nx), here (GL z = -game
@@ -104,7 +145,7 @@ float dos_vertex_level(vec3 p, vec3 tn, float C) {
   float nl = length(tn); vec3 nv = nl > 0.0 ? -tn / nl : vec3(0.0);
   nv = vec3(-nv.z, nv.y, -nv.x);
   vec3 Lv = u_dos_dir != 0 ? u_dos_lpos : u_dos_lpos - p; float ll = length(Lv);
-  float f = nl > 0.0 && ll > 0.0 ? trunc(128.0 * dot(nv, Lv / ll)) : 127.0;
+  float f = nl > 0.0 && ll > 0.0 ? dos_cos(Lv, nv) : 127.0;
   float light = u_dos_amb + (u_dos_light != 0 ? max(0.0, trunc(f * u_dos_intensity / 128.0)) : 0.0);
   if (u_dos_fogdist > 0.0) { int key = int(max(dos_camz(p), 0.0)); light = max(0.0, light - float((int(uint(key) << 11) / int(u_dos_fogdist)) >> 4)); }
   for (int i = 0; i < 4; i++) {
@@ -133,7 +174,8 @@ float dos_vertex_level(vec3 p, vec3 tn, float C) {
     VLOC(9) flat VARY vec4 v_sph; \
     VLOC(10) flat VARY float v_dkey; \
     VLOC(11) noperspective VARY vec4 v_np; \
-    VLOC(12) VARY vec2 v_fogmap;
+    VLOC(12) VARY vec2 v_fogmap; \
+    VLOC(13) flat VARY int v_pstart;
 #define VLOC(n) layout(location = n)
 #define v_texsel v_i0.x
 #define v_emask v_i0.y

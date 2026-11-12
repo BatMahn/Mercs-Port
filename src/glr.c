@@ -2628,6 +2628,7 @@ static void draw_view(glr *r, const glr_view *v, int x0, int y0, int w, int h)
             memcpy(r->dos_R, R, sizeof r->dos_R);   /* (glr_dos_project: the HUD's markers through the same integers) */
             r->dos_sh[0] = sh2[0]; r->dos_sh[1] = sh2[1]; r->dos_vw = w; r->dos_vh = h; r->dos_ok = 1;
             r->dos_zhw = (uint32_t)((uint64_t)zoom * hw);
+            r->F.u_dos_near = (int)(((r->dos_zhw >> 17) + 1) * 4);   /* the world polygons' near (0x504c1 -> 0x49fbc: +0x3c x 4, 0x4e1d0; the cockpit sets 8 for its own draw, 0x10626) */
             memcpy(r->dos_eye, eye, sizeof r->dos_eye);
             if (r->pit_n > 0) {   /* the cockpit set's draw order */
                 int rk[GLR_PIT_MAX];

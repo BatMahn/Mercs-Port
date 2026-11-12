@@ -94,6 +94,94 @@ ivec2 dos_gchain(ivec2 V[20], int C[20], int m, int top, int dir, int y, int ybo
   return ivec2(int(uint(V[a].x * 65536 + 0x8000) + t * uint(dos_idiv((V[b].x - V[a].x) * 65536, cnt))),
                int(uint(C[a] + 0x8000) + t * uint(dos_idiv(C[b] - C[a], cnt))));
 }
+/* the textured light pass's checkerboard (0x7bd2c: the pixel pairs' accumulators offset by 0xc1258 / 0xc125c, swapped
+ * every row): DOSBox, every LUMA row mapped to one colour, OUT3's ground - half a level (0x7fff) up where x + y is even;
+ * dos_shading=smooth: its mean */
+float dos_level_dither() {
+  if (u_dos_smooth != 0) return 0.25;
+  float px = floor(glFragCoord.x) - u_vpo.x, py = floor(glFragCoord.y) - u_vpo.y;
+  return mod(px + py, 2.0) > 0.5 ? 32767.0 / 65536.0 : 0.0;   /* (py counts from the bottom here) */
+}
+/* signed division truncating towards zero, safe for INT_MIN (llvmpipe faults on abs(INT_MIN) / d) */
+int dos_udiv(int n, int d) {
+  uint un = n < 0 ? uint(-(n + 1)) + 1u : uint(n), ud = d < 0 ? uint(-(d + 1)) + 1u : uint(d);
+  if (ud == 0u) return 0;
+  int q = int(un / ud); return (n < 0) != (d < 0) ? -q : q;
+}
+ivec2 dos_tV[24]; int dos_tA[24], dos_tB[24]; float dos_tT[24];   /* the walked corners: screen point, source corners, near-plane t */
+/* one walked corner's level, 16.16 (0x4f6c8 at the corner, or at the near-plane point 0x4cd65 makes) */
+int dos_tlevel(int k) {
+  k = clamp(k, 0, 23);
+  int ia = dos_tA[k], ib = dos_tB[k]; float t = dos_tT[k];
+  vec3 wa = vec3(dos_float(ia * 13), dos_float(ia * 13 + 1), dos_float(ia * 13 + 2));
+  vec3 na = vec3(world_vtx[ia * 25 + 17], world_vtx[ia * 25 + 18], world_vtx[ia * 25 + 19]);
+  if (t > 0.0) {
+    wa = mix(wa, vec3(dos_float(ib * 13), dos_float(ib * 13 + 1), dos_float(ib * 13 + 2)), t);
+    na = mix(na, vec3(world_vtx[ib * 25 + 17], world_vtx[ib * 25 + 18], world_vtx[ib * 25 + 19]), t);
+  }
+  return int(dos_dnib(dos_vertex_level(wa, na, floor(dos_float(ia * 13 + 10) + 0.5)), v_dnib)) << 16;
+}
+/* one side's edge at row y, as dos_gchain: (x 16.16 with its + 0x8000, the level from the corners' exact 16.16) */
+ivec2 dos_tchain(int m, int top, int dir, int y, int ybot) {
+  m = clamp(m, 1, 20); top = clamp(top, 0, m - 1);   /* (llvmpipe runs this for lanes that returned too: keep their indices in range) */
+  int a = top, b = (a + dir + m) % m, r0 = dos_tV[top].y;
+  for (int g = 0; g < 22 && dos_tV[b].y == dos_tV[a].y && b != top; g++) { a = b; b = (a + dir + m) % m; }
+  int cnt = dos_tV[b].y - dos_tV[a].y, yq = y == ybot && y > r0 ? y - 1 : y;
+  for (int g = 0; g < 22 && yq >= r0 + cnt && b != top; g++) { r0 += cnt; a = b; b = (a + dir + m) % m; cnt = dos_tV[b].y - dos_tV[a].y; if (cnt == 0) cnt = 1; }
+  if (cnt == 0) cnt = 1;
+  uint t = uint(y - r0);
+  int ca = dos_tlevel(a), cb = dos_tlevel(b);
+  return ivec2(int(uint(dos_tV[a].x * 65536 + 0x8000) + t * uint(dos_udiv((dos_tV[b].x - dos_tV[a].x) * 65536, cnt))),
+               int(uint(ca) + t * uint(dos_udiv(cb - ca, cnt))));
+}
+/* corner k of a polygon stored as a fan from vertex s with n corners: (s, s+1, s+2), (s+3, s+4, s+5) ... - the
+ * corners s, then each triangle's second (s + 3t + 1), the last triangle's third */
+int dos_fan(int s, int n, int k) { return k == 0 ? s : k == n - 1 ? s + 3 * (n - 3) + 2 : s + 3 * (k - 1) + 1; }
+/* a textured polygon's light (MW2.EXE 0x49e48 -> 0x7fe9c -> 0x7b43e / 0x7d7f0): its corners' own levels (0x4f6c8, as
+ * 16.16 with no rounding) walked down the polygon's left and right edges from its top corner, then across the span in
+ * pixel pairs (the step (right - left) / max(width / 2, 1)), the light pass (0x7bd2c) reading the integer part after
+ * the pair's dither offset (0xc1258 / 0xc125c, swapped each row). Corners the near plane makes (0x4cd65) are lit at
+ * their own position and interpolated normal. -1 when the polygon cannot be walked (the caller keeps the GPU's level). */
+float dos_tex_level() {
+  int s = v_pstart - 1;
+  if (s < 0) return -1.0;
+  for (int i = 0; i < 24; i++) { dos_tV[i] = ivec2(0); dos_tA[i] = s; dos_tB[i] = s; dos_tT[i] = 0.0; }   /* (every lane's reads stay in the buffer) */
+  int n = 0, m = 0;
+  for (int t = 0; t < 16; t++) {   /* the fan's corners: s, then each triangle's second, the last one's third too */
+    if (((int(dos_float((s + 3 * t) * 13 + 12) + 0.5) % 32 / 3) & 2) != 0) { n = t + 3; break; }
+  }
+  if (n < 3) return -1.0;
+  /* the near plane (0x49fbc): corners at camera z <= the near are behind; a crossing edge gets a corner on the plane
+   * (0x4cd65: camera x, y and normal interpolated, z = the near) */
+  float nz = float(max(u_dos_near, 1));
+  for (int i = 0; i < n; i++) {
+    int j = i + 1 < n ? i + 1 : 0;
+    int ia = dos_fan(s, n, i), ic = dos_fan(s, n, j);
+    vec3 wa = vec3(dos_float(ia * 13), dos_float(ia * 13 + 1), dos_float(ia * 13 + 2));
+    vec3 wc = vec3(dos_float(ic * 13), dos_float(ic * 13 + 1), dos_float(ic * 13 + 2));
+    float za = dos_camz(wa), zc = dos_camz(wc);
+    bool ina = za > nz, inc = zc > nz;
+    if (ina) { dos_tV[m] = dos_scr(wa); dos_tA[m] = ia; dos_tB[m] = ia; dos_tT[m] = 0.0; m++; }
+    if (ina != inc && m < 20) {
+      float t = (nz - za) / (zc - za);
+      dos_tV[m] = dos_gvtx(u_mvp * vec4(mix(wa, wc, t), 1.0)); dos_tA[m] = ia; dos_tB[m] = ic; dos_tT[m] = max(t, 1e-6); m++;
+    }
+    if (m >= 20) break;
+  }
+  if (m < 3) return -1.0;
+  int top = 0, ybot = dos_tV[0].y;
+  for (int i = 0; i < m; i++) { if (dos_tV[i].y <= dos_tV[top].y) top = i; ybot = max(ybot, dos_tV[i].y); }
+  float px = floor(glFragCoord.x), py = floor(glFragCoord.y);
+  int y = clamp(int(u_vp.y) - 1 - (int(py) - int(u_vpo.y)), dos_tV[top].y, ybot);
+  ivec2 e1 = dos_tchain(m, top, -1, y, ybot), e2 = dos_tchain(m, top, 1, y, ybot);
+  if (e2.x <= e1.x) { ivec2 t2 = e1; e1 = e2; e2 = t2; }
+  int x0 = e1.x >> 16, w = (e2.x >> 16) - x0;
+  int st = w != 0 ? dos_udiv(e2.y - e1.y, max(w >> 1, 1)) : 0;
+  int k = clamp(int(px) - int(u_vpo.x) - x0, 0, max(w, 0)), r = y - dos_tV[top].y;
+  uint val = uint(e1.y) + uint(k >> 1) * uint(st);
+  if (u_dos_smooth != 0) return float(int(val)) / 65536.0 + 0.25;
+  return float(int((val + (((k + r) & 1) == 0 ? 0x7fffu : 0u)) >> 16));   /* (DOSBox level maps: this phase, the span's own k and row) */
+}
 vec3 dos_gouraud(float lev) {
   float g = (lev + 1.0) / 16.0, px = floor(glFragCoord.x), py = floor(glFragCoord.y);
   float cc = v_gs.y + v_gs.x * dos_gouraud_level(lev) + 0.5, cmin = -1e9, cmax = 1e9;
@@ -182,11 +270,15 @@ void main() {
 #if DOS_LOOK
   if (u_dos != 0) {
     int kind = int(v_color.r + 0.5); float base = floor(v_color.g + 0.5), C = floor(v_color.b + 0.5);
+    /* the world's near plane (0x504c1 -> 0x49fbc): nothing of an object nearer than the view's near x 4 (camera z,
+     * quarter cm; 1.6 m at 640 x 480) is drawn - DOSBox REC1: the rock beside the perched external camera is cut away,
+     * the rock behind it shows. The cockpit has its own (8, 0x10626) */
+    if (v_pit == 0 && kind >= 1 && kind <= 3 && u_dos_near > 0 && u_dos_ortho == 0 && -v_viewpos.z * 4.0 <= float(u_dos_near)) discard;
     if (kind == 0) { o_color = vec4(dos_colour(base), 1.0); return; }
     if (kind == 4) {
       if (u_dos_texture_linear != 0) { vec4 t = dos_texture_filtered(v_uv / u_texsize, 15.0, true); if (t.a < 0.5) discard; o_color = vec4(t.rgb, 1.0); return; }
       vec4 tb = texture(u_tex, v_uv / u_texsize); if (tb.a < 0.5) discard; o_color = vec4(dos_colour(floor(tb.r * 255.0 + 0.5)), 1.0); return; }
-    if (kind == 5) { float sh = clamp(floor(v_color.g * glFragCoord.w + 0.00001), 0.0, 15.0);
+    if (kind == 5) { float sh = clamp(floor(v_color.g * glFragCoord.w + dos_level_dither() + 0.00001), 0.0, 15.0);   /* (the light pass's dither) */
       if (u_dos_texture_linear != 0) { o_color = vec4(dos_texture_filtered(v_uv, sh, false).rgb, 1.0); return; }
       float tx = floor(texture(u_tex, v_uv).r * 255.0 + 0.5);
       float idx = sh >= 15.0 ? tx : floor(texture(u_dos_tab, vec2((tx + 0.5) / 256.0, (sh + 0.5) / 17.0)).r * 255.0 + 0.5); o_color = vec4(dos_colour(idx), 1.0); return; }
@@ -208,7 +300,13 @@ void main() {
     float lev = dos_dnib(clamp(floor(floor(C / 2.0) * light / 1088.0), 0.0, 15.0), v_dnib);
     if (kind == 1 || (kind == 2 && v_texsel < 0 && ((-v_texsel) & u_notex) != 0)) { o_color = vec4(dos_colour(base + lev), 1.0); return; }
     if (kind == 3) { o_color = vec4(dos_gouraud(lev), 1.0); return; }
-    if (v_ticm == 4) lev = clamp(floor(v_gs.x + 0.5), 0.0, 15.0);   /* the vertices' levels across the polygon (0x4f6c8), in screen space */
+    /* the vertices' levels across the polygon (0x4f6c8), in screen space. The light pass after the texel spans (MW2.EXE
+     * 0x7bd2c, 0x7deb4) steps a 16.16 level from the left edge to the right and reads its integer part (truncated, with
+     * the dither) */
+    if (v_ticm == 4) {
+      float tl = dos_tex_level();
+      lev = clamp(tl >= 0.0 ? floor(tl) : floor(v_gs.x + dos_level_dither() + 1.0 / 1024.0), 0.0, 15.0);
+    }
     if (u_dos_texture_linear != 0) { vec4 t = dos_texture_filtered(v_uv / u_texsize, lev, true); if (t.a < 0.5) discard; o_color = vec4(t.rgb, 1.0); return; }
     vec4 tx = texture(u_tex, v_uv / u_texsize); if (tx.a < 0.5) discard;
     float ti = floor(tx.r * 255.0 + 0.5);

@@ -69,7 +69,7 @@ typedef struct {
     float u_dos_intensity;
     int32_t u_dos_fogpal;
     int32_t u_dos_mlit_n;
-    uint8_t _pad1[4];
+    int32_t u_dos_near;
     float u_dos_mlit[4][4];
     int32_t u_pit_rank4[128][4];
 } rb_world_frame;   /* 2960 bytes */

@@ -63,6 +63,7 @@ struct VertexOut {
   int mapmat;
   vec2 gs;
   vec2 uvl;
+  int pstart;   /* DOS look: the polygon's first vertex + 1 (its triangles follow), 0 none */
 };
 VertexOut world_vertex(int vertex_id) {
   VertexOut result;
@@ -154,19 +155,20 @@ VertexOut world_vertex(int vertex_id) {
     else { int d = int(floor(z + 0.5)); outlod = (a_lod.x >= 0.0 && d < lod_fixed(int(a_lod.x))) || (a_lod.y >= 0.0 && d >= lod_fixed(int(a_lod.y))); }
     if (outlod) result.clip = vec4(2.0, 2.0, 2.0, 1.0);
   }
-  result.dkey = -1.0;
+  result.dkey = -1.0; result.pstart = 0;
 #if DOS_LOOK
   if (u_dos != 0) {
     int vid = vertex_id, t = vid / 3, k, c;
     if (abs(dos_float(vid * 13) - a_pos.x) + abs(dos_float(vid * 13 + 2) - a_pos.z) < 0.01) {
-      for (k = 0; k < 16 && t > 0; k++) { if (((int(dos_float(3 * t * 13 + 12) + 0.5) % 32 / 3) & 4) != 0) break; t--; }
+      bool first = false, last = false;
+      for (k = 0; k < 16 && t >= 0; k++) { if (((int(dos_float(3 * t * 13 + 12) + 0.5) % 32 / 3) & 4) != 0) { first = true; break; } if (t == 0) break; t--; }
       float km = -1e9;
       for (k = 0; k < 16; k++) {
         int b = 3 * (t + k);
         for (c = 0; c < 3; c++) km = max(km, dos_camz(vec3(dos_float((b + c) * 13), dos_float((b + c) * 13 + 1), dos_float((b + c) * 13 + 2))));
-        if (((int(dos_float(b * 13 + 12) + 0.5) % 32 / 3) & 2) != 0) break;
+        if (((int(dos_float(b * 13 + 12) + 0.5) % 32 / 3) & 2) != 0) { last = true; break; }
       }
-      result.dkey = km;
+      result.dkey = km; result.pstart = first && last ? 3 * t + 1 : 0;   /* (a polygon walked whole, its first to its last triangle) */
     }
   }
 #endif
@@ -215,6 +217,7 @@ void output_vertex(VertexOut value) {
   v_mapmat = value.mapmat;
   v_gs = value.gs;
   v_uvl = value.uvl;
+  v_pstart = value.pstart;
   // Preserve GL's division/multiply rounding while changing the clip depth range.
   // A corner exactly on the eye plane still needs native homogeneous clipping.
   // Dividing by its zero w would turn the whole primitive into NaNs; only that
@@ -248,6 +251,7 @@ VertexOut clipped_vertex(VertexOut a, VertexOut b, VertexOut c, vec3 weight, boo
   vec3 screen_weight = weight * vec3(a.clip.w, b.clip.w, c.clip.w) / result.clip.w;
   result.gs = screen_weight.x * a.gs + screen_weight.y * b.gs + screen_weight.z * c.gs;
   result.uvl = screen_weight.x * a.uvl + screen_weight.y * b.uvl + screen_weight.z * c.uvl;
+  result.pstart = a.pstart;
   result.tivf = ti_vertex_fog(result.viewpos, result.world) * result.clip.w;
 #if DOS_LOOK
   if (u_dos != 0 && result.ticm == 4 && boundary) {

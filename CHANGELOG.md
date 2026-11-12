@@ -1,5 +1,45 @@
 # Mercenaries development history
 
+## v1.0.2: DOS look - the original's light cosine and near plane — 2026-11-11
+
+Continuing the DOSBox level maps of v1.0.1 (every LUMA row one plain colour):
+
+- **The light's cosine as MW2.EXE works it out** (0x4d246): the light vector scaled so its largest component has 8
+  bits, its length from the game's own square-root table (trunc(sqrt(i) x 1024), 0x486d4) and a dot product with the
+  Q29 vertex normal - about 128 x the cosine, but for about one direction in five one more than the port's
+  trunc(128 cos). Per-vertex light now uses it, in 64-bit integer steps written for the shader.
+- **The world's near plane.** MW2.EXE clips world polygons at the view's near x 4 (camera z in quarter cm,
+  0x504c1 -> 0x49fbc; 1.6 m at 640 x 480; the cockpit sets its own 8 around its draw, 0x10626) and lights the corners
+  it makes there at that depth. The span walk of v1.0.1 clipped at the GPU's near plane; it now uses DOS's, which moves
+  the near corners' levels on terrain that runs under the camera. Level maps: LUT1 79 % -> 85 % of pixels at DOS's
+  level (none more than one off), MED1 75 % -> 82 % (pixels two or more levels off 18.5 % -> 9 %). Fragments nearer
+  than DOS's near plane are no longer drawn.
+- Fixed a crash on llvmpipe (Mesa's software Vulkan) in the span walk: it runs the code after a lane's early return
+  too, so a polygon's corners are now worked out from its fan by formula instead of from per-lane arrays, and every
+  array index is kept in range.
+
+Across the 44 swept missions' cockpit frames the summed mean difference from DOSBox: 219.4 -> 217.8 (MED1 15.7 -> 14.1).
+
+## v1.0.1: DOS look - textured light walked as the original's spans — 2026-11-10
+
+Checked against DOSBox with a copy of the archive whose LUMA tables map each light level to one plain colour, so a
+frame shows the level of every pixel (OUT3, BET3, LUT1, MED1 at HUD + 3 s, DOS and port side by side):
+
+- **Light levels across large textured polygons.** The port let the GPU interpolate the corners' levels over each
+  triangle and rounded the result. MW2.EXE walks the whole polygon: the texel spans first (0x7b43e / 0x7d7f0), then a
+  light pass (0x7bd2c) that steps a 16.16 level down the left and right edges from the top corner and across each span
+  in pixel pairs, reading the integer part - truncated, with a checkerboard dither (half a level on alternate pixels,
+  swapped every row). The fragment shader now walks the polygon the same way, from the DOS camera's integer screen
+  corners, the corners the near plane makes lit at their own position. Pixels at the same level as DOSBox: BET3 48 % ->
+  96 %, LUT1 67 % -> 79 % (no pixel more than one level off now), OUT3 98.5 %. OUT3's hangar roof, listed in
+  KNOWN_ISSUES, now matches (mean colour difference in the cockpit frame 10.0 -> 6.7, its brightness bias gone).
+- **The ground's distance shading** has the same dither: DOS blends each step to the next over a band of
+  checkerboard rows; the port's steps were hard lines (OUT3's ground bands: 76 % -> 92 % of pixels at DOS's level).
+- With `dos_shading=smooth` both use the dither's average instead.
+
+Across the 44 swept missions' cockpit frames the mean difference from DOSBox fell slightly (225.5 -> 219.4 summed);
+MED1 and MCC5 moved a little the other way (their fog-table missions keep a separate difference, see KNOWN_ISSUES).
+
 ## v1.0: both 3D editions' careers play past IVA1; whole-career walk; release — 2026-11-10
 
 - **The 3Dfx and Direct3D (Titanium) careers stopped at IVA1.** Accepting it, or NOVICE12 in the Mercenary career,
