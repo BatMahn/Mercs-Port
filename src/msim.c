@@ -2046,7 +2046,12 @@ static void unit_messages(msim *s)
             if (ac->friendly && ac->table == 0) msim_order_message(s, star_point(s, i), 6);   /* "Point n destroyed" */
             continue;
         }
-        if (u->shutdown || (s->powered_down && s->powered_down[i])) s->msg_seen[i] |= 2;
+        /* DOS MW2.EXE 0x32cbd (mech power state 2): the message plays only when the unit's +0x14 bit 0x10 is still set
+         * as it comes up - a restart after a heat shutdown (state 3 sets the bit every tick). An AI woken from a hold
+         * node goes through the state setter 0x2c604, which clears the bit itself, so it comes up silently (DOSBox
+         * GRA1SCN1: no "Enemy power-up detected"; traced with a breakpoint at 0x32cd9 that never fires). */
+        if (u->shutdown) s->msg_seen[i] |= 2;
+        else if (s->powered_down && s->powered_down[i]) s->msg_seen[i] &= ~2;
         else if ((s->msg_seen[i] & 2) && !(s->online_at && (float)s->now < s->online_at[i])) {   /* the start-up done */
             s->msg_seen[i] &= ~2;
             if (enemy && pl_up && s->on_message) s->on_message(s->message_user, "Enemy power-up detected", 69);
@@ -2310,8 +2315,9 @@ void msim_step(msim *s, int32_t dt_ms)
             int lk = cur >= 0 ? s->logic.tables[ac->table].nodes[cur].lock : 0;
             s->seen_node[i] = cur;
             m->lock_bits = lk == 1 ? 2 : lk == 2 ? 1 : 0;   /* +0x152 = (+0x152 & ~3) | 0x100146e0(node +0xb7) | 0x40 */
-            if (kn & 0x400) { m->state = AI_REST; m->target = 0; ai_power_down(s, i); }
-            else if (kn & (0x800 | 0x10)) { m->state = AI_SHUTDOWN; m->target = 0; ai_power_down(s, i); }
+            /* DOS 0x2d5d4 compares the kind's low word for equality: 0x400 -> rest (10), 0x800 / 0x10 -> shutdown (11) */
+            if ((kn & 0xffff) == 0x400) { m->state = AI_REST; m->target = 0; ai_power_down(s, i); }
+            else if ((kn & 0xffff) == 0x800 || (kn & 0xffff) == 0x10) { m->state = AI_SHUTDOWN; m->target = 0; ai_power_down(s, i); }
             else {   /* the leader idles, the members follow; targets are assigned on a later callback */
                 int next = ac->leader ? AI_IDLE : AI_FOLLOW;
                 /* Mercs current-order transition installs its order program

@@ -1,5 +1,31 @@
 # Mercenaries development history
 
+## v1.0.4: Instant Action in the 3Dfx and Direct3D editions — 2026-11-11
+
+- **The player's own mech is drawn again in Instant Action on the 3Dfx and Direct3D editions** (and with the Titanium
+  textures): in the outside views it was missing altogether, and in the cockpit the arms and weapons the cockpit shows
+  were gone. The accelerated renderer opens the edition's archive a second time for its models and texture table, and
+  Instant Action's mission (RAN0SCN1) is generated at launch into the first one only. The second copy found no texture
+  map for the mission, so the player's model had nothing to draw with, and the map fell back to a plain tiled ground
+  and default sky. That copy now gets the same generated records: the mech, the sky, the planet's ground and the
+  scenery all appear. The DOS edition and career missions were not affected.
+
+## v1.0.3: enemy power-up message and rest nodes as DOS — 2026-11-11
+
+Traced in DOSBox with breakpoints in MW2.EXE (GRA1SCN1):
+
+- **"Enemy power-up detected" no longer plays when an enemy held at a rest node wakes.** MW2.EXE plays it from the
+  mech's start-up step (0x32cbd) only while the unit's powered-down flag is still set, which happens after a heat
+  shutdown. Waking from a rest node goes through the AI state setter (0x2c604), which clears that flag itself, so the
+  unit comes up without the message; a breakpoint on the message path never fires in GRA1. The port played it on
+  every wake.
+- **Rest and shutdown nodes are matched exactly**, as MW2.EXE 0x2d5d4 does: kind 0x400 rests (state 10), 0x800 and
+  0x10 shut down (state 11), any other kind - including one with those bits among others - goes on as an ordinary
+  node. The port tested the bits.
+- GRA1's Hunchback and Catapult: DOS rests them at the start and, with the player standing still, keeps them powered
+  down where they stand, as the port does. Why DOS's Catapult engages earlier on the autopilot's route stays open
+  (KNOWN_ISSUES).
+
 ## v1.0.2: DOS look - the original's light cosine and near plane — 2026-11-11
 
 Continuing the DOSBox level maps of v1.0.1 (every LUMA row one plain colour):

@@ -4582,6 +4582,7 @@ static void edition_look(glr_view *v)
 /* The inherited Titanium geometry/environment helpers also describe Mercs' dedicated
  * 3Dfx edition's 1.2x data. Open the selected edition itself: there is no cross-edition
  * texture/model fallback, and particle.PID is searched only beside that archive. */
+static prj_archive *g_main_archive;   /* the mission's archive (main): its generated records, if any */
 static int accelerated_archive_open(const char *path)
 {
     char err[256];
@@ -4589,6 +4590,15 @@ static int accelerated_archive_open(const char *path)
     if (c3d_ti) prj_close(c3d_ti);
     c3d_ti = prj_open(path, err, sizeof err);
     if (!c3d_ti) { fprintf(stderr, "accelerated archive: %s\n", err); return -1; }
+    /* Instant Action's generated mission (RAN0SCN1 and its records) lives only in the archive the launcher handed it
+     * to (g_main_archive). This second handle - the accelerated models and their texture table - needs the same set,
+     * or the player's model finds no texture map and is not drawn (3Dfx / Titanium, outside view and cockpit arms). */
+    if (g_main_archive) {
+        prj_record *gen = NULL; size_t gen_n = 0;
+        if (prj_get_generated(g_main_archive, &gen, &gen_n) == 0 && gen_n && prj_set_generated(c3d_ti, gen, gen_n) != 0)
+            fprintf(stderr, "accelerated archive: the generated mission could not be attached\n");
+        prj_free_generated(gen, gen_n);
+    }
     sl = strrchr(path, '/'); bs = strrchr(path, '\\');
     if (bs && (!sl || bs > sl)) sl = bs;
     snprintf(g_ti_dir, sizeof g_ti_dir, "%.*s", sl ? (int)(sl - path) : 1, sl ? path : ".");
@@ -5680,6 +5690,7 @@ int main(int argc, char **argv)
 
     if (argc < 4) { fprintf(stderr, "usage: %s MODELS.PRJ TEXTURES.PRJ dos|mercs16 [RECORD MISSION]\n", argv[0]); return 2; }
     if (!(ma = prj_open(argv[1], err, sizeof err)) || !(ta = prj_open(argv[2], err, sizeof err))) { fprintf(stderr, "%s\n", err); return 1; }
+    g_main_archive = ma;
     if(g_launch_generated) {
         prj_restore_generated(ma,g_launch_generated,g_launch_generated_count);
         g_launch_generated=NULL;g_launch_generated_count=0;
