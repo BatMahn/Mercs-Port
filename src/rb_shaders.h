@@ -70,10 +70,13 @@ typedef struct {
     int32_t u_dos_fogpal;
     int32_t u_dos_mlit_n;
     int32_t u_dos_near;
+    int32_t u_dos_zhw;
+    uint8_t _pad1[12];
     float u_dos_mlit[4][4];
+    int32_t u_dos_ri[4][4];
     int32_t u_pit_rank4[128][4];
-} rb_world_frame;   /* 2960 bytes */
-typedef char rb_world_frame_size_check[sizeof(rb_world_frame) == 2960 ? 1 : -1];
+} rb_world_frame;   /* 3040 bytes */
+typedef char rb_world_frame_size_check[sizeof(rb_world_frame) == 3040 ? 1 : -1];
 
 typedef struct {
     float u_wire[4];

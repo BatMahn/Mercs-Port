@@ -108,4 +108,6 @@ At 640 x 480 the HUD, cockpit outline, compass, weapon list, radar and skyline l
 
 1. **Shadow interior.** DOS remaps each pixel through the LUMA row, which flattens the ground texture. The port's
    multiply keeps the texture's contrast.
-2. **Camo stripe edges.** These are a texel or two off: DOS uses affine spans, the GPU perspective-correct UVs.
+2. **Camo stripe edges.** DOS's texture spans are perspective-correct every 16 pixels and pick the nearest texel
+   (MW2.EXE 0x7b43e); the DOS look now walks them the same way. What remains is the external view's geometry,
+   about a pixel lower in the port than in DOSBox.

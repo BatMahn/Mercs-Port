@@ -5731,7 +5731,7 @@ int msim_can_step_hr(const msim *s, float x0, float z0, float x, float z, float 
 
 int msim_can_move(const msim *s, float x0, float z0, float x, float z, float y, float dy, float H, float R)
 {
-    /* engine 0x1000b5e0 (DOS 0x1fca0) for a unit's move (x0, y + H, z0) -> (x, y + dy + H, z), its centre: the new
+    /* engine 0x1000b5e0 (DOS MW2.EXE 0x280d0, from the unit move 0x30c5d) for a unit's move (x0, y + H, z0) -> (x, y + dy + H, z), its centre: the new
      * centre against the type 6 spheres (0x1000be60), then the segment from the old centre to the new one extended along
      * the move by (1 - |u.y|) x R + |u.y| x H (0x1000b7b9, u its unit direction; walking: R) against the collision list
      * (0x10010530): types 0 and 1 by their world box (a box below or above the centre's height is not touched; one the

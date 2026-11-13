@@ -45,7 +45,9 @@ layout(std140, set = UBO_SET, binding = 0) uniform WorldFrame {
     int   u_dos_fogpal;   // the LUMA table is a fog table (its [0][0] not 0, Mercs 0x49d06 -> 0xb3f6c)
     int   u_dos_mlit_n;   // the mission's MLIT point lights (0 with Multiple Lights off): xyz GL position, w the box half size
     int   u_dos_near;     // the DOS world polygons' near plane, camera z in quarter cm: the view's +0x3c x 4 (0x504c1 -> 0x49fbc)
+    int   u_dos_zhw;      // the view's +0x94 (zoom 16.16 x the half width): a textured corner's 1/z is (+0x94 << 16) / z (0x49e48)
     vec4  u_dos_mlit[4];
+    ivec4 u_dos_ri[4];        // the DOS camera rows as MW2.EXE's Q27 integers (x, y, z rows; xyz) and the eye (row 3, xyz)
     ivec4 u_pit_rank4[128];   // u_pit_rank[512] (GLR_PIT_MAX), four to an ivec4
 };
 
@@ -74,10 +76,28 @@ float dos_float(int k) { return world_vtx[(k / 13) * 25 + (k % 13)]; }
 int dos_idiv(int n, int d) { int q = abs(n) / abs(d); return (n < 0) != (d < 0) ? -q : q; }
 float dos_rnd(float v) { return floor(v + 0.5); }
 int dos_pq(int c, int s, int z) { int q; if (abs(c) < (1 << (30 - s))) q = dos_idiv(c << s, z); else q = int(trunc(float(c) * exp2(float(s)) / float(z))); return (q + 2) >> 2; }
-float dos_camz(vec3 w) { vec3 d = vec3(dos_rnd(w.x) - dos_rnd(u_dos_eye.x), dos_rnd(w.y) - dos_rnd(u_dos_eye.y), dos_rnd(-w.z) - dos_rnd(-u_dos_eye.z)); return dos_rnd(dot(u_dos_rz, d)); }
+/* one camera coordinate as MW2.EXE makes it (0x4cc58, 0x4a011): the three imul products summed in 64 bits, shrd 27 and
+ * adc - (sum + 2^26) >> 27 - the products from 16-bit halves (no int64 in the shader targets) */
+int dos_crow(ivec3 r, ivec3 d) {
+  uint lo = 0x04000000u; int hi = 0;
+  for (int i = 0; i < 3; i++) {
+    int a = r[i], b = d[i];
+    bool neg = (a < 0) != (b < 0);
+    uint ua = a < 0 ? uint(-(a + 1)) + 1u : uint(a), ub = b < 0 ? uint(-(b + 1)) + 1u : uint(b);
+    uint al = ua & 0xffffu, ah = ua >> 16, bl = ub & 0xffffu, bh = ub >> 16;
+    uint ll = al * bl, m1 = ah * bl, m2 = al * bh;
+    uint mid = (ll >> 16) + (m1 & 0xffffu) + (m2 & 0xffffu);
+    uint pl = (ll & 0xffffu) | (mid << 16), ph = ah * bh + (m1 >> 16) + (m2 >> 16) + (mid >> 16);
+    if (neg) { pl = ~pl + 1u; ph = ~ph + (pl == 0u ? 1u : 0u); }
+    uint s2 = lo + pl; hi += int(ph) + (s2 < lo ? 1 : 0); lo = s2;
+  }
+  return int((uint(hi) << 5) | (lo >> 27));
+}
+ivec3 dos_cd(vec3 w) { return ivec3(int(dos_rnd(w.x)), int(dos_rnd(w.y)), int(dos_rnd(-w.z))) - u_dos_ri[3].xyz; }
+float dos_camz(vec3 w) { return float(dos_crow(u_dos_ri[2].xyz, dos_cd(w))); }
 ivec2 dos_scr(vec3 w) {
-  vec3 d = vec3(dos_rnd(w.x) - dos_rnd(u_dos_eye.x), dos_rnd(w.y) - dos_rnd(u_dos_eye.y), dos_rnd(-w.z) - dos_rnd(-u_dos_eye.z));
-  int xc = int(dos_rnd(dot(u_dos_rx, d))), yc = int(dos_rnd(dot(u_dos_ry, d))), zc = max(int(dos_rnd(dot(u_dos_rz, d))), 1);
+  ivec3 d = dos_cd(w);
+  int xc = dos_crow(u_dos_ri[0].xyz, d), yc = dos_crow(u_dos_ri[1].xyz, d), zc = max(dos_crow(u_dos_ri[2].xyz, d), 1);
   if (u_dos_ortho > 0) zc = u_dos_ortho;
   ivec2 c = ivec2(u_vp) / 2;
   return ivec2(c.x + dos_pq(xc, u_dos_ps.x, zc), c.y - dos_pq(yc, u_dos_ps.y, zc));

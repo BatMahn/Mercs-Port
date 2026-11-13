@@ -110,6 +110,7 @@ int dos_udiv(int n, int d) {
 }
 ivec2 dos_tV[24]; int dos_tA[24], dos_tB[24]; float dos_tT[24];   /* the walked corners: screen point, source corners, near-plane t */
 int dos_tLv[24]; ivec3 dos_cB[24];   /* the corners' levels (16.16); the 2D clipper's output buffer */
+ivec3 dos_tUV[24], dos_cU[24];   /* a textured corner's u / z, v / z and 1 / z (0x49e48), and the clipper's copy */
 /* signed (d * f + 0x20000000) >> 30 over the full 64-bit product, as 0x7fe9c's imul / adc / shld 2 (no int64 in
  * the shader targets: 16-bit partial products) */
 int dos_q30mul(int d, int f) {
@@ -149,14 +150,17 @@ int dos_muldiv(int a, int b, int c) {
 }
 /* a corner's camera-space point as dos_scr makes it (before the divide) */
 ivec3 dos_cam(vec3 w) {
-  vec3 d = vec3(dos_rnd(w.x) - dos_rnd(u_dos_eye.x), dos_rnd(w.y) - dos_rnd(u_dos_eye.y), dos_rnd(-w.z) - dos_rnd(-u_dos_eye.z));
-  return ivec3(int(dos_rnd(dot(u_dos_rx, d))), int(dos_rnd(dot(u_dos_ry, d))), int(dos_rnd(dot(u_dos_rz, d))));
+  ivec3 d = dos_cd(w);
+  return ivec3(dos_crow(u_dos_ri[0].xyz, d), dos_crow(u_dos_ri[1].xyz, d), dos_crow(u_dos_ri[2].xyz, d));
 }
-/* MW2.EXE 0x4cd65: the corner a near-plane crossing makes - camera x and y from the nearer-z corner, (other - it) *
- * (near - its z) / (z difference) truncated, z the near; then projected as any corner */
-ivec2 dos_nvtx(vec3 wa, vec3 wc, int nz) {
+/* MW2.EXE 0x4cd65: the corner a near-plane crossing a -> c makes - camera x and y (other - base) * (near - base z) /
+ * (z difference) truncated from a base corner, z the near; then projected as any corner. The base is picked by a compare
+ * that reads the wrong register (0x4ce0f: c's stored normal z, +0x40 in Q29, against a's camera z): a when that is
+ * greater, else c - not the nearer corner (DOSBox LUT1: the truncation then moves the corner far off screen by a pixel
+ * or two, and the walked edges and their dither phase with it). bnz: c's unit normal, game z */
+ivec2 dos_nvtx(vec3 wa, vec3 wc, int nz, float bnz) {
   ivec3 a = dos_cam(wa), c = dos_cam(wc);
-  if (a.z >= c.z) { ivec3 t = a; a = c; c = t; }
+  if (!(bnz * 536870912.0 > float(a.z))) { ivec3 t = a; a = c; c = t; }
   int dz = c.z - a.z, x = a.x, y = a.y;
   if (dz != 0) { x += dos_muldiv(c.x - a.x, nz - a.z, dz); y += dos_muldiv(c.y - a.y, nz - a.z, dz); }
   int zc = max(nz, 1); if (u_dos_ortho > 0) zc = u_dos_ortho;
@@ -186,15 +190,17 @@ int dos_tclip2d(int m) {
       ivec3 a = ivec3(dos_tV[ia], dos_tLv[ia]), b = ivec3(dos_tV[i], dos_tLv[i]);
       int ca = ax ? a.x : a.y, cb = ax ? b.x : b.y;
       bool ina = hi ? ca <= bound : ca >= bound, inb = hi ? cb <= bound : cb >= bound;
-      if (ina && o < 24) { dos_cB[o] = a; o++; }
+      if (ina && o < 24) { dos_cB[o] = a; dos_cU[o] = dos_tUV[ia]; o++; }
       if (ina != inb && o < 24) {
         int f = dos_q30div(bound - cb, ca - cb);
         int oc = ax ? b.y + dos_q30mul(a.y - b.y, f) : b.x + dos_q30mul(a.x - b.x, f);
-        dos_cB[o] = ivec3(ax ? bound : oc, ax ? oc : bound, b.z + dos_q30mul(a.z - b.z, f)); o++;
+        dos_cB[o] = ivec3(ax ? bound : oc, ax ? oc : bound, b.z + dos_q30mul(a.z - b.z, f));
+        ivec3 ua = dos_tUV[ia], ub = dos_tUV[i];   /* (u / z, v / z, 1 / z the same way: 0x7fe9c's fields 3-5) */
+        dos_cU[o] = ivec3(ub.x + dos_q30mul(ua.x - ub.x, f), ub.y + dos_q30mul(ua.y - ub.y, f), ub.z + dos_q30mul(ua.z - ub.z, f)); o++;
       }
     }
     m = o;
-    for (int i = 0; i < 24; i++) { if (i >= m) break; dos_tV[i] = dos_cB[i].xy; dos_tLv[i] = dos_cB[i].z; }
+    for (int i = 0; i < 24; i++) { if (i >= m) break; dos_tV[i] = dos_cB[i].xy; dos_tLv[i] = dos_cB[i].z; dos_tUV[i] = dos_cU[i]; }
     if (m < 3) return m;
   }
   return m;
@@ -211,19 +217,29 @@ int dos_tlevel(int k) {
   }
   return int(dos_dnib(dos_vertex_level(wa, na, floor(dos_float(ia * 13 + 10) + 0.5)), v_dnib)) << 16;
 }
-/* one side's edge at row y, as dos_gchain: (x 16.16 with its + 0x8000, the level from the corners' exact 16.16) */
-ivec2 dos_tchain(int m, int top, int dir, int y, int ybot) {
+/* one side's edge segment at row y: (its upper corner, its lower corner, rows down it, its row count) */
+ivec4 dos_tseg(int m, int top, int dir, int y, int ybot) {
   m = clamp(m, 1, 20); top = clamp(top, 0, m - 1);   /* (llvmpipe runs this for lanes that returned too: keep their indices in range) */
   int a = top, b = (a + dir + m) % m, r0 = dos_tV[top].y;
   for (int g = 0; g < 22 && dos_tV[b].y == dos_tV[a].y && b != top; g++) { a = b; b = (a + dir + m) % m; }
   int cnt = dos_tV[b].y - dos_tV[a].y, yq = y == ybot && y > r0 ? y - 1 : y;
   for (int g = 0; g < 22 && yq >= r0 + cnt && b != top; g++) { r0 += cnt; a = b; b = (a + dir + m) % m; cnt = dos_tV[b].y - dos_tV[a].y; if (cnt == 0) cnt = 1; }
   if (cnt == 0) cnt = 1;
-  uint t = uint(y - r0);
-  int ca = dos_tLv[clamp(a, 0, 23)], cb = dos_tLv[clamp(b, 0, 23)];
-  return ivec2(int(uint(dos_tV[a].x * 65536 + 0x8000) + t * uint(dos_udiv((dos_tV[b].x - dos_tV[a].x) * 65536, cnt))),
-               int(uint(ca) + t * uint(dos_udiv(cb - ca, cnt))));
+  return ivec4(clamp(a, 0, 23), clamp(b, 0, 23), y - r0, cnt);
 }
+/* the edge's value at the row: the upper corner's plus the rows x the truncated per-row step (0x7b43e's idiv) */
+int dos_tstep(int ca, int cb, ivec4 g) { return int(uint(ca) + uint(g.z) * uint(dos_udiv(cb - ca, g.w))); }
+/* one side's edge at row y, as dos_gchain: (x 16.16 with its + 0x8000, the level from the corners' exact 16.16) */
+ivec2 dos_tchain(int m, int top, int dir, int y, int ybot) {
+  ivec4 g = dos_tseg(m, top, dir, y, ybot);
+  return ivec2(dos_tstep(dos_tV[g.x].x * 65536 + 0x8000, dos_tV[g.y].x * 65536 + 0x8000, g), dos_tstep(dos_tLv[g.x], dos_tLv[g.y], g));
+}
+ivec3 dos_tuvchain(ivec4 g) {
+  ivec3 a = dos_tUV[g.x], b = dos_tUV[g.y];
+  return ivec3(dos_tstep(a.x, b.x, g), dos_tstep(a.y, b.y, g), dos_tstep(a.z, b.z, g));
+}
+/* (n << 30) / w over 64 bits, truncated, + 0x8000: the span's texel coordinate 16.16 from u / z and 1 / z (0x7b7b0) */
+int dos_tdiv(int n, int w) { return int(uint(dos_muldiv(n, 1 << 30, w)) + 0x8000u); }
 /* corner k of a polygon stored as a fan from vertex s with n corners: (s, s+1, s+2), (s+3, s+4, s+5) ... - the
  * corners s, then each triangle's second (s + 3t + 1), the last triangle's third */
 int dos_fan(int s, int n, int k) { return k == 0 ? s : k == n - 1 ? s + 3 * (n - 3) + 2 : s + 3 * (k - 1) + 1; }
@@ -232,10 +248,75 @@ int dos_fan(int s, int n, int k) { return k == 0 ? s : k == n - 1 ? s + 3 * (n -
  * pixel pairs (the step (right - left) / max(width / 2, 1)), the light pass (0x7bd2c) reading the integer part after
  * the pair's dither offset (0xc1258 / 0xc125c, swapped each row). Corners the near plane makes (0x4cd65) are lit at
  * their own position and interpolated normal. -1 when the polygon cannot be walked (the caller keeps the GPU's level). */
+ivec2 dos_ttexel = ivec2(0); bool dos_tok = false, dos_tbad = false;   /* the texel dos_tex_level's walk found for this pixel; a corner it can't take */
+/* the polygon's texel at this pixel: the walk's, masked by the size the span walker gets (0x4ed80: the rows, at most
+ * 128 and at most the width; minus 1 for both u and v), else the GPU's (its pixel centre is half a pixel past the
+ * walk's integer position, which about cancels the walk's + 0x8000: rounding the GPU's coordinate instead measured
+ * worse against DOSBox) */
+vec4 dos_tfetch() {
+  ivec2 ts = ivec2(u_texsize + 0.5);
+  if (dos_tok) {
+    int sz = min(min(ts.y, 128), ts.x), mk = sz - 1;
+    return texelFetch(u_tex, clamp(ivec2(dos_ttexel.x & mk, dos_ttexel.y & mk), ivec2(0), ts - 1), 0);
+  }
+  return texture(u_tex, v_uv / u_texsize);
+}
+/* a corner's (u / z, v / z, 1 / z) as 0x49e48 makes them: 1 / z = (+0x94 << 16) / z (unsigned, kept as an int), u and v
+ * (texels << 16, 0x47824) times it, (+ 0x20000000) >> 30 */
+ivec3 dos_tuvw(int u16, int v16, int z) {
+  int w = int(uint(dos_muldiv(u_dos_zhw, 65536, max(z, 1))));
+  return ivec3(dos_q30mul(u16, w), dos_q30mul(v16, w), w);
+}
+ivec3 dos_tcorner_uv0(int ia, int ic, int nz) {
+  int ua = int(dos_float(ia * 13 + 6)) << 16, va = int(dos_float(ia * 13 + 7)) << 16;
+  int za = max(int(dos_camz(vec3(dos_float(ia * 13), dos_float(ia * 13 + 1), dos_float(ia * 13 + 2)))), 1);
+  if (ic < 0) return dos_tuvw(ua, va, za);
+  /* a corner the near plane makes (0x4cd65): u and v from the nearer corner, (other - it) x (near - its z) / dz */
+  int uc = int(dos_float(ic * 13 + 6)) << 16, vc = int(dos_float(ic * 13 + 7)) << 16;
+  int zc = max(int(dos_camz(vec3(dos_float(ic * 13), dos_float(ic * 13 + 1), dos_float(ic * 13 + 2)))), 1);
+  if (za >= zc) { int t = ua; ua = uc; uc = t; t = va; va = vc; vc = t; t = za; za = zc; zc = t; }
+  int dz = zc - za;
+  if (dz != 0) { ua += dos_muldiv(uc - ua, nz - za, dz); va += dos_muldiv(vc - va, nz - za, dz); }
+  return dos_tuvw(ua, va, nz);
+}
+ivec3 dos_tcorner_uv(int ia, int ic, int nz) {
+  ivec3 r = dos_tcorner_uv0(ia, ic, nz);
+  /* (only texel coordinates inside the texture, as the DOS models', and a 1 / z that stays positive: the port's own
+   * UVs - the ground's repeats, fractions - and corners so near that 1 / z wraps keep the GPU's sampling) */
+  vec2 c0 = vec2(dos_float(ia * 13 + 6), dos_float(ia * 13 + 7)), c1 = ic >= 0 ? vec2(dos_float(ic * 13 + 6), dos_float(ic * 13 + 7)) : c0;
+  if (r.z <= 0 || any(notEqual(fract(c0), vec2(0.0))) || any(notEqual(fract(c1), vec2(0.0)))
+      || any(lessThan(min(c0, c1), vec2(0.0))) || any(greaterThan(max(c0, c1), u_texsize))) dos_tbad = true;
+  return r;
+}
+/* the pixel's texel along the span (MW2.EXE 0x7b6c3..0x7bd27, 0x7d7f0 the same): the texel coordinates are u / z over
+ * 1 / z (dos_tdiv: + 0x8000, so the texel is the nearest one, not the one the coordinate falls in) at the span's left
+ * end and every 16 pixels, u / z and 1 / z stepped by 16 x (right - left) / (width + 1) truncated; between, the 16.16
+ * coordinate steps by (next - this) >> 4, the last part by (the right end's - this) / its count; the texel is the
+ * integer part, masked by the texture's size - 1 */
+ivec2 dos_tspan(ivec3 L, ivec3 R, int n, int k) {
+  int dU = dos_udiv(R.x - L.x, n) << 4, dV = dos_udiv(R.y - L.y, n) << 4, dW = dos_udiv(R.z - L.z, n) << 4;
+  int u = dos_tdiv(L.x, L.z), v = dos_tdiv(L.y, L.z), segs = n >> 4, sk = k >> 4, su = 0, sv = 0;
+  ivec3 P = L;
+  for (int i = 0; i < 64; i++) {
+    if (i >= segs || i > sk) break;
+    P = ivec3(uvec3(P) + uvec3(uint(dU), uint(dV), uint(dW)));
+    int eu = dos_tdiv(P.x, P.z), ev = dos_tdiv(P.y, P.z);
+    su = (eu - u) >> 4; sv = (ev - v) >> 4;
+    if (i == sk) break;
+    u += su << 4; v += sv << 4;
+  }
+  if (sk >= segs) {
+    int rem = max(n & 15, 1);
+    su = dos_udiv(dos_tdiv(R.x, R.z) - u, rem); sv = dos_udiv(dos_tdiv(R.y, R.z) - v, rem);
+  }
+  int j = k & 15;
+  return ivec2(int(uint(u) + uint(j) * uint(su)) >> 16, int(uint(v) + uint(j) * uint(sv)) >> 16);
+}
 float dos_tex_level() {
-  int s = v_pstart - 1;
+  int s = (v_pstart & 0x1fffffff) - 1;
+  dos_tok = false; dos_tbad = false;
   if (s < 0) return -1.0;
-  for (int i = 0; i < 24; i++) { dos_tV[i] = ivec2(0); dos_tA[i] = s; dos_tB[i] = s; dos_tT[i] = 0.0; dos_tLv[i] = 0; }   /* (every lane's reads stay in the buffer) */
+  for (int i = 0; i < 24; i++) { dos_tV[i] = ivec2(0); dos_tA[i] = s; dos_tB[i] = s; dos_tT[i] = 0.0; dos_tLv[i] = 0; dos_tUV[i] = ivec3(0, 0, 1); }   /* (every lane's reads stay in the buffer) */
   int n = 0, m = 0;
   for (int t = 0; t < 16; t++) {   /* the fan's corners: s, then each triangle's second, the last one's third too */
     if (((int(dos_float((s + 3 * t) * 13 + 12) + 0.5) % 32 / 3) & 2) != 0) { n = t + 3; break; }
@@ -244,33 +325,40 @@ float dos_tex_level() {
   /* the near plane (0x49fbc): corners at camera z <= the near are behind; a crossing edge gets a corner on the plane
    * (0x4cd65: camera x, y and normal interpolated, z = the near) */
   float nz = float(max(u_dos_near, 1));
-  for (int i = 0; i < n; i++) {
-    int j = i + 1 < n ? i + 1 : 0;
-    int ia = dos_fan(s, n, i), ic = dos_fan(s, n, j);
+  bool grown = v_bb == 0;   /* (the vertex stage grew it when every corner is before the GPU's near plane: then the walk's coverage) */
+  for (int i = 0; i < n; i++) { vec4 q = dos_gclip(dos_fan(s, n, i)); if (q.w <= 0.0 || q.z + q.w < 0.0) grown = false; }
+  for (int i = 0; i < n; i++) {   /* (0x4a0d5: each edge from the previous corner, the last first - its crossing, then the corner) */
+    int ia = dos_fan(s, n, i == 0 ? n - 1 : i - 1), ic = dos_fan(s, n, i);
     vec3 wa = vec3(dos_float(ia * 13), dos_float(ia * 13 + 1), dos_float(ia * 13 + 2));
     vec3 wc = vec3(dos_float(ic * 13), dos_float(ic * 13 + 1), dos_float(ic * 13 + 2));
     float za = dos_camz(wa), zc = dos_camz(wc);
     bool ina = za > nz, inc = zc > nz;
-    if (ina) { dos_tV[m] = dos_scr(wa); dos_tA[m] = ia; dos_tB[m] = ia; dos_tT[m] = 0.0; m++; }
     if (ina != inc && m < 20) {
-      float t = (nz - za) / (zc - za);
-      dos_tV[m] = dos_nvtx(wa, wc, int(nz)); dos_tA[m] = ia; dos_tB[m] = ic; dos_tT[m] = max(t, 1e-6); m++;
+      vec3 nc = vec3(world_vtx[ic * 25 + 17], world_vtx[ic * 25 + 18], world_vtx[ic * 25 + 19]);
+      float t = (nz - za) / (zc - za), ncl = length(nc);
+      dos_tV[m] = dos_nvtx(wa, wc, int(nz), ncl > 0.0 ? nc.z / ncl : 0.0); dos_tA[m] = ia; dos_tB[m] = ic; dos_tT[m] = max(t, 1e-6); dos_tUV[m] = dos_tcorner_uv(ia, ic, int(nz)); m++;
     }
+    if (inc && m < 20) { dos_tV[m] = dos_scr(wc); dos_tA[m] = ic; dos_tB[m] = ic; dos_tT[m] = 0.0; dos_tUV[m] = dos_tcorner_uv(ic, -1, 0); m++; }
     if (m >= 20) break;
   }
-  if (m < 3) return -1.0;
+  if (m < 3) { if (grown) discard; return -1.0; }
   for (int i = 0; i < 20; i++) { if (i >= m) break; dos_tLv[i] = dos_tlevel(i); }
   if (v_pit == 0) m = dos_tclip2d(m);   /* (not the cockpit: see dos_gouraud) */
-  if (m < 3) return -1.0;
+  if (m < 3) { if (grown) discard; return -1.0; }
   int top = 0, ybot = dos_tV[0].y;
   for (int i = 0; i < m; i++) { if (dos_tV[i].y <= dos_tV[top].y) top = i; ybot = max(ybot, dos_tV[i].y); }
   float px = floor(glFragCoord.x), py = floor(glFragCoord.y);
-  int y = clamp(int(u_vp.y) - 1 - (int(py) - int(u_vpo.y)), dos_tV[top].y, ybot);
+  int y0 = int(u_vp.y) - 1 - (int(py) - int(u_vpo.y)), y = clamp(y0, dos_tV[top].y, ybot);
+  if (grown && y0 != y) discard;
   ivec2 e1 = dos_tchain(m, top, -1, y, ybot), e2 = dos_tchain(m, top, 1, y, ybot);
-  if (e2.x <= e1.x) { ivec2 t2 = e1; e1 = e2; e2 = t2; }
+  ivec4 g1 = dos_tseg(m, top, -1, y, ybot), g2 = dos_tseg(m, top, 1, y, ybot);
+  if (e2.x <= e1.x) { ivec2 t2 = e1; e1 = e2; e2 = t2; ivec4 t4 = g1; g1 = g2; g2 = t4; }
   int x0 = e1.x >> 16, w = (e2.x >> 16) - x0;
   int st = w != 0 ? dos_udiv(e2.y - e1.y, max(w >> 1, 1)) : 0;
-  int k = clamp(int(px) - int(u_vpo.x) - x0, 0, max(w, 0)), r = y - dos_tV[top].y;
+  int k0 = int(px) - int(u_vpo.x) - x0, k = clamp(k0, 0, max(w, 0)), r = y - dos_tV[top].y;
+  if (grown && (k0 < 0 || k0 > w)) discard;
+  /* (a pixel the GPU covers outside the walk's rows or span keeps the GPU's texel, not the clamped edge's) */
+  if (v_pit == 0 && w >= 0 && y0 == y && k0 >= 0 && k0 <= w && !dos_tbad && all(greaterThan(u_texsize, vec2(1.5)))) { dos_ttexel = dos_tspan(dos_tuvchain(g1), dos_tuvchain(g2), w + 1, k); dos_tok = true; }
   uint val = uint(e1.y) + uint(k >> 1) * uint(st);
   if (u_dos_smooth != 0) return float(int(val)) / 65536.0 + 0.25;
   return float(int((val + (((k + r) & 1) == 0 ? 0x7fffu : 0u)) >> 16));   /* (DOSBox level maps: this phase, the span's own k and row) */
@@ -375,14 +463,14 @@ void main() {
     if (kind == 0) { o_color = vec4(dos_colour(base), 1.0); return; }
     if (kind == 4) {
       if (u_dos_texture_linear != 0) { vec4 t = dos_texture_filtered(v_uv / u_texsize, 15.0, true); if (t.a < 0.5) discard; o_color = vec4(t.rgb, 1.0); return; }
-      vec4 tb = texture(u_tex, v_uv / u_texsize); if (tb.a < 0.5) discard; o_color = vec4(dos_colour(floor(tb.r * 255.0 + 0.5)), 1.0); return; }
+      dos_tex_level(); vec4 tb = dos_tfetch(); if (tb.a < 0.5) discard; o_color = vec4(dos_colour(floor(tb.r * 255.0 + 0.5)), 1.0); return; }
     if (kind == 5) { float sh = clamp(floor(v_color.g * glFragCoord.w + dos_level_dither() + 0.00001), 0.0, 15.0);   /* (the light pass's dither) */
       if (u_dos_texture_linear != 0) { o_color = vec4(dos_texture_filtered(v_uv, sh, false).rgb, 1.0); return; }
       float tx = floor(texture(u_tex, v_uv).r * 255.0 + 0.5);
       float idx = sh >= 15.0 ? tx : floor(texture(u_dos_tab, vec2((tx + 0.5) / 256.0, (sh + 0.5) / 17.0)).r * 255.0 + 0.5); o_color = vec4(dos_colour(idx), 1.0); return; }
     float nl = length(v_normal); vec3 Lv = u_dos_dir != 0 ? u_dos_lpos : u_dos_lpos - v_world; float ll = length(Lv);
     vec3 nf = nl > 0.0 ? -v_normal / nl : vec3(0.0);
-    if (nl > 0.0 && dot(v_viewpos, mat3(u_view) * nf) >= 0.0) discard;
+    if ((v_pstart & 0x40000000) != 0 ? (v_pstart & 0x20000000) != 0 : nl > 0.0 && dot(v_viewpos, mat3(u_view) * nf) >= 0.0) discard;   /* (the vertex stage's 0x4d3c9 when it found the polygon's first corner) */
     float f = nl > 0.0 && ll > 0.0 ? trunc(128.0 * dot(nf, Lv / ll)) : 127.0;
     float light = u_dos_amb + (u_dos_light != 0 ? max(0.0, trunc(f * u_dos_intensity / 128.0)) : 0.0);
     if (u_dos_fogdist > 0.0) { int key = v_dkey >= 0.0 ? int(v_dkey) : int(max(-v_viewpos.z, 0.0) * 4.0); light = max(0.0, light - float((int(uint(key) << 11) / int(u_dos_fogdist)) >> 4)); }
@@ -406,7 +494,8 @@ void main() {
       lev = clamp(tl >= 0.0 ? floor(tl) : floor(v_gs.x + dos_level_dither() + 1.0 / 1024.0), 0.0, 15.0);
     }
     if (u_dos_texture_linear != 0) { vec4 t = dos_texture_filtered(v_uv / u_texsize, lev, true); if (t.a < 0.5) discard; o_color = vec4(t.rgb, 1.0); return; }
-    vec4 tx = texture(u_tex, v_uv / u_texsize); if (tx.a < 0.5) discard;
+    if (v_ticm != 4) dos_tex_level();   /* (the walk, for the texel only) */
+    vec4 tx = dos_tfetch(); if (tx.a < 0.5) discard;
     float ti = floor(tx.r * 255.0 + 0.5);
     float si = lev >= 15.0 ? ti : floor(texture(u_dos_tab, vec2((ti + 0.5) / 256.0, (lev + 0.5) / 17.0)).r * 255.0 + 0.5);
     o_color = vec4(dos_colour(si), 1.0); return;

@@ -2625,9 +2625,15 @@ static void draw_view(glr *r, const glr_view *v, int x0, int y0, int w, int h)
             U3(r->F.u_dos_ry, (float)((double)R[1][0] / 134217728.0), (float)((double)R[1][1] / 134217728.0), (float)((double)R[1][2] / 134217728.0));
             U3(r->F.u_dos_rz, (float)((double)R[2][0] / 134217728.0), (float)((double)R[2][1] / 134217728.0), (float)((double)R[2][2] / 134217728.0));
             U2(r->F.u_dos_ps, sh2[0], sh2[1]);
+            for (c3 = 0; c3 < 3; c3++) {   /* (the exact integers: the shader's camera transform as 0x4cc58 does it) */
+                r->F.u_dos_ri[c3][0] = (int32_t)R[c3][0]; r->F.u_dos_ri[c3][1] = (int32_t)R[c3][1]; r->F.u_dos_ri[c3][2] = (int32_t)R[c3][2]; r->F.u_dos_ri[c3][3] = 0;
+            }
+            r->F.u_dos_ri[3][0] = (int32_t)floorf(eye[0] + 0.5f); r->F.u_dos_ri[3][1] = (int32_t)floorf(eye[1] + 0.5f);
+            r->F.u_dos_ri[3][2] = (int32_t)floorf(-eye[2] + 0.5f); r->F.u_dos_ri[3][3] = 0;
             memcpy(r->dos_R, R, sizeof r->dos_R);   /* (glr_dos_project: the HUD's markers through the same integers) */
             r->dos_sh[0] = sh2[0]; r->dos_sh[1] = sh2[1]; r->dos_vw = w; r->dos_vh = h; r->dos_ok = 1;
             r->dos_zhw = (uint32_t)((uint64_t)zoom * hw);
+            r->F.u_dos_zhw = (int32_t)r->dos_zhw;
             r->F.u_dos_near = (int)(((r->dos_zhw >> 17) + 1) * 4);   /* the world polygons' near (0x504c1 -> 0x49fbc: +0x3c x 4, 0x4e1d0; the cockpit sets 8 for its own draw, 0x10626) */
             memcpy(r->dos_eye, eye, sizeof r->dos_eye);
             if (r->pit_n > 0) {   /* the cockpit set's draw order */

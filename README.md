@@ -7,7 +7,7 @@ folder").
 
 The program is `mercs`.
 
-## Status (2026-11-12, v1.2.1)
+## Status (2026-11-12, v1.2.2)
 A development release. The single-player game runs from the original menus through missions and back:
 
 - **Shell:** the original menus and career, from the arrival sequence and pilot registration to the Office, contracts

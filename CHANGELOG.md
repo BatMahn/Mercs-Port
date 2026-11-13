@@ -1,5 +1,22 @@
 # Mercenaries development history
 
+## v1.2.2: DOS look texture spans and coverage, TRA1 trace — 2026-11-12
+
+- **DOS look textures are walked as DOS's spans:** textured polygons now pick their texels the way MW2.EXE does
+  (0x49e48 -> 0x7b43e / 0x7d7f0): perspective-correct every 16 pixels, stepped in 16.16 between, nearest texel. Port
+  geometry whose UVs aren't whole texels inside the texture (the ground's repeats) keeps the GPU's sampling.
+- **Textured world polygons cover exactly the pixels DOS's span walk covers**, as Gouraud polygons already did: they
+  are grown slightly on their own plane and trimmed back to the walk, so texture mapping is unchanged. This brings
+  back DOS's bottom row where far terrain meets the ground. The shader's camera transform is now the original's Q27
+  integer one, near-plane corners follow 0x4cd65 and 0x4a0d5, and the backface test is made once per polygon at its
+  first corner (0x4d3c9).
+- DOSBox sweep over 44 missions: summed difference 217.04 -> 214.32.
+- **TRA1's instructor Catapult** (still open): DOS's move and slope handling (0x280d0, from the unit move 0x30c5d)
+  was traced and matches the port's. The difference is the Catapult's route: in DOS it takes a line west of the dune,
+  while the port's reaches the dune face, where its goal steering and obstacle avoidance cancel out. See KNOWN_ISSUES.
+- Still open in the DOS look: LUT1's dither phase in two foreground polygons, MED1's near lower wall, and camo in
+  external views, which sit about one pixel lower than DOSBox's (see KNOWN_ISSUES).
+
 ## v1.2.1: README - Titanium files for the Salvage Yard — 2026-11-12
 
 - The README's game-folder section now lists the extra Titanium disc files dynamic salvage needs

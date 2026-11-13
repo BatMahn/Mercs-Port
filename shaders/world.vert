@@ -158,17 +158,76 @@ VertexOut world_vertex(int vertex_id) {
   result.dkey = -1.0; result.pstart = 0;
 #if DOS_LOOK
   if (u_dos != 0) {
-    int vid = vertex_id, t = vid / 3, k, c;
+    int vid = vertex_id, t = vid / 3, k, c, bfl = 0;
     if (abs(dos_float(vid * 13) - a_pos.x) + abs(dos_float(vid * 13 + 2) - a_pos.z) < 0.01) {
       bool first = false, last = false;
       for (k = 0; k < 16 && t >= 0; k++) { if (((int(dos_float(3 * t * 13 + 12) + 0.5) % 32 / 3) & 4) != 0) { first = true; break; } if (t == 0) break; t--; }
+      /* the backface test as MW2.EXE 0x4d3c9 makes it: once a polygon, its normal against its first corner less the eye (the
+       * world integers), drawn when negative - not at each pixel (the near building in MED1: a face not quite flat, seen
+       * from beside it, is dropped whole) */
+      if (first && dot(a_normal, a_normal) > 0.0) {
+        vec3 v0 = vec3(dos_float(3 * t * 13), dos_float(3 * t * 13 + 1), dos_float(3 * t * 13 + 2));
+        float bs = dot(floor(v0 + 0.5) - floor(u_dos_eye + 0.5), -a_normal);
+        bfl = 0x40000000 | (bs >= 0.0 ? 0x20000000 : 0);
+      }
       float km = -1e9;
       for (k = 0; k < 16; k++) {
         int b = 3 * (t + k);
         for (c = 0; c < 3; c++) km = max(km, dos_camz(vec3(dos_float((b + c) * 13), dos_float((b + c) * 13 + 1), dos_float((b + c) * 13 + 2))));
         if (((int(dos_float(b * 13 + 12) + 0.5) % 32 / 3) & 2) != 0) { last = true; break; }
       }
-      result.dkey = km; result.pstart = first && last ? 3 * t + 1 : 0;   /* (a polygon walked whole, its first to its last triangle) */
+      result.dkey = km; result.pstart = (first && last ? 3 * t + 1 : 0) | bfl;   /* (a polygon walked whole, its first to its last triangle) */
+    }
+  }
+#endif
+  vec2 uvx = a_uv;
+#if DOS_LOOK
+  /* a textured polygon walked as DOS does (dos_tex_level): its coverage is the walk's, not the GPU's - the corners grown 3
+   * pixels out as the Gouraud polygons' (above), the fragment shader discarding what the walk leaves. The moved corner
+   * stays on its triangle's plane (the point whose projection is the grown corner, its position and texture coordinates
+   * the triangle's own combination of its corners), so the texture mapping is the GPU's as before */
+  if (u_dos != 0 && pit == 0 && e < 256 && int(a_color.r + 0.5) == 2 && int(a_tic.a + 0.5) == 4 && (result.pstart & 0x1fffffff) > 0 && result.clip != vec4(2.0, 2.0, 2.0, 1.0)) {
+    int s = (result.pstart & 0x1fffffff) - 1, rel = vertex_id - s, tt = rel / 3, cn = rel - 3 * tt;
+    vec2 Q[18]; int n = 0; bool ok = true; vec2 h = 0.5 * u_vp;
+    for (int k = 0; k < 16; k++) {
+      int b = s + 3 * k;
+      for (int c = (k == 0 ? 0 : 1); c < 3; c++) {
+        if (c == 2 && ((int(dos_float(b * 13 + 12) + 0.5) % 32 / 3) & 2) == 0) break;
+        vec4 q = u_mvp * vec4(dos_float((b + c) * 13), dos_float((b + c) * 13 + 1), dos_float((b + c) * 13 + 2), 1.0);
+        if (q.z + q.w < 0.0 || q.w <= 0.0) ok = false; else if (n < 18) Q[n] = q.xy / q.w * h;
+        n++;
+      }
+      if (((int(dos_float(b * 13 + 12) + 0.5) % 32 / 3) & 2) != 0) break;
+    }
+    int j = cn == 0 ? 0 : tt + cn;
+    if (ok && n >= 3 && n <= 18 && j < n) {
+      float area = 0.0;
+      for (int i = 0; i < 18; i++) { if (i >= n) break; vec2 qa = Q[i], qb = Q[(i + 1) % n]; area += qa.x * qb.y - qa.y * qb.x; }
+      vec2 A = Q[(j + n - 1) % n], B = Q[j], C = Q[(j + 1) % n], e1 = B - A, e2 = C - B;
+      float sg = area > 0.0 ? 1.0 : -1.0;
+      vec2 n1 = length(e1) > 1e-4 ? sg * vec2(e1.y, -e1.x) / length(e1) : vec2(0.0), n2 = length(e2) > 1e-4 ? sg * vec2(e2.y, -e2.x) / length(e2) : vec2(0.0);
+      vec2 m = n1 + n2; float d = 1.0 + dot(n1, n2);
+      vec2 off = d > 1e-3 ? 3.0 * m / d : 3.0 * m;
+      if (length(off) > 24.0) off = off / length(off) * 24.0;
+      vec2 S = (B + off) / h;
+      int t0 = 3 * (vertex_id / 3);
+      vec3 P0 = vec3(world_vtx[t0 * 25], world_vtx[t0 * 25 + 1], world_vtx[t0 * 25 + 2]);
+      vec3 P1 = vec3(world_vtx[(t0 + 1) * 25], world_vtx[(t0 + 1) * 25 + 1], world_vtx[(t0 + 1) * 25 + 2]);
+      vec3 P2 = vec3(world_vtx[(t0 + 2) * 25], world_vtx[(t0 + 2) * 25 + 1], world_vtx[(t0 + 2) * 25 + 2]);
+      vec4 C0 = u_mvp * vec4(P0, 1.0), C1 = u_mvp * vec4(P1, 1.0), C2 = u_mvp * vec4(P2, 1.0);
+      vec3 dx = vec3(C0.x - S.x * C0.w, C1.x - S.x * C1.w, C2.x - S.x * C2.w), dy = vec3(C0.y - S.y * C0.w, C1.y - S.y * C1.w, C2.y - S.y * C2.w);
+      float a00 = dx.x - dx.z, a01 = dx.y - dx.z, a10 = dy.x - dy.z, a11 = dy.y - dy.z, det = a00 * a11 - a01 * a10;
+      float sc = max(max(abs(a00), abs(a01)), max(abs(a10), abs(a11)));
+      if (abs(det) > 1e-6 * sc * sc) {
+        float w0 = (-dx.z * a11 + dy.z * a01) / det, w1 = (-dy.z * a00 + dx.z * a10) / det, w2 = 1.0 - w0 - w1;
+        vec3 pg = w0 * P0 + w1 * P1 + w2 * P2;
+        vec4 cg = u_mvp * vec4(pg, 1.0);
+        if (cg.w > 0.0) {
+          p = pg; result.clip = cg;
+          uvx = w0 * vec2(world_vtx[t0 * 25 + 6], world_vtx[t0 * 25 + 7]) + w1 * vec2(world_vtx[(t0 + 1) * 25 + 6], world_vtx[(t0 + 1) * 25 + 7])
+              + w2 * vec2(world_vtx[(t0 + 2) * 25 + 6], world_vtx[(t0 + 2) * 25 + 7]);
+        }
+      }
     }
   }
 #endif
@@ -176,9 +235,9 @@ VertexOut world_vertex(int vertex_id) {
   result.mapmat = int(a_mapmat); float mq = trunc((floor(p.y+0.5)-u_map_range.x)*65536.0/max(u_map_range.y,1.0));
   result.mapshade=clamp(floor(mq/4096.0+0.5),0.0,15.0);
   result.tivf = ti_vertex_fog(result.viewpos, result.world) * result.clip.w;
-  result.normal = nrm; result.uv = a_uv; result.color = a_color; result.texsel = int(floor(a_texsel + 0.5)); result.sph = a_sphere;
+  result.normal = nrm; result.uv = uvx; result.color = a_color; result.texsel = int(floor(a_texsel + 0.5)); result.sph = a_sphere;
   if (u_dos != 0 && int(a_color.r + 0.5) == 5) result.color.g *= result.clip.w;
-  result.tic = a_tic.rgb; result.ticm = int(a_tic.a + 0.5); result.gs = a_uv; result.uvl = a_uv;
+  result.tic = a_tic.rgb; result.ticm = int(a_tic.a + 0.5); result.gs = uvx; result.uvl = uvx;
 #if DOS_LOOK
   if (u_dos != 0 && result.ticm == 4) {   /* the vertex's own level (dos_vertex_level), interpolated over the polygon */
     float lv = dos_dnib(dos_vertex_level(p, a_tic.rgb, floor(a_color.b + 0.5)), result.dnib);

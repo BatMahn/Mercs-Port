@@ -112,16 +112,25 @@ static void filter_checks(glr *r, glr_view *v, int billboard)
     upload(r, &checker, billboard, 0x100, 0, 0);
     v->dos_texture_linear = 0; v->tex_min = v->tex_mag = 0;
     draw(r, v, original);
-    check(near_rgb(at(original, 16, 112), colours[0], 0) &&
-          near_rgb(at(original, 112, 112), colours[1], 0) &&
-          near_rgb(at(original, 16, 16), colours[2], 0) &&
-          near_rgb(at(original, 112, 16), colours[3], 0),
+    /* the surface is walked as DOS's spans (MW2.EXE 0x7b43e): u and v 0..2 across the quad, each pixel taking the
+     * nearest texel (+ 0x8000), 2 wrapping to 0 - texel 1 in the middle half, 0 at both ends; the billboard keeps the
+     * GPU's nearest sampling, a quadrant a texel */
+    check(billboard ? near_rgb(at(original, 16, 112), colours[0], 0) && near_rgb(at(original, 112, 112), colours[1], 0) &&
+                      near_rgb(at(original, 16, 16), colours[2], 0) && near_rgb(at(original, 112, 16), colours[3], 0)
+                    : near_rgb(at(original, 16, 16), colours[0], 0) && near_rgb(at(original, 64, 16), colours[1], 0) &&
+                      near_rgb(at(original, 16, 64), colours[2], 0) && near_rgb(at(original, 64, 64), colours[3], 0) &&
+                      near_rgb(at(original, 112, 112), colours[0], 0),
           billboard ? "billboard original palette colours" : "surface original LUMA and palette colours");
     for (i = 0; i < WIDTH * HEIGHT; i++) {
-        int texel = (i % WIDTH >= WIDTH / 2) + (i / WIDTH < HEIGHT / 2 ? 2 : 0);
+        int x = i % WIDTH, y = i / WIDTH, texel;
+        if (billboard) texel = (x >= WIDTH / 2) + (y < HEIGHT / 2 ? 2 : 0);
+        else {
+            if (x == 32 || x == 33 || x == 96 || x == 97 || y == 30 || y == 31 || y == 94 || y == 95) continue;   /* (the rounding's edge) */
+            texel = (x > 32 && x < 97) + (y > 30 && y < 95 ? 2 : 0);
+        }
         if (!near_rgb(original + i * 4, colours[texel], 0)) original_bad++;
     }
-    check(!original_bad, "every original pixel matches the exact nearest-sampled colour fixture");
+    check(!original_bad, "every original pixel matches the exact nearest-sampled colour fixture (DOS's nearest texel on the surface)");
     v->tex_min = v->tex_mag = RB_NEAREST;
     draw(r, v, nearest);
     check(!memcmp(original, nearest, BYTES), "explicit nearest is bit-identical to original");

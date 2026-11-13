@@ -4,17 +4,23 @@ What is still open in the Mercenaries port, in plain language.
 
 - **Side-by-side comparison with the original.** Every fixed mission's opening has been compared with the DOS game in
   DOSBox (docs/DOSBOX_COMPARISON.md). Differences found and not yet fixed:
-  - **Light levels** follow DOS's span walk, cosine, near plane and 2D screen clip (v1.0.1, v1.0.2, v1.2.0). Still off,
-    in DOSBox level maps: on LUT1 8 % of pixels sit one level off, nearly all in the two large foreground polygons on
-    the right, where the dither's phase flips one row before DOS's (their visible edges match DOS's, so the walked left
-    edge's 16.16 position differs by a fraction somewhere above the screen; not found). On the fog-table mission MED1
-    8 % of pixels are two or more levels off, nearly all on the near building at the left: DOS shows one flat level
-    where the port shows the wall's banded levels, consistent with DOS not drawing that lower wall face (not traced).
-    Where the far terrain meets the ground at the horizon, DOS draws the terrain's bottom pixel row and the port shows
-    the ground there: a textured polygon's coverage is still the GPU's (float corners, top-left rule), not DOS's walk,
-    which includes the bottom row (Gouraud polygons already use the walk's coverage).
-  - **Camo stripe edges** land a texel or two off (texture coordinate rounding), and **shadow interiors** are a multiply
-    by the shadow row's mean darkening, where DOS remaps each pixel through the row. Remapping texel by texel was tried;
+  - **Light levels** follow DOS's span walk, cosine, near plane and 2D screen clip (v1.0.1, v1.0.2, v1.2.0), and a
+    textured polygon now covers the pixels DOS's walk covers. Still off, in DOSBox level maps: on LUT1 8 % of
+    pixels sit one level off, nearly all in the two large foreground polygons on the right, where the dither's phase
+    flips one row before DOS's, i.e. the walked left edge steps a row early. Those polygons are clipped at the bottom of
+    the screen, not the top; MW2.EXE's integer camera transform, its near-plane corner (0x4cd65) and a bottom bound of
+    478 or 480 were tried and do not explain it (not found). On the fog-table mission MED1 8 % of pixels are two or
+    more levels off, nearly all on the near building at the left: DOS shows a flat grey face and two pillars over parts
+    of the banded wall, where the port shows the banded wall throughout. The port has nothing behind that wall there
+    (only the pillars' back faces at its edge); its LOD, near plane and backface test (0x4d3c9, now per polygon as DOS)
+    were ruled out, which leaves DOS's drawing order inside the object (painter's, no depth buffer) - not traced. On
+    BET3 the far terrain strip at the horizon is one flat level (6) in DOS over nine rows, where the port's walk gives
+    levels 0 to 2, and DOS still draws one row more at its bottom (not found).
+  - **Camo stripe edges** in external views still differ from DOSBox by about a pixel: the texels now come from DOS's
+    own span walk, but the whole external view sits about one pixel lower in the port than in DOSBox (BET1, IVA1,
+    MED1, OUT1, REV1: mechs and the buildings behind alike; the cockpit views line up, so the external camera's
+    integers likely differ - not traced). **Shadow interiors** are a multiply by the shadow row's mean darkening, where
+    DOS remaps each pixel through the row. Remapping texel by texel was tried;
     with the port's overlapping shadow polygons it came out no closer to DOSBox, so it was left out.
 
   - **REC1/REC2's external camera**, perched on the rocks: DOS shows dark, shaded rock faces beside the camera where the
@@ -30,8 +36,20 @@ What is still open in the Mercenaries port, in plain language.
     64 m to 92 m) and walks on. The port's Catapult stays stuck at that spot for the rest of the run, 250 to 400 m
     from the player. The terrain height there matches DOS exactly. The port refuses every move against a terrain face
     whose normal is about (0.48, 0.71, -0.51), right at the 45 degree climbable limit; the move is harmless (no
-    damage), but it is cut back each tick and the AI's avoidance turns back and forth without getting free. Why DOS's
-    move (0x1fca0) lets the mech up that face is not yet traced.
+    damage), but it is cut back each tick and the AI's avoidance turns back and forth without getting free.
+    Checked against DOS after v1.2.0: DOS's move test (MW2.EXE 0x280d0, called from the unit move 0x30c5d) is the same
+    rule as the port's - the segment from the centre extended by |u.y| H + (1 - |u.y|) R (Catapult: 654 and 640 cm in
+    both), every crossed face refused (0x23918 -> 0x2643c / 0x23bdc), the touching point and untravelled length signed,
+    the reflection x 1/4, the second try's revert on a different object (0x313c3) and the harmless window (normal y at
+    least 0xb506, feet -100 m .. +10 m, 0x31490). So the move rule is not what differs. In two new DOSBox runs (the
+    Catapult's position watched every ~1.5 s) the DOS Catapult never reaches (-927, 1528) m: it first walks south-east
+    to about (-440, 1470) m and goes west along z = 1403 m, and from (-929, 1411) m it heads north-north-west and
+    passes about 50 m west of the dune, climbing the hill there. The port's Catapult turns west at about
+    (-518, 1580) m, about 8 s after it starts walking (DOS keeps going south-east for about 23 s), so it reaches the
+    dune on a different line. At the
+    dune its goal swings round to the east (bearing 75 degrees) while the avoidance, with its side set to the left,
+    keeps turning it left into the slope; the goal steering and the avoidance cancel out. What is still open is why
+    the Catapult's route leaves DOS's that early (its goal or the player's progress).
   - **GRA1's ambush timing** varies from run to run in DOS. Traced in DOSBox (after v1.1.0, AI records watched through
     the whole run): the Catapult and the Hunchback stay powered down in their rest state (10) in place for the whole
     mission in DOS as well, so the earlier report that DOS's Catapult wakes sooner was wrong. In both games the Crab
