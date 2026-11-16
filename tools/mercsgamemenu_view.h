@@ -7,6 +7,7 @@
  * Mouse activates on LEFT PRESS (unlike the message-dialog release rule).
  * Opening key/button and repeats must not leak into this modal from its host.
  */
+#include "mercsplatform.h"
 #include "mercsart.h"
 
 enum {
@@ -82,7 +83,7 @@ static inline int mercs_game_menu_mouse(mercs_game_menu *m, int x, int y, int ev
 static inline int mercs_game_menu_draw(mercs_art *a, const mercs_game_menu *m)
 {
     static const char *const labels[7] = {"NEW MERCENARY","COMBAT VARIABLES","COCKPIT CONTROLS",
-        "MERC LORDS","THE FIRST CIRCUIT","FLEE TO DOS","LOAD/SAVE GAME"};
+        "MERC LORDS","THE FIRST CIRCUIT","FLEE TO " MERCS_PLATFORM_UPPER,"LOAD/SAVE GAME"};
     int i;
     if (!a || !m || !m->active || mercs_art_shape(a,1,0,198,116)) return -1;
     for (i = 0; i < 7; i++)

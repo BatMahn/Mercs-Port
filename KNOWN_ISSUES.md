@@ -27,6 +27,9 @@ What is still open in the Mercenaries port, in plain language.
     port shows the lit face nearest it. The rest of the view lines up, so the camera is in the same place. Neither the
     fog nor DOS's near plane (v1.0.2) is the cause; DOS draws without a depth buffer, in its sorted polygon order, and
     the likeliest cause is that order letting faces behind the near rock paint over it. Not reproduced.
+  - **Enemies react as soon as the player fires at them** (GitHub report: a locked missile volley alerts the target
+    before it lands; in DOS only the hit does). The port follows the 3D engine's attacker rule, where the player counts as
+    attacking its target while the trigger is held; DOS's equivalent is not traced yet.
   - **TRA1's instructor Catapult stalls on a dune in the port.** Traced in DOSBox (after v1.1.0, the four friendly
     AI records and the player's position watched over four minutes on autopilot at full throttle): the Thug, Bombardier
     and Panther go north and stop around (-470, 2180) m within the first 80 s, as in the port. The Catapult leads the

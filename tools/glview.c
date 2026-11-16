@@ -21,6 +21,7 @@
  * Sky/ground/fog: MW2_SKYGND=3dfx skygnd.par, MW2_SKYGND_FOG=PowerVR skygnd.par
  * Any window size or aspect ratio; wider screens see more to the sides.
  */
+#include "mercsplatform.h"
 #if defined(__APPLE__)
 #include <dlfcn.h>   /* the system-shortcut switch, looked up at run time (syskeys_apply) */
 #ifndef RTLD_DEFAULT
@@ -3726,7 +3727,7 @@ typedef struct { int type; const char *text; int arg; } mm_item;
 typedef struct { const char *title; int n; mm_item it[7]; } mm_page;
 static const mm_page MM_PAGE[MP_COUNT] = {
     {"MAIN MENU", 6, {{MI_SUB, "Abort Mission", MP_ABORT}, {MI_SUB, "Graphics", MP_GRAPHICS}, {MI_SUB, "Audio Ctrl", MP_AUDIO},
-                      {MI_SUB, "Combat Variables", MP_COMBAT}, {MI_SUB, "Flee to Windows", MP_FLEE}, {MI_ACCEPT, "Accept (Esc to cancel)", 0}}},
+                      {MI_SUB, "Combat Variables", MP_COMBAT}, {MI_SUB, "Flee to " MERCS_PLATFORM_TITLE, MP_FLEE}, {MI_ACCEPT, "Accept (Esc to cancel)", 0}}},
     {"ABORT MISSION", 2, {{MI_LABEL, "Confirmation requested", 0}, {MI_CONFIRM, "Accept (Esc to cancel)", 0}}},
     {"GRAPHICS", 6, {{MI_VAL, "Textured Sky", MV_SKY}, {MI_VAL, "Textured Ground", MV_GROUND}, {MI_VAL, "Renderer", MV_VIDEO},
                      {MI_VAL, "Textures", MV_TEXSET}, {MI_VAL, "HUD layout", MV_HUDLAYOUT}, {MI_ACCEPT, "Accept (Esc to cancel)", 0}}},
@@ -3735,7 +3736,7 @@ static const mm_page MM_PAGE[MP_COUNT] = {
     {"COMBAT VARIABLES", 7, {{MI_VAL, "Object textmaps", MV_OBJTEX}, {MI_VAL, "Terrain textmaps", MV_TERTEX}, {MI_VAL, "Display detail", MV_DETAIL},
                              {MI_VAL, "Object density", MV_DENSITY}, {MI_VAL, "Explosion chunks", MV_CHUNKS},
                              {MI_SUB, "Graphics", MP_GRAPHICS}, {MI_ACCEPT, "Accept (Esc to cancel)", 0}}},
-    {"FLEE TO WINDOWS", 2, {{MI_LABEL, "Confirm your cowardice", 0}, {MI_CONFIRM, "Accept (Esc to cancel)", 1}}},
+    {"FLEE TO " MERCS_PLATFORM_UPPER, 2, {{MI_LABEL, "Confirm your cowardice", 0}, {MI_CONFIRM, "Accept (Esc to cancel)", 1}}},
     {"GRAPHICS", 6, {{MI_VAL, "DOS shading", MV_DOSSKY}, {MI_VAL, "Textured Ground", MV_GROUND}, {MI_VAL, "Renderer", MV_VIDEO},   /* a DOS mission's */
                      {MI_VAL, "Textures", MV_TEXSET}, {MI_VAL, "HUD layout", MV_HUDLAYOUT}, {MI_ACCEPT, "Accept (Esc to cancel)", 0}}},
     {"GRAPHICS", 6, {{MI_VAL, "Textured Sky", MV_SKY}, {MI_VAL, "Textured Ground", MV_GROUND}, {MI_VAL, "Renderer", MV_VIDEO},
@@ -6086,10 +6087,13 @@ int main(int argc, char **argv)
                             hud_message_ex(combat_auto_eject() ? "Automatic ejection ON" : "Automatic ejection OFF", 0x16a, 0x32);
                         }
                     }
-                    else if (act < 0 && g_cc_page == 1) { if (msim_set_formation(&g_sim, -act - 1) == 0) g_cc_page = -1; }
+                    /* an order goes back to the menu it was picked from: the COMMAND COMPUTER root when the page was
+                     * opened from it, closed when the page was opened by its own key (DOSBox GRA1SCN1 with two
+                     * starmates: b 2 1 and b 1 2 leave the root up; Ctrl+F2 3 closes) */
+                    else if (act < 0 && g_cc_page == 1) { if (msim_set_formation(&g_sim, -act - 1) == 0) g_cc_page = g_cc_from_root ? 0 : -1; }
                     else if (act < 0) {
                         msim_command(&g_sim, g_cc_page - 2, CC_ORDER[-act - 1], cc_selected_target());
-                        g_cc_page = -1;
+                        g_cc_page = g_cc_from_root ? 0 : -1;
                     }
                     continue;
                 }
@@ -6807,13 +6811,28 @@ int main(int argc, char **argv)
                         if (fabsf(g_ap_turn) >= 1e-7f) g_pl_legs_turn = 1;
                     }
                 }
-                {   /* keyboard turning builds up (legs_pan_delta's key ramp, see key_ramp) and stops on release */
+                {   /* keyboard turning builds up (legs_pan_delta's key ramp, see key_ramp). The 3D editions stop on the
+                     * release; DOS eases in and out: DOSBox GRA1SCN1 recorded at 60 fps, a 0.2 s tap and a 1.5 s hold, the
+                     * heading follows the ramp's rate through a first-order lag of about 0.3 s (fitted, 1.4 deg rms over
+                     * both: the hold coasts on ~13 deg after the release, the tap ~5) - the DOS routine itself is not
+                     * traced (INFERRED from the recording) */
                     static key_ramp_t rl;
+                    static float dos_rate;
+                    int pr = 0;
+                    float a = g_im_ok ? im_axis(&g_im, "legs_pan_delta", ks, 1, &pr) : 0, want;
                     key_ramp(&rl, H("legs_pan_plus"), H("legs_pan_minus"), 7, 1, dt);
-                    g_pl.heading += turn * rl.val * dt;
-                    if (rl.val != 0) g_pl_legs_turn = 1;
+                    want = turn * (rl.val + (pr ? a : 0.0f));
+                    if (g_edition == PORTCFG_ED_DOS && dt > 0) {
+                        dos_rate += (want - dos_rate) * fminf(1.0f, dt / 0.3f);
+                        if (fabsf(dos_rate) < 0.01f && want == 0) dos_rate = 0;
+                        g_pl.heading += dos_rate * dt;
+                        if (dos_rate != 0) g_pl_legs_turn = 1;
+                    } else {
+                        dos_rate = 0;
+                        g_pl.heading += want * dt;
+                    }
+                    if (rl.val != 0 || (pr && fabsf(a) >= 1e-7f)) g_pl_legs_turn = 1;
                 }
-                { int pr = 0; float a = g_im_ok ? im_axis(&g_im, "legs_pan_delta", ks, 1, &pr) : 0; if (pr) g_pl.heading += a * turn * dt; if (pr && fabsf(a) >= 1e-7f) g_pl_legs_turn = 1; }
                 if (g_feet_to_torso) {
                     float step = 55.0f * dt, d = g_pl.twist;
                     if (fabsf(d) <= step) { g_pl.heading += d; g_pl.twist = 0; g_feet_to_torso = 0; }
@@ -7420,7 +7439,20 @@ int main(int argc, char **argv)
                          * a centre torso carries the hips - all of it); the old "wreck" set was the cockpit representation */
                         const int dead = g_sim.armed[k] && g_sim.units[k].destroyed && !g_sim.units[k].intact_out;
                         const unsigned fly = g_sim.armed[k] ? mech3d_fly_mask(g_sim.units[k].loc_gone) : 0;
-                        mech3d *lm = actor_lod(k, src, g_actors[k].skel, g_sim.col_repr ? -(float)msim_unit_repr(&g_sim, k) : dead ? -1.0f : sqrtf(ddx * ddx + ddy * ddy + ddz * ddz));
+                        /* drawn: the simulation's representation (the original's, at its 640 x 480 reference - hits use
+                         * it), but no coarser than the same rule at this window's size: the originals' thresholds scale with
+                         * the half-width (DOS camera +0xb8 = zoom x half-width / (quality x 160), 0x3f1c1; the 3D editions'
+                         * camera +0xa0 likewise), so a far mech that is a few pixels tall at 640 x 480 is not a crude
+                         * representation-3 model filling a large window (GitHub report: "LOD massively reduced past 500 m") */
+                        const float dd = sqrtf(ddx * ddx + ddy * ddy + ddz * ddz);
+                        int rsim = g_sim.col_repr ? msim_unit_repr(&g_sim, k) : -1, rdraw;
+                        {
+                            float sw = g_render_w ? (float)g_render_w : (float)g_win_lines * 4.0f / 3.0f, a0;
+                            a0 = 2.0f * (g_zoom > 1 ? g_zoom : 1.0f) / (float)g_lodq * (sw > 640.0f ? sw / 640.0f : 1.0f);
+                            rdraw = dd < a0 * 3600.0f ? 0 : dd < a0 * 8500.0f ? 1 : dd < a0 * 22500.0f ? 2 : 3;
+                        }
+                        if (rsim >= 0 && !dead && rsim < 4 && rdraw < rsim) rsim = rdraw;
+                        mech3d *lm = actor_lod(k, src, g_actors[k].skel, rsim >= 0 ? -(float)rsim : dead ? -1.0f : -(float)rdraw);
                         if (lm && lm->part_count > src->part_count) {
                             mech3d_part *grown = realloc(all.parts, (size_t)(total + lm->part_count) * sizeof *all.parts);
                             if (grown) { all.parts = grown; total += lm->part_count; } else lm = NULL;

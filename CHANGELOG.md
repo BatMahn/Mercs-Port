@@ -1,5 +1,23 @@
 # Mercenaries development history
 
+## v1.2.7: command computer stays open, DOS turning eases out, far mechs keep their detail, Flee to your OS — 2026-11-16
+
+- **The COMMAND COMPUTER stays up after an order,** as in DOS: an order or formation picked from a page opened from
+  the root returns to the root; a page opened by its own key (Ctrl+F2 / F3) closes after the order. Traced in DOSBox
+  with two starmates. (GitHub report.)
+- **DOS look: the mech eases into and out of a turn,** as in DOS, instead of stopping dead when the arrow key is
+  released. Measured in DOSBox at 60 fps: a held turn coasts on about 13 degrees after the release, a tap about 5. The
+  port fits this with a 0.3 s lag on the turn rate (INFERRED from the recording; the DOS routine is not traced). The 3D
+  looks keep their stop on release. (GitHub report.)
+- **Far mechs no longer drop to their crudest model in large windows.** DOS uses the same distances as the port (traced:
+  450 m at 640 x 480), but they scale with the screen's width, so at 640 x 480 a far mech is a few pixels tall. The
+  drawn level of detail now follows the window's size; the simulation and hits keep the 640 x 480 values. (GitHub
+  report.)
+- **"Flee to DOS" / "Flee to Windows" name the system the port runs on:** Windows, macOS or Linux, in the shell's game
+  menu and the in-mission menu.
+- Still open from the same report: enemies notice the player as soon as a locked volley is fired, where DOS waits for
+  the hit (see KNOWN_ISSUES).
+
 ## v1.2.6: Instant Action generates a new battle after each mission — 2026-11-16
 
 - **Launching Instant Action again no longer replays the same battle.** The scenario was generated once, when the
