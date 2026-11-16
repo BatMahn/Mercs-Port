@@ -60,6 +60,15 @@ int main(int argc,char **argv)
     close_mechlab(s,1,PAGE_INSTANT);healthy(s);assert(s->page==PAGE_INSTANT&&!s->mechlab&&s->instant.slots[0].custom_size);
     frame(s,"instant-custom-design");mouse(s,570,310);assert(s->instant.slots[0].variant_active);
     assert(!mercs_save_encode(s->campaign.document,1,&after,&after_size));assert(before_size==after_size&&!memcmp(before,after,before_size));
+    {   /* after a mission the next launch is a new scenario: new seed, the asked-for parameters and the slots kept
+         * (GitHub: launching again replayed the same battle) */
+        uint32_t seed=s->instant.request.seed;mercs_instant_slot slot0=s->instant.slots[0];
+        char scene_before[17];int kind=s->instant.request.kind,skill=s->instant.request.skill;
+        memcpy(scene_before,s->instant.world.scene,sizeof scene_before);(void)scene_before;
+        SDL_Delay(5);assert(!instant_next_scenario(s));healthy(s);
+        assert(s->instant.request.seed!=seed&&s->instant.request.kind==kind&&s->instant.request.skill==skill);
+        assert(s->instant.slots[0].custom_size==slot0.custom_size&&s->instant.slots[0].variant_active==slot0.variant_active);
+    }
     s->save_return=PAGE_INSTANT;assert(!can_save_slot(s));s->save_return=PAGE_INSTANT_PARAMS;assert(!can_save_slot(s));
     mouse(s,550,450);assert(s->page==PAGE_MENU);frame(s,"instant-return-to-menu");
     free(before);free(after);mercs_instant_free(&s->instant);mercs_campaign_free(&s->campaign);mercs_art_destroy(s->art);mercs_viewport_reset(&s->viewport);

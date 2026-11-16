@@ -1958,6 +1958,15 @@ static int refresh_instant(shell *s)
     return rc;
 }
 
+/* After a mission: a new scenario for the next launch, from what was asked (a random planet / kind is drawn again), the
+ * slots kept. The preview generated on entering the screen was reused, so launching again replayed the same battle */
+static int instant_next_scenario(shell *s)
+{
+    s->instant.parameters=s->instant.request;
+    if(refresh_instant(s)){snprintf(s->status,sizeof s->status,"A new Instant Action scenario could not be generated.");return -1;}
+    return 0;
+}
+
 static void open_instant(shell *s)
 {
     if(!s->instant.ready)mercs_instant_init(&s->instant);
@@ -1995,6 +2004,7 @@ static void launch_instant(shell *s)
     /* Instant Action has no career deployment/import/debrief. Keep the
      * original selected slots on the original Instant Action screen. */
     s->instant.restart=1;
+    if(s->running)instant_next_scenario(s);
     if(result&&s->running)snprintf(s->status,sizeof s->status,"Instant Action ended with status %d. Your career has not changed.",result);
     fprintf(stderr,"mercs shell: instant-return result=%d\n",result);
 done:

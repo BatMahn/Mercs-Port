@@ -1,5 +1,13 @@
 # Mercenaries development history
 
+## v1.2.6: Instant Action generates a new battle after each mission — 2026-11-16
+
+- **Launching Instant Action again no longer replays the same battle.** The scenario was generated once, when the
+  screen opened, and every later launch reused it. After each mission the shell now generates a new one with a fresh
+  seed. Your slots, custom designs and chosen parameters stay; a planet or mission type left on random is drawn again.
+  (GitHub report from macOS; it affected every platform.) How the original shell reseeds here was not traced
+  (INFERRED).
+
 ## v1.2.5: DOS look ground textured in Instant Action and generated contracts — 2026-11-16
 
 - **The DOS look's ground has its texture again in Instant Action and generated contracts.** SKYGND.PAR has no line
