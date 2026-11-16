@@ -45,7 +45,8 @@ typedef struct prj_record {
     uint32_t year;
     uint32_t checksum;                  /* stored checksum, unchanged even for the known compatibility case */
     uint32_t computed_checksum;         /* actual byte sum from record offset 12 */
-    int      checksum_compat;           /* an exact fingerprinted record shipped with a wrong checksum; otherwise 0 */
+    int      checksum_compat;           /* 1: an exact fingerprinted record shipped with a wrong checksum; 2: any other
+                                         * mismatch, read because checksum checking is off; otherwise 0 */
     int      generated;                 /* native shell runtime resource; no archive bytes changed */
     uint8_t *data;                      /* payload, malloc'd; free with prj_record_free */
     size_t   size;                      /* payload size in bytes */
@@ -78,7 +79,11 @@ uint32_t     prj_record_size(const prj_archive *a, int type, int id);
 /* Read and checksum-verify one record. Returns PRJ_OK or a negative error.
  * The exact fingerprinted records the editions shipped with inconsistent
  * checksums are accepted without changing bytes; checksum_compat marks them.
- * All other mismatches remain PRJ_ERR_CHECKSUM. */
+ * All other mismatches are PRJ_ERR_CHECKSUM unless prj_set_checksum_strict(0)
+ * was called (the game does: the originals never check), then read with a
+ * warning on stderr and checksum_compat = 2. */
+void         prj_set_checksum_strict(int strict);
+const char  *prj_path(const prj_archive *a);
 int          prj_read(prj_archive *a, int type, int id, prj_record *out);
 int          prj_read_named(prj_archive *a, const char *tag, const char *name, prj_record *out);
 void         prj_record_free(prj_record *r);

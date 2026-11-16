@@ -1,5 +1,15 @@
 # Mercenaries development history
 
+## v1.2.3: archives with stale record checksums load — 2026-11-15
+
+- **A game folder whose MW2.PRJ has records with stale checksums now plays.** A tester's copy stopped the first
+  contract (TRA1) with "Cannot read BWD id 1490" (TRA1PLT1). The port refused any record whose stored checksum wasn't
+  its byte sum, apart from the 26 known shipped ones; the originals never check. The game now reads such records as the
+  originals do and writes a warning naming the archive and record. Malformed records (wrong id, size or type) are
+  still refused, and the tools and tests keep the strict check.
+- Record read errors now name the record, the archive file and the reason (for example
+  "Cannot read BWD TRA1PLT1 (id 1490) from .../titanium/MW2.PRJ: checksum mismatch").
+
 ## v1.2.2: DOS look texture spans and coverage, TRA1 trace — 2026-11-12
 
 - **DOS look textures are walked as DOS's spans:** textured polygons now pick their texels the way MW2.EXE does

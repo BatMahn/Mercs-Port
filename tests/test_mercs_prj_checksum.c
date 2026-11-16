@@ -155,6 +155,14 @@ static void check_record(int argc,char **argv,const char *name,unsigned id,
     MUTATE("wrong record size",wr32(candidate+4,(uint32_t)size-9),size-1,"MEK\0",PRJ_ERR_CHECKSUM);
     MUTATE("other resource type",memcpy(candidate+12,"BWD\0",4),size,"BWD\0",PRJ_ERR_CHECKSUM);
     MUTATE("invalid declared size",wr32(candidate+4,(uint32_t)size-7),size,"MEK\0",PRJ_ERR_FORMAT);
+    /* The game turns checking off, as the originals never check: a stale checksum is read (marked 2); a malformed
+     * record is still refused. */
+    prj_set_checksum_strict(0);
+    memcpy(candidate,accelerated,size); candidate[62]++;
+    mini_archive(candidate,size,id,"MEK\0",PRJ_OK,2,"lenient payload one byte"); mutations++;
+    MUTATE("lenient different record id",wr16(candidate+24,id+1),size,"MEK\0",PRJ_ERR_FORMAT);
+    MUTATE("lenient invalid declared size",wr32(candidate+4,(uint32_t)size-7),size,"MEK\0",PRJ_ERR_FORMAT);
+    prj_set_checksum_strict(1);
 #undef MUTATE
     /* Ordinary checksum-valid records remain valid; the special fingerprint
      * is not a new restriction on unrelated records or corrected headers. */

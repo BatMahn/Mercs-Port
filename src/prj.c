@@ -31,7 +31,14 @@ struct prj_archive {
     int       type_count;
     prj_record *generated;
     size_t generated_count;
+    char path[512];
 };
+
+/* 1: a record whose stored checksum is not its byte sum is refused (tools, tests); 0: read anyway, as the originals'
+ * record readers do (MERCSW.DLL 0x1001ead0 sums nothing), with a warning - the game uses this. */
+static int g_checksum_strict = 1;
+void prj_set_checksum_strict(int strict) { g_checksum_strict = strict ? 1 : 0; }
+const char *prj_path(const prj_archive *a) { return a ? a->path : ""; }
 
 static uint16_t rd16(const uint8_t *p) { return (uint16_t)(p[0] | (p[1] << 8)); }
 static uint32_t rd32(const uint8_t *p)
@@ -256,6 +263,7 @@ prj_archive *prj_open(const char *path, char *err, size_t errlen)
     a = (prj_archive *)calloc(1, sizeof *a);
     if (!a) { if (err) snprintf(err, errlen, "out of memory"); return NULL; }
     a->fp = fopen(path, "rb");
+    snprintf(a->path, sizeof a->path, "%s", path);
     if (!a->fp) FAIL("cannot open archive");
     if (fseek(a->fp, 0, SEEK_END) != 0) FAIL("seek failed");
     a->file_size = (uint64_t)ftell(a->fp);
@@ -401,8 +409,18 @@ int prj_read(prj_archive *a, int type, int id, prj_record *out)
     out->checksum = rd32(buf + 8);
     out->computed_checksum = sum;
     if (sum != out->checksum) {
-        if (!known_mercs_checksum_record(buf, size, sum)) { free(buf); return PRJ_ERR_CHECKSUM; }
-        out->checksum_compat = 1;
+        if (known_mercs_checksum_record(buf, size, sum)) out->checksum_compat = 1;
+        else if (!g_checksum_strict) {
+            static uint32_t warned[64]; static unsigned nwarned;
+            uint32_t key = ((uint32_t)type << 16) | (uint32_t)id; unsigned w;
+            char name[PRJ_NAME_LEN + 1];
+            copy_name(name, buf + 30, PRJ_NAME_LEN);
+            for (w = 0; w < nwarned && w < 64 && warned[w] != key; w++) {}
+            if (w == nwarned || w >= 64) { if (nwarned < 64) warned[nwarned++] = key; } else name[0] = 0;
+            if (name[0]) fprintf(stderr, "warning: %s: %s %s (id %d) stored checksum 0x%x, bytes sum 0x%x; read anyway, as the original does\n",
+                    a->path, t->tag, name, id, (unsigned)out->checksum, (unsigned)sum);
+            out->checksum_compat = 2;
+        } else { free(buf); return PRJ_ERR_CHECKSUM; }
     }
 
     tag_from(out->tag, buf + 12);

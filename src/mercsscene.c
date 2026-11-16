@@ -45,8 +45,13 @@ int mercs_shell_scene_player(prj_archive *a, const char *scene,
         prj_record r;
         bwd_chunk *chunks = NULL;
         int i, chunks_count;
-        if (prj_read(a, bwd_type, ids[head], &r) != PRJ_OK)
-            return fail(error, n, "Cannot read BWD id %d", ids[head]);
+        int rc = prj_read(a, bwd_type, ids[head], &r);
+        if (rc != PRJ_OK) {
+            const char *nm = NULL; int k;
+            for (k = 0; k < prj_symbol_count(a, bwd_type) && !nm; k++)
+                if (prj_symbol_id(a, bwd_type, k) == ids[head]) nm = prj_symbol_name(a, bwd_type, k);
+            return fail(error, n, "Cannot read BWD %s (id %d) from %s: %s", nm ? nm : "?", ids[head], prj_path(a), prj_strerror(rc));
+        }
         chunks_count = chunks_of(&r, &chunks, error, n);
         if (chunks_count < 0) { prj_record_free(&r); return -1; }
         for (i = 0; i < chunks_count; i++) {
@@ -82,8 +87,9 @@ int mercs_shell_scene_player(prj_archive *a, const char *scene,
                     prj_find_id(a,bwd_type,gps.skeleton)<0) {
                     fail(error, n, "Unsupported actor reference in %s", r.name); goto bad;
                 }
-                if ((gps.mek_id==0xffff?prj_read_named(a,"MEK",gps.loadout,&mech):prj_read(a,mek_type,gps.mek_id,&mech)) != PRJ_OK) {
-                    fail(error, n, "Cannot read actor loadout %s", gps.loadout); goto bad;
+                int mrc = gps.mek_id==0xffff?prj_read_named(a,"MEK",gps.loadout,&mech):prj_read(a,mek_type,gps.mek_id,&mech);
+                if (mrc != PRJ_OK) {
+                    fail(error, n, "Cannot read actor loadout %s from %s: %s", gps.loadout, prj_path(a), prj_strerror(mrc)); goto bad;
                 }
                 parsed = mek_parse(mech.data, mech.size, &def);
                 prj_record_free(&mech);
