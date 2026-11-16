@@ -40,6 +40,8 @@ typedef struct {
                              * (type & 0xf0), as Mercs DOS 0x449b4. Class 0xa0 selects the cockpit subtree. */
     int       parent_obj;    /* world objects: the OBJ parent's index in the same record (-1 none) */
     int       gt_debris;     /* world objects: GT flag 0x8000 - flies off as debris when its parent is destroyed */
+    int       gt_wait;       /* world objects: 1 + the OBJ index of the GT destroyed variant whose subtree this part is in
+                              * (hidden until that thing's swap); 0 none */
     int       hidden;        /* not drawn and not solid (a building's destroyed variant before, its intact one after) */
     unsigned  tint;          /* 0x1RRGGBB: drawn in this colour (the target viewer's damage colours); 0 = its own */
     int       sparse;        /* world objects: an OBJECT DENSITY object (type 0xc0), hidden while the density is LOW */

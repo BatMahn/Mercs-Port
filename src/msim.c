@@ -3455,6 +3455,8 @@ static void building_swap(msim *s, int b)
                         parent_shown = !s->world->parts[j].hidden || s->world->parts[j].gt_debris == 2;
                         break;
                     }
+                /* (under a dummy node of the variant's subtree, which draws nothing: shown with the variant) */
+                if (j == s->world->part_count && c->gt_wait == pd->obj_index + 1) parent_shown = 1;
                 if (!parent_shown || j == bd->intact) continue;
                 if (c->gt_debris) {
                     c->gt_debris = 2;   /* spent: launched (or dropped) once */

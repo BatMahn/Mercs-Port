@@ -1,5 +1,27 @@
 # Mercenaries development history
 
+## v1.2.4: MW2 port fixes checked against Mercs: wrecks, formations, HUD — 2026-11-16
+
+The MechWarrior 2 port's November fixes were checked against Mercenaries. Four applied:
+
+- **Destroyed variants no longer stand in the world from the start.** A destructible thing's destroyed object (the
+  second object of its GT chunk) and everything under it now wait for the thing to be destroyed, whatever the models are
+  called. The port only hid models named SA*, so dropship wrecks (VA1DROPC), crashed aircraft (VA1AEROA) and their
+  debris (VC*) stood inside or beside the intact objects, 250 parts under 126 GT entries (GRA3-5, IVA1-5, LUT3-6,
+  MCC1/4 and more). Parts under a dummy node of the wreck now show with it when the thing is destroyed.
+- **Mission formation tables are read as the engine reads them** (MERCSW.DLL 0x100323e1 / 0x1004d0e5): a 16-byte name,
+  then slots whose first is the leader's own, subtracted from every follower's. Changed: MCC2's turret group
+  (mcc2tur2, followers 150 m out of place), MCC3's and MCC6's platoon (the first follower stood on the leader) and
+  REV1's group1form (4 m). Every other spawn is unchanged (all 79 scenes diffed).
+- **Mission tables (MTBL) are found by their number**, not their order in the scene. Every shipped scene stores them in
+  order, so nothing changes there; generated or edited scenes are safe.
+- **HUD weapon list:** a weapon destroyed by a critical hit now shows dark, as the original (state -1), not red as if
+  recycling.
+
+Checked and already matching: the player record (Mercs always uses USERSTAR), torso / pitch objects (THNG #1 / #2, the
+torso set last when both name one node, no door class in Mercs), the view at half the torso pitch, the Endo / Ferro
+mass (Mercs' Mech Lab sets them once every critical is placed, as DOS), the lower-display toggles.
+
 ## v1.2.3: archives with stale record checksums load — 2026-11-15
 
 - **A game folder whose MW2.PRJ has records with stale checksums now plays.** A tester's copy stopped the first

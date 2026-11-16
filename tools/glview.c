@@ -8645,7 +8645,8 @@ int main(int argc, char **argv)
                     const float *wdark = HP(8), *wred = HP(0xb), *wgreen = HP(14), *wwhite = HP(0xfe), *wyellow = HP(3);   /* the mission
                                        * palette (0x10260324); the 0xe green drawn as 14 here (as before) */
                     (void)grey; (void)white;
-                    if (cw->ammo == 0 || pu->loc_gone[cw->location]) col = wdark;
+                    if (cw->state < 0 || cw->ammo == 0 || pu->loc_gone[cw->location]) col = wdark;   /* (state -1: a critical hit
+                                       * destroyed it - it showed red, as recycling) */
                     else if (cw->state == CW_FIRING) col = wgreen;
                     else if (cw->state != CW_READY) col = wred;
                     else if (cw->return_group==1) col = wwhite;

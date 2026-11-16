@@ -307,7 +307,7 @@ int world3d_append(prj_archive *a, const char *record, int with_damaged, mech3d 
     prj_record rec;
     bwd_chunk *chunks = NULL;
     wnode *nodes = NULL;
-    int n, k, i, poly_type, rc = -1, max = MAX_NODES * 4, scrg_obj = -1;
+    int n, k, i, poly_type, rc = -1, max = MAX_NODES * 4, scrg_obj = -1, *wait = NULL;
 
     if (prj_read_named(a, "BWD", record, &rec) != PRJ_OK) return -1;
     poly_type = prj_find_type(a, "POLY");
@@ -331,6 +331,26 @@ int world3d_append(prj_archive *a, const char *record, int with_damaged, mech3d 
         int sc = -1;
         for (k = 0; k < n; k++) if (strcmp(chunks[k].tag, "SCRG") == 0 && chunks[k].size >= 2) sc = (int16_t)(chunks[k].data[0] | chunks[k].data[1] << 8);
         scrg_obj = sc >= 0 && sc < max && nodes[sc].present ? sc : -1;
+    }
+    /* a destroyed variant (a GT chunk's second object) and its whole OBJ subtree wait for the swap, whatever their
+     * models are called (engine: the variants are flagged 0x800 and not created until 0x10025450; the port hid only
+     * SA* models, so VA1* dropship / aircraft wrecks and their VC* debris stood in the world from the start). The
+     * subtree follows OBJ parents, through dummy nodes that draw nothing */
+    if (with_damaged && (wait = calloc((size_t)max, sizeof *wait))) {
+        int changed = 1, guard = 0;
+        for (k = 0; k < n; k++)
+            if (strcmp(chunks[k].tag, "GT") == 0 && chunks[k].size >= 4) {
+                int b = (int16_t)(chunks[k].data[2] | chunks[k].data[3] << 8);
+                if (b >= 0 && b < max && nodes[b].present) wait[b] = b + 1;
+            }
+        while (changed && guard++ < 64) {
+            changed = 0;
+            for (i = 0; i < max; i++) {
+                int par = nodes[i].parent;
+                if (!nodes[i].present || wait[i] || par < 0 || par >= max || par == i || !wait[par]) continue;
+                wait[i] = wait[par]; changed = 1;
+            }
+        }
     }
     for (i = 0; i < max; i++) {
         prj_record mr;
@@ -356,7 +376,8 @@ int world3d_append(prj_archive *a, const char *record, int with_damaged, mech3d 
         snprintf(p->rec, sizeof p->rec, "%.10s", record);
         p->obj_index = i;
         p->parent_obj = nodes[i].parent;
-        p->hidden = with_damaged && strncasecmp(mr.name, "SA", 2) == 0;   /* destroyed variants wait (GT B) */
+        p->gt_wait = wait ? wait[i] : 0;
+        p->hidden = with_damaged && (p->gt_wait || strncasecmp(mr.name, "SA", 2) == 0);   /* destroyed variants wait (GT B) */
         /* the projectile / effect pool (MW2_SHT1: lasers, bullets, explosion and PPC cards at 0,0,0) is never linked into
          * the world until used (the front end draws shots and effects itself): its cards were drawn at the map origin */
         if (strncasecmp(record, "MW2_SHT", 7) == 0) p->hidden = 1;
@@ -405,7 +426,7 @@ int world3d_append(prj_archive *a, const char *record, int with_damaged, mech3d 
                 if (p->pos[1] + o->verts[0].y <= 2 && p->pos[1] + o->verts[0].y >= -2) { p->pos[1] += 4; p->lift = 4; }
             }
         }
-        if (getenv("MERCS_DEBUG_WORLD")) fprintf(stderr, "world %s obj %d %s at %d,%d,%d type 0x%x\n", record, i, p->model_name, p->pos[0], p->pos[1], p->pos[2], (unsigned)p->objtype);   /* tests */
+        if (getenv("MERCS_DEBUG_WORLD")) fprintf(stderr, "world %s obj %d %s at %d,%d,%d type 0x%x wait %d\n", record, i, p->model_name, p->pos[0], p->pos[1], p->pos[2], (unsigned)p->objtype, p->gt_wait);   /* tests */
         out->part_count++;
     }
     {   /* a destroyed variant's children (its SCD / SCE chunks) wait with it: hidden while any ancestor is hidden */
@@ -428,7 +449,7 @@ int world3d_append(prj_archive *a, const char *record, int with_damaged, mech3d 
     rc = 0;
 done:
     free(chunks);
-    free(nodes);
+    free(nodes); free(wait);
     prj_record_free(&rec);
     return rc;
 }
@@ -504,29 +525,35 @@ int world3d_mission(prj_archive *a,const char *scene,int with_damaged,mech3d *ou
     bwd_mission_free(&m);return rc?-1:state.used;
 }
 
-/* Formation member offsets (FTBL chunk): char name[24], i32 leader yaw (16.16 deg),
- * then per follower { i32 x, i32 z, i32 yaw 16.16 }. Looked up by name in the
- * mission's records first, then the shared FORMATNS record. */
+/* Formation member offsets (FTBL chunk, MERCSW.DLL 0x100323e1): char name[16], then 12-byte slots { i32 x, i32 z,
+ * i32 heading 16.16 }, (size - 0x18) / 12 of them, and the first slot is the leader's own; a table of 9 or more slots
+ * is not loaded. The team's leader set (0x1004d0e5) subtracts the leader's slot x / z from every slot, so followers stand
+ * relative to the leader: the stock FORMATNS tables have the leader at 0,0, but mission tables store map positions
+ * (MCC2's turrets mcc2tur2 150 m off, MCC3 / MCC6 platoon 50 m, REV1 group1form). Looked up by name in the mission's
+ * records first, then FORMATNS. leader_yaw is the leader slot's heading; x / z / yaw[k] are follower k + 1's. */
 typedef struct { int found; float leader_yaw; int count; int32_t x[16], z[16]; float yaw[16]; } formation;
 
+static int32_t ftbl_i32(const uint8_t *q) { return (int32_t)((uint32_t)q[0] | ((uint32_t)q[1] << 8) | ((uint32_t)q[2] << 16) | ((uint32_t)q[3] << 24)); }
 static int ftbl_match(const bwd_chunk *c, const char *name, formation *f)
 {
-    char nm[25];
+    char nm[17];
     size_t k, n;
+    int32_t lx, lz;
     if (strcmp(c->tag, "FTBL") != 0 || c->size < 28) return 0;
-    memcpy(nm, c->data, 24); nm[24] = '\0';
+    memcpy(nm, c->data, 16); nm[16] = '\0';
     if (strcasecmp(nm, name) != 0) return 0;
+    n = (c->size - 16) / 12;
+    if (n >= 9) return 0;   /* (0x100323e1 refuses it) */
     f->found = 1;
-    f->leader_yaw = (float)(int32_t)((uint32_t)c->data[24] | ((uint32_t)c->data[25] << 8) | ((uint32_t)c->data[26] << 16) | ((uint32_t)c->data[27] << 24)) / 65536.0f;
-    n = (c->size - 28) / 12;
-    if (n > 16) n = 16;
-    for (k = 0; k < n; k++) {
-        const uint8_t *q = c->data + 28 + k * 12;
-        f->x[k] = (int32_t)((uint32_t)q[0] | ((uint32_t)q[1] << 8) | ((uint32_t)q[2] << 16) | ((uint32_t)q[3] << 24));
-        f->z[k] = (int32_t)((uint32_t)q[4] | ((uint32_t)q[5] << 8) | ((uint32_t)q[6] << 16) | ((uint32_t)q[7] << 24));
-        f->yaw[k] = (float)(int32_t)((uint32_t)q[8] | ((uint32_t)q[9] << 8) | ((uint32_t)q[10] << 16) | ((uint32_t)q[11] << 24)) / 65536.0f;
+    lx = ftbl_i32(c->data + 16); lz = ftbl_i32(c->data + 20);
+    f->leader_yaw = (float)ftbl_i32(c->data + 24) / 65536.0f;
+    for (k = 1; k < n; k++) {
+        const uint8_t *q = c->data + 16 + k * 12;
+        f->x[k - 1] = ftbl_i32(q) - lx;
+        f->z[k - 1] = ftbl_i32(q + 4) - lz;
+        f->yaw[k - 1] = (float)ftbl_i32(q + 8) / 65536.0f;
     }
-    f->count = (int)n;
+    f->count = (int)n - 1;
     return 1;
 }
 
@@ -570,7 +597,7 @@ int world3d_actors(prj_archive *a, const char *scene, world_actor **actors, int 
     *count = 0;
     bwd_mission m;
     const bwd_record *scn = NULL;
-    const bwd_chunk *tables[64];
+    const bwd_chunk *tables[64] = {0};
     int ntables = 0, i, k, per_table[64], bwd_type = prj_find_type(a, "BWD");
 
     if (bwd_mission_load(a, scene, &m) != 0) return -1;
@@ -582,7 +609,13 @@ int world3d_actors(prj_archive *a, const char *scene, world_actor **actors, int 
     memset(star_tex, 0, sizeof star_tex);
     if (scn)
         for (k = 0; k < scn->chunk_count; k++) {
-            if (strcmp(scn->chunks[k].tag, "MTBL") == 0 && ntables < 64) tables[ntables++] = &scn->chunks[k];
+            if (strcmp(scn->chunks[k].tag, "MTBL") == 0 && scn->chunks[k].size >= 4) {
+                /* by the table number at +0, which the units' GPS table refers to - not the chunk order (the MW2 port's
+                 * Sable Flame mix-up; every shipped Mercs scene stores them in order, so this changes nothing there) */
+                const uint8_t *q = scn->chunks[k].data;
+                uint32_t tn = (uint32_t)q[0] | (uint32_t)q[1] << 8 | (uint32_t)q[2] << 16 | (uint32_t)q[3] << 24;
+                if (tn < 64) { tables[tn] = &scn->chunks[k]; if ((int)tn + 1 > ntables) ntables = (int)tn + 1; }
+            }
             /* STAR: per state table, 24-byte entries { u32, u32, char formation[16] } */
             if (strcmp(scn->chunks[k].tag, "STAR") == 0) {
                 size_t e;
@@ -617,7 +650,7 @@ int world3d_actors(prj_archive *a, const char *scene, world_actor **actors, int 
                 mech3d_player_star_tex = g.table >= 0 && g.table < 64 && star_tex[g.table] >= 0 && star_tex[g.table] < 16 ? star_tex[g.table] : 0;
                 continue;
             }
-            if (g.table < 0 || g.table >= ntables || tables[g.table]->size < 106) continue;
+            if (g.table < 0 || g.table >= ntables || !tables[g.table] || tables[g.table]->size < 106) continue;
             start_id = (uint16_t)(tables[g.table]->data[102] | (tables[g.table]->data[103] << 8));
             start_name = NULL;
             if (start_id == 0xffff || start_id == BWD_EXTERNAL_ID) {
