@@ -11,9 +11,14 @@ int skygnd_dos_lookup(const char *path, const char *mission, skygnd_dos *out)
     char line[512];
     FILE *f = path && mission ? fopen(path, "r") : NULL;
     memset(out, 0, sizeof *out);
+    /* No line for the mission (the generated RAN<n> scenes of Instant Action and generated contracts: SKYGND.PAR has
+     * none): MW2.EXE 0x49cc4 reads to the end and leaves its statics as they start, tile_ground 5000, ground_max
+     * 160000 (0xb3f4c; 0xb3f48 the doubled 320000), grounddelta 0, gclip 10000, 30000, 50000 (0xb3f54..0xb3f5c). The port
+     * had gclip 0, 0, 0, which drew no textured ground at all - the ground took the flat colour */
     out->intensity = 128;
     out->tile_ground = 5000;
     out->ground_max = 160000;
+    out->gclip[0] = 10000; out->gclip[1] = 30000; out->gclip[2] = 50000;
     if (!f) return -1;
     while (fgets(line, sizeof line, f)) {
         char name[5];

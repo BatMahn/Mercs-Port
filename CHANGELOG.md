@@ -1,5 +1,13 @@
 # Mercenaries development history
 
+## v1.2.5: DOS look ground textured in Instant Action and generated contracts — 2026-11-16
+
+- **The DOS look's ground has its texture again in Instant Action and generated contracts.** SKYGND.PAR has no line
+  for their generated RAN<n> scenes. MW2.EXE (0x49cc4) then keeps its starting values: tile 5000, ground_max 160000,
+  gclip 10000 / 30000 / 50000. The port fell back to gclip 0 / 0 / 0, so it drew no textured ground band at all and
+  the ground was one flat colour. Campaign missions all have SKYGND lines and are unchanged; the 3Dfx and Titanium
+  looks were not affected.
+
 ## v1.2.4: MW2 port fixes checked against Mercs: wrecks, formations, HUD — 2026-11-16
 
 The MechWarrior 2 port's November fixes were checked against Mercenaries. Four applied:
