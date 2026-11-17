@@ -268,7 +268,11 @@ static int SDLCALL mercs_app_main(int argc, char **argv)
     size_t generated_count=0;
     bwd_mission mission;
     bwd_gps player;
-    prj_set_checksum_strict(0);   /* (the originals never check a record's checksum: a copy with stale ones still plays) */
+    prj_set_checksum_strict(0);
+    {   /* launched by the shell: its messages to a log the shell reads back when the mission stops with an error */
+        const char *log = getenv("MERCS_ERROR_LOG");
+        if (log && *log && !freopen(log, "w", stderr)) { /* keep the console */ }
+    }   /* (the originals never check a record's checksum: a copy with stale ones still plays) */
     for (i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) { usage(argv[0]); return 0; }
         else if (strcmp(argv[i], "--list") == 0) list = 1;

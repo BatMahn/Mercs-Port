@@ -163,14 +163,14 @@ static int add_record(prj_record *r,size_t *count,const char *tag,const char *na
 int mercs_instant_install(prj_archive *a,const mercs_instant_launch *l,char *e,size_t n)
 {
     mercs_rmg_bundle b={0};prj_record records[64];lance_mercs_slot friendly[3]={{0}},enemy[3]={{0}};
-    char random[3][9]={{0}};size_t count=0,i,size;int k,rc=-1,skill;uint8_t star[LANCE_MERCS_STAR_MAX_BYTES];
+    char random[3][9]={{0}},random_skel[3][10]={{0}};size_t count=0,i,size;int k,rc=-1,skill;uint8_t star[LANCE_MERCS_STAR_MAX_BYTES];
     memset(records,0,sizeof records);if(!a||!launch_ok(l))return fail(e,n,"Invalid Instant Action launch.");
     if(mercs_rmg_generate(a,&l->request,&b,e,n))return -1;
     for(i=0;i<b.count;i++){
         const prj_record *p=&b.files[i];
         if(!strcasecmp(p->name,"EN01STAR")){size_t at;int slot=0;
             for(at=12;at+8<=p->size;){uint32_t z=u32(p->data+at+4);if(z<8||z>p->size-at)break;
-                if(!memcmp(p->data+at,"GPS",3)&&z>=100&&slot<3){memcpy(random[slot++],p->data+at+45,8);}at+=z;}}
+                if(!memcmp(p->data+at,"GPS",3)&&z>=100&&slot<3){memcpy(random_skel[slot],p->data+at+36,9);memcpy(random[slot++],p->data+at+45,8);}at+=z;}}
         if(add_record(records,&count,p->tag,p->name,p->data,p->size))goto done;
     }
     for(k=0;k<6;k++){
@@ -178,8 +178,12 @@ int mercs_instant_install(prj_archive *a,const mercs_instant_launch *l,char *e,s
         if(chassis==-1)continue;
         if(chassis==-2){name=random[k-3];if(!name[0])continue;
             for(chassis=0;chassis<62;chassis++)if(!strncasecmp(name,mercs_instant_prefix(chassis),3))break;
-            if(chassis==62){fail(e,n,"The original random enemy has an unknown chassis.");goto done;}}
-        slot->active=1;strcpy(slot->skeleton,mercs_shell_chassis[chassis].skeleton);strcpy(slot->loadout,name);
+            /* The original generator also draws units the Instant Action roster cannot pick - an AeroTech (aro00std,
+             * skeleton STUKA): its own GPS names the skeleton. Without this, launches whose seed drew one stopped with
+             * status 1 (GitHub: "sometimes on a fresh start; changing the mission parameters gets past it") */
+            if(chassis==62&&(!random_skel[k-3][0]||prj_find_id(a,prj_find_type(a,"BWD"),random_skel[k-3])<0)){
+                fail(e,n,"The original random enemy %.8s has an unknown chassis.",name);goto done;}}
+        slot->active=1;strcpy(slot->skeleton,chassis<62?mercs_shell_chassis[chassis].skeleton:random_skel[k-3]);strcpy(slot->loadout,name);
         if(!k)strcpy(slot->name,"MechWarrior");
         else snprintf(slot->name,sizeof slot->name,k<3?"Friend %d":"Enemy %d",k<3?k:k-2);
         if(l->slots[k].size){size_t j;

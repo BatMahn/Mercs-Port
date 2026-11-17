@@ -5858,17 +5858,13 @@ static void settle_spawn_ground(msim *s)
         spawn_terrain_floor(s, s->player[0], s->player[2], s->player_unit.y, s->player_centre_h, &floor) && s->player_unit.y < floor) {
         s->player_unit.y = s->player_unit.ground = floor;
         s->player_unit.vy = 0;
-    } else if (spawn_ground_class(s->player_unit_class)) {
-        /* An elevated player start stands on the surface under it at once. 12 retail missions put the player's start
-         * above the ground (GRA4 40 m, IVA3 30 m, SOL5 45 m, SPA1/2 12 m ...): DOSBox GRA4SCN1 / IVA3SCN1 show the
-         * terrain height (365.98 / 412.60 on the Alt readout = 239.85 / 270.39 m) and an undamaged mech from the
-         * first frame, where the port dropped the mech 30-40 m and took leg damage on landing. The surface is the
-         * runtime query's (within 10 m of the centre, else the highest below), so a roof or bridge start keeps its
-         * roof or bridge. Other units keep their authored starts: IVA3's six enemies start at 300 m over a 258 m
-         * plateau and drop, as before - whether the original grounds them too is not yet checked in DOSBox. */
-        float g = msim_ground(s, s->player[0], s->player[2], s->player_unit.y + s->player_centre_h);
-        if (s->player_unit.y > g) { s->player_unit.y = s->player_unit.ground = g; s->player_unit.vy = 0; }
     }
+    /* An elevated player start is not moved down: the mech drops from it while the mission fades in from black, as DOS
+     * does - DOSBox, a generated Instant Action scene (RAN0SCN1, the RMG's "Dustoff Site" 100 m up): the Alt readout runs
+     * 123 -> 0 m over about 3 s of the opening fade, the cockpit coming up as the mech lands. The port had stood such
+     * starts on the surface (12 retail missions too: GRA4 40 m, IVA3 30 m, SOL5 45 m, SPA1/2 12 m), read from DOSBox
+     * frames taken once the HUD was up - by then the drop is over. From those heights the landing is below the
+     * fall-damage speed (16.154 cm/tick); from 100 m the legs take the engine's fall damage */
     for (i = 0; s->actors && s->units && i < s->actor_count; i++) {
         world_actor *a = &s->actors[i];
         /* Class2 actors publish an absolute MGEO body altitude after

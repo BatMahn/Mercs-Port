@@ -3,6 +3,7 @@
 #include "bwd.h"
 #include <assert.h>
 #include <stdio.h>
+#include <strings.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
@@ -55,6 +56,20 @@ static void validate_graph(prj_archive *a,int friends)
     }
     T(players==1&&allies==friends&&enemies>0);bwd_mission_free(&m);
 }
+/* A random enemy the generator draws outside the Instant Action roster (seed 406: aro00std, an AeroTech) installs with
+ * its own GPS skeleton - it stopped the launch with status 1 */
+static void random_aerotech(prj_archive *a)
+{
+    mercs_instant *s=calloc(1,sizeof *s);mercs_instant_launch *l=calloc(1,sizeof *l);char error[384]={0};prj_record r;int i,found=0;
+    T(s&&l);mercs_instant_init(s);OK(mercs_instant_generate(a,s,406,error,sizeof error));
+    OK(mercs_instant_prepare(s,"dos",1,l,error,sizeof error));
+    if(mercs_instant_install(a,l,error,sizeof error))fprintf(stderr,"%s\n",error);
+    OK(mercs_instant_install(a,l,error,sizeof error));
+    T(!prj_read_named(a,"BWD","EN01STAR",&r));
+    for(i=0;i+5<(int)r.size;i++)if(!strncasecmp((const char *)r.data+i,"STUKA",5))found=1;
+    T(found);prj_record_free(&r);prj_restore_generated(a,NULL,0);
+    mercs_instant_free(s);free(s);free(l);
+}
 static void prepare(prj_archive *a,const char *overlay,const char *edition,int child)
 {
     mercs_instant *s=calloc(1,sizeof *s);mercs_instant_launch *l=calloc(1,sizeof *l),*copy=calloc(1,sizeof *copy);
@@ -95,6 +110,6 @@ int main(int argc,char **argv)
     T(!child||!strcmp(argv[4],"--prepare-launch"));a=prj_open(argv[1],error,sizeof error);T(a!=NULL);
     snprintf(root,sizeof root,"%s",argv[1]);slash=strrchr(root,'/');T(slash!=NULL);*slash=0;
     mkdir(argv[3],0700);OK(dp_add_root(argv[3]));OK(dp_set_write_root(argv[3]));OK(dp_add_root(root));OK(dp_add_root(argv[2]));
-    selection();if(!child)generator(a);prepare(a,argv[3],child?argv[5]:"dos",child);
+    selection();if(!child){generator(a);random_aerotech(a);}prepare(a,argv[3],child?argv[5]:"dos",child);
     prj_close(a);printf("Mercs Instant Action: %d checks passed; original selection/year graph, custom designs, six-slot launch and capsule rejection.\n",checks);return 0;
 }

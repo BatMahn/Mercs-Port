@@ -7197,7 +7197,12 @@ int main(int argc, char **argv)
                             int now_on = H(PRESS[q]);
                             if (now_on && !was[q] && !g_sim.ending) {
                                 switch (q) {
-                                case 0: if (g_sim.player_unit.weapon_count > 0) g_sel_weapon = mercs_firegroup_next_weapon(&g_sim.player_unit,g_sel_weapon,1);
+                                /* Enter: the next weapon in panel order, row by row, whatever its group (DOSBox GRA1SCN1:
+                                 * with both top weapons put in group 2, Enter from the top right goes on to the bottom left,
+                                 * group 1, then the bottom right and round to the top left - not back and forth inside the
+                                 * group; MERCSW.DLL 0x1005c74e..0x1005c8e6, mercs_weapon_next). The group's own advance after
+                                 * a chain-fire shot stays mercs_firegroup_next_weapon */
+                                case 0: if (g_sim.player_unit.weapon_count > 0) g_sel_weapon = mercs_weapon_next(&g_sim.player_unit,g_sel_weapon,0,0);
                                         if (g_sfx) sfx_play(g_sfx, MERCS_SOUND_FIRE_GROUP, SFX_VOL(0x32), 0.0f);   /* Mercs 0x1002247d: MECWPTG1, volume50, centred. */
                                         break;
                                 case 1: g_fire_cycle_pending=1; break; /* original advances after the fire/update step */
@@ -8847,17 +8852,16 @@ int main(int argc, char **argv)
              * vertex colour (DAT_1024e494) or the flat colours / HUD table (0x1002ac40), and the frame-3 fade targets the
              * time of day's slot (4 / 0 / 8: DAT_1024e494 off) - so the picture is there from the first frame; the HUD
              * and flat colours are the start slot's (hud_mission_palette). (Titanium textures keep the fade: not traced) */
-            static int frame, steps;
-            static int32_t prev_now;
+            /* The steps are taken by the time they stand for (steps x the frame's ticks = 0x16a, 2.0 s), not one a
+             * frame: the original's count is for its own frame rate, and at the port's frame rates a frame of under one
+             * tick (above 182 fps) gave 10 steps and a frame that ran no simulation step 20 - the fade was over in a
+             * tenth of a second and the mission seemed to start at full brightness (GitHub report, macOS) */
+            static int frame;
+            static int32_t t3;
             float level;
             frame++;
-            if (frame == 3) {
-                float ticks = (float)(g_sim.now - prev_now) * 0.182f;
-                steps = ticks <= 0 ? 0x14 : ticks < 1.0f ? 10 : (int)(362.0f / ticks + 0.5f);
-                if (steps < 1) steps = 1;
-            }
-            prev_now = g_sim.now;
-            level = frame <= 3 ? 0.0f : (float)(frame - 3) / (float)steps;
+            if (frame == 3) t3 = g_sim.now;
+            level = frame <= 3 ? 0.0f : (float)(g_sim.now - t3) * 0.182f / 362.0f;
             g_fade_level = level > 1.0f ? 1.0f : level;
             if (level < 1.0f) {
                 int fw, fh;

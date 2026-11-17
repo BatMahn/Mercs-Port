@@ -130,7 +130,7 @@ typedef struct {
     int panel_mode, reveal_rows, reveal_total, reveal_active;
     unsigned panel_polls;
     int look_available[3];
-    char pilot[22], unit[22], status[384];
+    char pilot[22], unit[22], status[384], child_reason[256];
     text_cache text[TEXT_CACHE];
     int text_next;
     unsigned char *fallback_font;
@@ -1523,12 +1523,42 @@ static void pump_child_events(shell *s)
     flush_shell_input();
 }
 
+/* The last message the mission wrote before it stopped (its log's last line that is not a progress line). */
+static void mission_log_reason(const char *path, char *out, size_t size)
+{
+    FILE *f = fopen(path, "r");
+    char line[512];
+    out[0] = 0;
+    if (!f) return;
+    while (fgets(line, sizeof line, f)) {
+        size_t n = strlen(line);
+        while (n && (line[n - 1] == '\n' || line[n - 1] == '\r' || line[n - 1] == ' ')) line[--n] = 0;
+        if (!n || !strncmp(line, "mercs ", 6) || !strncmp(line, "music:", 6) || !strncmp(line, "controls:", 9) ||
+            line[0] == ' ' || !strncmp(line, "autopilot:", 10)) continue;
+        snprintf(out, size, "%s", line);
+    }
+    fclose(f);
+}
+
 static int run_mission_child(shell *s, const char *scene, const char *return_token, const char *instant_token)
 {
     const char *edition = portcfg_mercs_name(s->edition);
     const char *binding = instant_token ? instant_token : return_token;
     int result = -1;
+    char log_path[PORTCFG_PATH + 32] = "";
     if (!binding || !binding[0]) return -1;
+    {   /* the mission's own messages go to a log beside the overlay, so a mission that cannot start or ends with an
+         * error can say why (a desktop launch shows no console) */
+        char overlay[PORTCFG_PATH];
+        if (!portcfg_overlay_dir(s->cfg, portcfg_mercs_overlay(s->edition), overlay, sizeof overlay, 1)) {
+            snprintf(log_path, sizeof log_path, "%s/MERCS-MISSION.LOG", overlay);
+#ifdef _WIN32
+            SetEnvironmentVariableA("MERCS_ERROR_LOG", log_path);
+#else
+            setenv("MERCS_ERROR_LOG", log_path, 1);
+#endif
+        }
+    }
 #ifndef _WIN32
     const char *binding_option = instant_token ? "--instant-token" : "--return-token";
     pid_t pid;
@@ -1570,6 +1600,8 @@ static int run_mission_child(shell *s, const char *scene, const char *return_tok
     CloseHandle(process.hThread); CloseHandle(process.hProcess);
 #endif
     pump_child_events(s);
+    if (result != 0 && result != 42 && log_path[0]) mission_log_reason(log_path, s->child_reason, sizeof s->child_reason);
+    else s->child_reason[0] = 0;
     if (result == 42 || result == 43) s->running = 0;
     if (s->running) {
         SDL_ShowWindow(s->window); SDL_RaiseWindow(s->window);
@@ -2005,7 +2037,8 @@ static void launch_instant(shell *s)
      * original selected slots on the original Instant Action screen. */
     s->instant.restart=1;
     if(s->running)instant_next_scenario(s);
-    if(result&&s->running)snprintf(s->status,sizeof s->status,"Instant Action ended with status %d. Your career has not changed.",result);
+    if(result&&s->running)snprintf(s->status,sizeof s->status,"Instant Action ended with status %d%s%s%s",result,
+                                     s->child_reason[0]?": ":".",s->child_reason,s->child_reason[0]?"":" Your career has not changed.");
     fprintf(stderr,"mercs shell: instant-return result=%d\n",result);
 done:
     mercs_launch_lock_release(lock);free(launch);

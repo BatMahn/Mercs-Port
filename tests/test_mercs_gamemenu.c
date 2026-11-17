@@ -18,7 +18,9 @@ void mercs_art_center(mercs_art *a, int font, int x, int y, const char *text, in
     assert(text_index >= 0 && text_index < 7);
     t = &menu_text_fixtures[text_index];
     assert(font == t->font && x-t->width/2 == t->x && y == t->y);
-    assert(!strcmp(text,t->text));
+    /* (the original's FLEE TO DOS names the system the port runs on) */
+    if (!strcmp(t->text, "FLEE TO DOS")) assert(!strcmp(text, "FLEE TO " MERCS_PLATFORM_UPPER));
+    else assert(!strcmp(text,t->text));
     assert(ink == (text_index == selected ? 17 : t->ink));
     text_index++;
 }

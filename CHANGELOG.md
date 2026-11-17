@@ -1,5 +1,37 @@
 # Mercenaries development history
 
+## v1.2.10: the mission fades in from black again at high frame rates — 2026-11-16
+
+- **Missions fade in from black again on fast machines.** The DOS look's opening fade took one step a frame, with
+  the number of steps worked out from the third frame's length, as the original does at its own frame rate. At the
+  port's frame rates a frame shorter than one tick (above 182 fps), or one that ran no simulation step, gave 10 or 20
+  steps, so the fade was over in a tenth of a second and the mission seemed to start at full brightness (a tester's
+  macOS recording). The fade now runs on the simulation's time: 0x16a ticks, 2.0 s, at any frame rate. With v1.2.8's
+  drop the mech now falls in during that fade, as in DOS.
+
+## v1.2.9: Instant Action no longer fails to launch when the generator draws an AeroTech — 2026-11-16
+
+- **"Instant Action ended with status 1" on some launches is fixed.** The original mission generator sometimes draws
+  an enemy the Instant Action roster has no entry for: an AeroTech (aro00std, a Stuka). The launch looked its chassis
+  up in the roster's 62 mechs, found none and stopped. It now takes the skeleton from the generator's own unit record,
+  so the Stuka flies in that battle. About one launch in twenty hit it (5 of 108 seeds checked); changing the mission
+  parameters drew a new seed, which is why that got past it. (GitHub report.)
+
+## v1.2.8: Instant Action drops in, Enter leaves a weapon group, mission errors explained — 2026-11-16
+
+- **The mech drops in from its start point, as in DOS.** Instant Action (and generated contracts) start the player at
+  the RMG's "Dustoff Site", 100 m up: in DOSBox the mech falls while the mission fades in from black and lands as the
+  cockpit comes up. The port had stood every elevated start on the ground; it now drops from it, in campaign missions
+  with raised starts too (GRA4, IVA3, SOL5, SPA1/2 ...), whose earlier DOSBox check had only looked once the HUD was
+  up, after the landing. (GitHub report.)
+- **Enter steps through the weapons in panel order, whatever their group,** as in DOS: with two weapons in one group,
+  Enter no longer flips between them forever. Checked in DOSBox. The chain-fire advance after a shot still stays inside
+  its group. (GitHub issue #6.)
+- **A mission that stops with an error now says why.** The shell keeps the mission's messages in MERCS-MISSION.LOG in
+  the installation folder and shows the last one in the "ended with status" notice, instead of only the number (a
+  tester's Instant Action ended with status 1; it could not be reproduced here with an Awesome on any look).
+- The shell's game-menu test now expects the system name in FLEE TO (v1.2.7 changed the label but not the test).
+
 ## v1.2.7: command computer stays open, DOS turning eases out, far mechs keep their detail, Flee to your OS — 2026-11-16
 
 - **The COMMAND COMPUTER stays up after an order,** as in DOS: an order or formation picked from a page opened from
