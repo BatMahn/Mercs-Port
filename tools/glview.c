@@ -283,6 +283,9 @@ static float     g_twist_dem, g_pitch_dem;   /* the torso demands c[2] / c[6] (t
 static float     g_twist_srv = 1e9f, g_pitch_srv = 1e9f;   /* the servos' values as the servo step last left them */
 static hud      *g_hud;
 static int g_rcl = -1;   /* the reticle sprite chosen last frame (state dump): -1 RETICLE, else the g_hs_rcl index */
+/* cheat state (cheat_key): bounding spheres, AutoGrouping, the leading reticle, the jump-jet grant, the DOS-only frame */
+static int g_cheat_bubble, g_cheat_autogroup, g_cheat_lead, g_cheat_balloon, g_cheat_again;
+static int32_t g_cheat_again_t0;
 static float g_reticle_x,g_reticle_y;
 static int g_reticle_visible;
 static hud_sprite g_hs_rcl[6], g_hs_rcl_dos[6], g_hs_reticle_dos, g_hs_tgt_dos[3];   /* the DOS (base set) reticle and brackets */   /* RCLINOP RCLLOCK RCLNOLK RCLPLOC RCLTGT RCLGLOC */
@@ -1720,6 +1723,7 @@ static int      g_camode, g_cam_prev, g_cam_last;   /* the mode; the one ordnanc
  * DAT_1024e654 (kept, starts at 0); this frame's held controls (sinks -1..1): track_distance_delta, track_height_delta,
  * eyepoint_pan_delta (control table 0x10256540: ranges 3600 / 3600 / 72 a second, key-ramp shift 6 / 6 / 4) */
 static float    g_orb_d, g_orb_h, g_orb_ang, g_orb_in[3];
+static float    g_free_slide, g_free_eye[3], g_free_yaw, g_free_pitch;   /* camera mode 2, the free eye (cheat "beholdmyglory") */
 /* eyepoint_tilt (sink 0x10159e18, -16..16): mode 1 aims the camera's pitch at -(eyepoint_tilt x 0.5 + the pitch to the target)
  * (0x1002e280: FUN_1003b9f0(-(param_3 x 0.5 + pitch)), param_3 = the sink as it stands, not x ticks) - the plus side looks up */
 static float    g_orb_tilt;
@@ -1799,7 +1803,6 @@ static void cheat_key(SDL_Keycode k)
         "superfunkicalifragisexy", "iseenfireandiseenrain", "ooohhhlllaaalllaaa", "wediditagain", "itsdabooomb",
         "inmybeautifulballoon", "redjackandtikrules", "likethecomstarbaby", "ontimeeverytime", "bubbleboy",
         "crazysexycool", "beholdmyglory", "antijolt", "flashyflashy", "walkthisway"};
-    static int bubble, autogroup, lead;
     combat_unit *pu = &g_sim.player_unit;
     size_t n = strlen(buf);
     int c, tgt = g_tgt_sel >= 0 && g_tgt_sel < g_sim.actor_count && g_sim.armed[g_tgt_sel] && !g_sim.units[g_tgt_sel].destroyed ? g_tgt_sel : -1;
@@ -1816,9 +1819,13 @@ static void cheat_key(SDL_Keycode k)
     case 0: pu->invulnerable = !pu->invulnerable; hud_message_ex(pu->invulnerable ? "Invulnerbility ON." : "Invulnerbility OFF.", 0x16a, 0x32); break;
     case 1: pu->unlimited_ammo = !pu->unlimited_ammo; hud_message_ex(pu->unlimited_ammo ? "Unlimited Ammo ON." : "Unlimited Ammo OFF.", 0x16a, 0x32); break;
     case 2: pu->no_heat = !pu->no_heat; hud_message_ex(pu->no_heat ? "Heat tracking OFF." : "Heat tracking ON.", 0x16a, 0x32); break;
-    case 3: hud_message_ex("We coming at cha again.", 0x16a, 0x32); break;   /* DOS 0x21a50 swaps in another frame routine: not reproduced */
+    case 3:   /* DOS 0x21a50: the frame's last routine (0xb40ac) becomes 0x21184 - the DOS edition only (Windows says "Type this
+               * cheat in the DOS version"); see cheat_again_draw */
+        g_cheat_again = 1; g_cheat_again_t0 = g_sim.now;
+        hud_message_ex("We coming at cha again.", 0x16a, 0x32); break;
     case 4: if (tgt >= 0) msim_nuke_actor(&g_sim, tgt); break;
-    case 5: hud_message_ex("jumpjets", 0x16a, 0x32); break;   /* sets a flag (DOS 0xb5f7d / Win 0x100ba99d) nothing reads */
+    case 5:   /* the player's control block +0x45 (DOS 0xb5f7d / Win 0x100ba99d): a mech with no jets gets three (cheat_frame) */
+        g_cheat_balloon = 1; hud_message_ex("jumpjets", 0x16a, 0x32); break;
     case 6:   /* the target's centre torso lost (DOS 0x2f56c / Win 0x10005207(-2, target, 3)), with its arms, side torsos and head */
         if (tgt >= 0) {
             combat_destroy_location(&g_sim.units[tgt], 3, &g_sim.rng);
@@ -1827,14 +1834,24 @@ static void cheat_key(SDL_Keycode k)
         break;
     case 7: g_sim.logic.cheat_success = 1; break;
     case 8: g_time_comp_key = !g_time_comp_key; hud_message_ex(g_time_comp_key ? "Time compression key enabled." : "Time compression key disabled.", 0xb5, 0x32); break;
-    case 9: bubble = !bubble; hud_message_ex("Bounding spheres.", 0x16a, 0x32); break;   /* a debug drawing: not reproduced */
+    case 9: g_cheat_bubble = !g_cheat_bubble; hud_message_ex("Bounding spheres.", 0x16a, 0x32); break;   /* both ways the same message */
     case 10: pu->infinite_jets = !pu->infinite_jets; hud_message_ex(pu->infinite_jets ? "Infinite jumpjets ON." : "Infinite jumpjets OFF.", 0x16a, 0x32); break;
-    case 11: hud_message_ex("free-eye mode on.", 0x16a, 0x32); break;   /* camera mode 2: not reproduced */
+    case 11:   /* Win 0x1001a5e1(2): camera mode 2, the free eye (camera_modes); the external-view key leaves it */
+        g_camode = 2; hud_message_ex("free-eye mode on.", 0x16a, 0x32); break;
     case 12: g_time_exp = !g_time_exp; hud_message_ex(g_time_exp ? "time expansion enabled." : "time expansion disabled.", 0x16a, 0x32); break;
-    case 13: autogroup = !autogroup; hud_message_ex(autogroup ? "AutoGrouping enabled." : "AutoGrouping disabled.", 0x16a, 0x32); break;   /* not reproduced */
-    case 14: lead = !lead; hud_message_ex(lead ? "Leading Recticle enabled." : "Leading Recticle disabled.", 0x16a, 0x32); break;   /* not reproduced */
+    case 13: g_cheat_autogroup = !g_cheat_autogroup; hud_message_ex(g_cheat_autogroup ? "AutoGrouping enabled." : "AutoGrouping disabled.", 0x16a, 0x32); break;
+    case 14: g_cheat_lead = !g_cheat_lead; hud_message_ex(g_cheat_lead ? "Leading Recticle enabled." : "Leading Recticle disabled.", 0x16a, 0x32); break;
     }
-    (void)bubble; (void)autogroup; (void)lead;
+}
+/* "inmybeautifulballoon" (Win 0x10019xxx after the controller step, DOS the same): while the flag is set, a unit whose tank
+ * reads "no jets" (-2) gets a full tank (0x712), three jets (+0x3f8) and a thrust of 3 x gravity (+0x420 = DAT_100a40a8 x 3).
+ * The port keeps a mech built without jets at an empty tank and 0 jets: both count. A lost gyro keeps its no-jump flag */
+static void cheat_frame(void)
+{
+    combat_unit *pu = &g_sim.player_unit;
+    if (g_cheat_balloon && !pu->destroyed && (pu->jets <= 0 || pu->jet_fuel == -2)) {
+        pu->jets = 3; pu->jet_fuel = combat_jet_fuel_max; pu->jet_ddy = 3.0f * 0.0296f * g_sim.planet.gravity_g;
+    }
 }
 static int followed(void)   /* 0x100469b0: the followed projectile while it flies, else none */
 {
@@ -2469,7 +2486,32 @@ static void camera_modes(glr_view *v)
         /* then the height kept between 200 - the centre height (DAT_1015f034) and 4 x the start distance (DAT_1015efd0) */
         g_orb_h = h > 4.0f * d0 ? 4.0f * d0 : h < 200.0f - g_sim.player_centre_h ? 200.0f - g_sim.player_centre_h : h;
     }
-    if (g_camode == 1 || g_camode == 3 || g_camode == 4)
+    if (g_camode == 2) {
+        /* the free eye (Win 0x1001b179, camera mode 2 - "beholdmyglory"): it starts where the camera is and flies on the
+         * camera controls - track_distance back / forward along the view (Z, Shift+Z), track_height up / down (Ctrl + grey
+         * up / down), eyepoint_slide sideways, eyepoint_pan turns (Ctrl + grey left / right), eyepoint_tilt's sign pitches
+         * 45 deg/s (clamped at +-90); never under 5 m over the ground (2 m at or below 0: 0x1001a58f). The speeds -
+         * 36 m/s for a full input, the pan 72 deg/s - are the orbit's scales (INFERRED: the engine's shifts not traced) */
+        float k = dt / 181.0f, ya, pa, gy, mv;
+        if (g_cam_last != 2) { memcpy(g_free_eye, g_cam_eye, sizeof g_free_eye); g_free_yaw = g_cam_yaw; g_free_pitch = g_cam_pitch; g_cam_zoom = 1.0f; }
+        g_free_yaw = fmodf(g_free_yaw + g_orb_in[2] * 72.0f * k, 360.0f);
+        g_free_pitch += (g_orb_tilt > 0 ? 45.0f : g_orb_tilt < 0 ? -45.0f : 0.0f) * k;
+        if (g_free_pitch > 90.0f) g_free_pitch = 90.0f;
+        if (g_free_pitch < -90.0f) g_free_pitch = -90.0f;
+        ya = g_free_yaw * 3.14159265f / 180.0f; pa = g_free_pitch * 3.14159265f / 180.0f;
+        mv = -g_orb_in[0] * 3600.0f * k;   /* distance "plus" moves away (back) */
+        g_free_eye[0] += sinf(ya) * cosf(pa) * mv + cosf(ya) * g_free_slide * 3600.0f * k;
+        g_free_eye[2] += cosf(ya) * cosf(pa) * mv - sinf(ya) * g_free_slide * 3600.0f * k;
+        g_free_eye[1] += sinf(pa) * mv + g_orb_in[1] * 3600.0f * k;
+        gy = msim_ground_fixed(&g_sim, g_free_eye[0], g_free_eye[2], g_free_eye[1] + 10000.0f);
+        gy += gy > 1e-7f ? 500.0f : 200.0f;
+        if (g_free_eye[1] < gy) g_free_eye[1] = gy;
+        g_orb_in[0] = g_orb_in[1] = g_orb_in[2] = 0; g_free_slide = 0;
+        v->free_cam = 1;
+        memcpy(v->eye, g_free_eye, sizeof g_free_eye);
+        v->look_yaw = g_free_yaw; v->look_pitch = g_free_pitch;
+    }
+    if (g_camode == 1 || g_camode == 2 || g_camode == 3 || g_camode == 4)
         v->vfov = 2.0f * atanf(tanf(73.74f * 3.14159265f / 360.0f) / g_cam_zoom) * 180.0f / 3.14159265f;
     g_cam_last = g_camode;
     memcpy(g_cam_eye, v->eye, sizeof g_cam_eye);
@@ -7079,6 +7121,11 @@ int main(int argc, char **argv)
                     key_ramp(&ro[1], H("track_height_plus"), H("track_height_minus"), 6, 1, dt);
                     key_ramp(&ro[2], H("eyepoint_pan_plus"), H("eyepoint_pan_minus"), 4, 1, dt);
                     g_orb_in[0] = ro[0].val; g_orb_in[1] = ro[1].val; g_orb_in[2] = ro[2].val;
+                    {   /* eyepoint_slide (the free eye only; INPUT.MAP binds none) */
+                        static key_ramp_t rs;
+                        key_ramp(&rs, H("eyepoint_slide_plus"), H("eyepoint_slide_minus"), 6, 1, dt);
+                        g_free_slide = rs.val;
+                    }
                 }
                 {   /* eyepoint_tilt (control table entry 60: sink 0x10159e18, -16..16, shift 4, not a "_delta": it keeps its
                      * value) - INPUT.MAP eyepoint_tilt_plus / _minus / _reset (the installed map and the Cockpit Controls
@@ -7171,6 +7218,7 @@ int main(int argc, char **argv)
                     {
                         float y3 = g_sim.player_unit.y + g_pl_dy_done;
                         int was_wreck = g_sim.player_unit.destroyed && !g_sim.player_unit.intact_out;
+                        cheat_frame();
                         combat_jets(&g_sim.player_unit, jet, dt, &g_sim.rng);
                         if (g_pl_imp3 && g_pl_land3) combat_land(&g_sim.player_unit, g_pl_vy3, &g_sim.rng);   /* harmless: landed (0x10019c4e) */
                         else if (g_pl_imp3) {   /* a move refused in 3D (pl_move): where the impact left it, the reflected vertical velocity */
@@ -7324,7 +7372,23 @@ int main(int argc, char **argv)
                      * nothing fires. On the release the selection moves to the next weapon of its fire group (0x10043f80;
                      * stepped in the panel's order, row by row) */
                     if (H("weapon_fire") || (!g_im_mouse && (g_im_dev.mouse_buttons & SDL_BUTTON_MASK(SDL_BUTTON_LEFT)))) {
-                        if (g_group_fire) mask |= mercs_firegroup_mask(&g_sim.player_unit,g_sel_weapon,0);
+                        uint32_t auto_mask = 0;
+                        if (g_cheat_autogroup && g_tgt_sel >= 0 && g_tgt_sel < g_sim.actor_count && g_sim.armed[g_tgt_sel] && !g_sim.units[g_tgt_sel].destroyed) {
+                            /* "flashyflashy" (DOS 0x39dc4 / Win 0x10023258 - the AI's weapon choice run for the player every
+                             * frame): the trigger's group becomes every ready weapon whose range reaches the target; with none,
+                             * the trigger works as before */
+                            const combat_unit *pu3 = &g_sim.player_unit;
+                            float ddx = (float)g_actors[g_tgt_sel].mech.origin[0] - (float)g_pl.origin[0], ddz = (float)g_actors[g_tgt_sel].mech.origin[2] - (float)g_pl.origin[2];
+                            float ddy = g_sim.units[g_tgt_sel].y - g_sim.player_unit.y, dd = sqrtf(ddx * ddx + ddy * ddy + ddz * ddz);
+                            int wq;
+                            for (wq = 0; wq < pu3->weapon_count && wq < 32; wq++) {
+                                const combat_weapon *cw3 = &pu3->weapons[wq];
+                                if (cw3->state == CW_READY && cw3->ammo != 0 && !(cw3->location >= 0 && cw3->location < 8 && pu3->loc_gone[cw3->location]) &&
+                                    dd < combat_weapon_range(cw3->weapon)) auto_mask |= 1u << wq;
+                            }
+                        }
+                        if (auto_mask) mask |= auto_mask;
+                        else if (g_group_fire) mask |= mercs_firegroup_mask(&g_sim.player_unit,g_sel_weapon,0);
                         else if (g_sel_weapon >= 0 && g_sel_weapon < g_sim.player_unit.weapon_count) {
                             const combat_unit *pu2 = &g_sim.player_unit;
                             const combat_weapon *cw2 = &pu2->weapons[g_sel_weapon];
@@ -8483,6 +8547,84 @@ int main(int argc, char **argv)
                     }
                 }
             }
+            /* the cheats' HUD drawings */
+            if (g_sim_ok && (g_cheat_bubble || g_cheat_lead)) {
+                int dosl = getenv("MERCS_HUD_BASE") && g_hs_reticle_dos.tex;
+                float native_scale = h > 768 ? (float)h / 768.0f : 1.0f, focal = (float)h * 0.5f / th;
+                /* a point to window pixels (as the reticle's): 0 behind the eye or off the picture */
+#define CHEAT_PROJECT(P, PX, PY, DEPTH) ( dosl ? (glr_dos_project(r, (float[3]){(P)[0], (P)[1], -(P)[2]}, &cs_x, &cs_y, &cs_z) == 1 && (glr_dos_view(r, &cs_zhw, &cs_w, &cs_h), cs_w > 0 && cs_h > 0) ? \
+                    ((PX) = (float)cs_x * w / cs_w, (PY) = (float)cs_y * h / cs_h, (DEPTH) = (float)cs_z, 1) : 0) : \
+                    ((DEPTH) = ((P)[0] - v.eye[0]) * fx + ((P)[1] - v.eye[1]) * fy + ((P)[2] - v.eye[2]) * fz) > 8.0f ? \
+                    ((PX) = (float)(w >> 1) + (((P)[0] - v.eye[0]) * rx + ((P)[1] - v.eye[1]) * ry + ((P)[2] - v.eye[2]) * rz) * focal / (DEPTH), \
+                     (PY) = (float)(h - 1 - (h >> 1)) - (((P)[0] - v.eye[0]) * ux + ((P)[1] - v.eye[1]) * uy + ((P)[2] - v.eye[2]) * uz) * focal / (DEPTH), 1) : 0 )
+                int cs_x = 0, cs_y = 0, cs_z = 0, cs_w = 0, cs_h = 0;
+                uint32_t cs_zhw = 0;
+                if (g_cheat_bubble) {
+                    /* "bubbleboy" (DOS 0x10a20 after the world): every collidable object's bounding sphere as a circle in
+                     * colour 0xf - the projected centre, radius = focal x R / depth (0x6b098, with the view's aspect) */
+                    const float *wc = HP(15);
+                    int q;
+                    for (q = -1; q < g_sim.actor_count + g_sim.bld_count; q++) {
+                        float c[3], rr = 0, px, py, dp;
+                        if (q < 0) continue;   /* (the eye's own mech: the camera sits inside it) */
+                        if (q < g_sim.actor_count) {
+                            if (!g_sim.armed[q] || g_sim.units[q].body_detached) continue;
+                            c[0] = (float)g_actors[q].mech.origin[0]; c[2] = (float)g_actors[q].mech.origin[2];
+                            c[1] = g_sim.units[q].y + (g_sim.centre_h ? g_sim.centre_h[q] : 550.0f);
+                            rr = g_sim.radius ? g_sim.radius[q] : 450.0f;
+                        } else if (!msim_thing_sphere(&g_sim, q - g_sim.actor_count, c, &rr)) continue;
+                        if (rr <= 0 || !CHEAT_PROJECT(c, px, py, dp) || dp <= 1.0f) continue;
+                        {
+                            float rad = rr * focal / dp, cx = hud_left_x(g_hud) + hud_px_x(g_hud, px) / native_scale, cy = hud_px_y(g_hud, py) / native_scale;
+                            float rx2 = hud_px_x(g_hud, rad) / native_scale, ry2 = hud_px_y(g_hud, rad) / native_scale;
+                            int sgm;
+                            if (rx2 > 2000.0f) continue;
+                            for (sgm = 0; sgm < 32; sgm++) {
+                                float a0 = sgm * 6.2831853f / 32.0f, a1 = (sgm + 1) * 6.2831853f / 32.0f;
+                                hud_line(g_hud, cx + cosf(a0) * rx2, cy + sinf(a0) * ry2, cx + cosf(a1) * rx2, cy + sinf(a1) * ry2, 1.0f, wc);
+                            }
+                        }
+                    }
+                }
+                if (g_cheat_lead && g_camode == 0 && g_tgt_sel >= 0 && g_tgt_sel < g_sim.actor_count && g_sim.armed[g_tgt_sel] && !g_sim.units[g_tgt_sel].destroyed &&
+                    g_sel_weapon >= 0 && g_sel_weapon < g_sim.player_unit.weapon_count && g_sim.player_unit.weapons[g_sel_weapon].state == CW_READY) {
+                    /* "walkthisway" (DOS 0x33cb8 -> 0x39fe8, Win 0x10033e5a -> 0x10023525): with a unit targeted and the selected
+                     * weapon ready, where the target will be when the shot gets there - t = range / (the shot's speed - the
+                     * target's speed, signed by whether it closes), kept only within the shot's life and over one frame -
+                     * drawn with shape 0x5d (+ the set's offset: RETICLE's record + 2). The target's velocity here: its
+                     * movement over the last frame (the engine reads the unit's velocity, +0x428) */
+                    static int last_t = -1;
+                    static float last_p[3];
+                    static int32_t last_now;
+                    static hud_sprite lead_spr;
+                    static int lead_tried;
+                    const int wid = g_sim.player_unit.weapons[g_sel_weapon].weapon;
+                    float tp[3], vel[3] = {0, 0, 0}, rel[3], dist, vmag, closing, spd = combat_weapon_speed(wid), t;
+                    tp[0] = (float)g_actors[g_tgt_sel].mech.origin[0]; tp[1] = g_sim.units[g_tgt_sel].y + (g_sim.centre_h ? g_sim.centre_h[g_tgt_sel] : 550.0f); tp[2] = (float)g_actors[g_tgt_sel].mech.origin[2];
+                    if (last_t == g_tgt_sel && g_sim.now > last_now) { int k3; for (k3 = 0; k3 < 3; k3++) vel[k3] = (tp[k3] - last_p[k3]) / ((float)(g_sim.now - last_now) * 0.182f); }   /* cm/tick */
+                    if (last_t != g_tgt_sel || g_sim.now != last_now) { last_t = g_tgt_sel; memcpy(last_p, tp, sizeof last_p); last_now = g_sim.now; }
+                    rel[0] = tp[0] - (float)g_pl.origin[0]; rel[1] = tp[1] - g_sim.player_unit.y; rel[2] = tp[2] - (float)g_pl.origin[2];
+                    dist = sqrtf(rel[0] * rel[0] + rel[1] * rel[1] + rel[2] * rel[2]);
+                    vmag = sqrtf(vel[0] * vel[0] + vel[1] * vel[1] + vel[2] * vel[2]);
+                    closing = rel[0] * vel[0] + rel[1] * vel[1] + rel[2] * vel[2] < 0 ? -vmag : vmag;
+                    t = fabsf(closing) == spd ? 2.0f : spd - closing != 0 ? dist / (spd - closing) : 0;
+                    if (!lead_tried && g_ma) {
+                        int st = prj_find_type(g_ma, "SHP"), id = st >= 0 ? prj_find_id(g_ma, st, dosl ? "RETICLE" : HN("RETICLE")) : -1, q;
+                        lead_tried = 1;
+                        for (q = 0; st >= 0 && id >= 0 && q < prj_symbol_count(g_ma, st); q++)
+                            if (prj_symbol_id(g_ma, st, q) == id + 2) { hud_sprite_load(g_hud, g_ma, prj_symbol_name(g_ma, st, q), 0, &lead_spr); break; }
+                    }
+                    if (t > 0 && t <= (float)combat_weapon_life(wid) && t > (float)g_sim.fx_delta_ticks && lead_spr.tex) {
+                        float lp[3], px, py, dp;
+                        lp[0] = tp[0] + vel[0] * t; lp[1] = tp[1] + vel[1] * t; lp[2] = tp[2] + vel[2] * t;
+                        if (CHEAT_PROJECT(lp, px, py, dp)) {
+                            float hx = hud_left_x(g_hud) + hud_px_x(g_hud, px) / native_scale, hy = hud_px_y(g_hud, py) / native_scale;
+                            if (dosl) hud_draw_f(g_hud, &lead_spr, hx, hy, -1.0f); else hud_draw(g_hud, &lead_spr, hx, hy, NULL);
+                        }
+                    }
+                }
+#undef CHEAT_PROJECT
+            }
             /* target bracket (engine dispatcher 0x10022830): a mech (0x10022cc0) gets four corner pieces TGTGP1-4 (+E enemy,
              * +N neutral) at (x -+ h, y -+ h), h = R x F / depth - R its contact radius (MGEO int[6]), F the view's focal
              * length, the point its centre (MGEO int[0] above the feet), no minimum or cap; a nav point TGTNP. Off
@@ -8964,6 +9106,45 @@ int main(int argc, char **argv)
                 hud_begin(g_hud, fw, fh);
                 hud_rect(g_hud, hud_left_x(g_hud) - 10.0f, -10.0f, 660.0f - 2.0f * hud_left_x(g_hud), 500.0f, blk);
                 hud_end(g_hud);
+            }
+        }
+        if (g_cheat_again && g_sim_ok && g_hud) {
+            /* "wediditagain" (DOS 0x21a50 -> frame routine 0x21189, the DOS edition only): 910 ticks after the code the view
+             * reopens - six HUD windows off, the 3D view drawn in a rectangle that grows from the centre (0.49-0.51 of the
+             * screen) to the whole screen over 0x27d ticks; then the screen is cleared and the view grows again from the
+             * centre point, framed, over 0x2d8 ticks; then the HUD comes back. Outside the rectangle black, the frame colour
+             * 0xf and the whole HUD off for the windows (INFERRED: their pixels not compared) */
+            static int saved_off = -1;
+            float tk = (float)(g_sim.now - g_cheat_again_t0) * 0.182f, f = -1, a0 = 0.5f, frame = 0;
+            if (tk >= 910.0f && tk < 910.0f + 637.0f) { f = (tk - 910.0f) / 637.0f; a0 = 0.49f; }
+            else if (tk >= 910.0f + 637.0f && tk < 910.0f + 637.0f + 728.0f) { f = (tk - 910.0f - 637.0f) / 728.0f; a0 = 0.5f; frame = 1; }
+            if (f >= 0) {
+                int fw, fh;
+                float L, W, x0, y0, x1, y1;
+                static const float blk[4] = {0, 0, 0, 1};
+                if (saved_off < 0) { saved_off = g_hud_off; g_hud_off = 1; }
+                SDL_GetWindowSizeInPixels(win, &fw, &fh);
+                rb_viewport(0, 0, fw, fh);
+                hud_begin(g_hud, fw, fh);
+                L = hud_left_x(g_hud); W = 640.0f - 2.0f * L;
+                {   /* the rectangle: from (a0, a0)-(a1, a1) of the screen to (0, 0)-(1, 1), linear in the anim's time */
+                    const float a1 = 1.0f - a0;
+                    x0 = L + W * a0 * (1 - f); x1 = L + W * (a1 * (1 - f) + f);
+                    y0 = 480.0f * a0 * (1 - f); y1 = 480.0f * (a1 * (1 - f) + f);
+                }
+                hud_rect(g_hud, L - 10.0f, -10.0f, W + 20.0f, y0 + 10.0f, blk);
+                hud_rect(g_hud, L - 10.0f, y1, W + 20.0f, 500.0f - y1, blk);
+                hud_rect(g_hud, L - 10.0f, y0, x0 - L + 10.0f, y1 - y0, blk);
+                hud_rect(g_hud, x1, y0, L + W + 10.0f - x1, y1 - y0, blk);
+                if (frame) {
+                    const float *fc = HP(15);
+                    hud_line(g_hud, x0, y0, x1, y0, 1.0f, fc); hud_line(g_hud, x1, y0, x1, y1, 1.0f, fc);
+                    hud_line(g_hud, x1, y1, x0, y1, 1.0f, fc); hud_line(g_hud, x0, y1, x0, y0, 1.0f, fc);
+                }
+                hud_end(g_hud);
+            } else if (tk >= 910.0f + 637.0f + 728.0f) {
+                g_cheat_again = 0;   /* (0x21189 state 4: the frame routine and the windows restored) */
+                if (saved_off >= 0) { g_hud_off = saved_off; saved_off = -1; }
             }
         }
         if (g_drop_over && g_drop_tex) drop_screen_quad(win, 0);   /* the mission running under the drop screen's fade-out */

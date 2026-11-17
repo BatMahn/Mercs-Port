@@ -2,10 +2,6 @@
 
 What is still open in the Mercenaries port, in plain language.
 
-- **Some cheat codes only show their message.** `wediditagain` (DOS swaps in a different frame routine, not traced),
-  `bubbleboy` (debug bounding spheres), `beholdmyglory` (the free-eye camera), `flashyflashy` (automatic weapon
-  grouping) and `walkthisway` (a leading reticle) print what the original prints but do nothing else yet.
-  `inmybeautifulballoon` only prints "jumpjets" in the original too.
 - **Side-by-side comparison with the original.** Every fixed mission's opening has been compared with the DOS game in
   DOSBox (docs/DOSBOX_COMPARISON.md). Differences found and not yet fixed:
   - **Light levels** follow DOS's span walk, cosine, near plane and 2D screen clip (v1.0.1, v1.0.2, v1.2.0), and a

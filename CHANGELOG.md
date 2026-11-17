@@ -1,5 +1,20 @@
 # Mercenaries development history
 
+## v1.2.14: the last six cheat codes do what they did in the original — 2026-11-17
+
+Hold Ctrl, Alt and Shift and type the code, as before. Each was read from the DOS game and the Windows edition:
+
+| Code | Effect |
+| --- | --- |
+| `inmybeautifulballoon` | A mech without jump jets gets three, with a full tank ("jumpjets") |
+| `bubbleboy` | Draws every object's bounding sphere, and frames each region of the damage display; type it again to clear |
+| `beholdmyglory` | The free-eye camera: Z / Shift+Z fly forward / back, Ctrl + arrow keys turn and climb; the external-view key returns to the cockpit |
+| `flashyflashy` | AutoGrouping: with a target, the trigger fires every ready weapon that can reach it |
+| `walkthisway` | The leading reticle: where to aim so a shot meets a moving target |
+| `wediditagain` | Five seconds later the view closes to the centre of the screen and reopens, twice (the DOS edition's gag; Windows only said "Type this cheat in the DOS version") |
+
+Some details are the port's best reading rather than traced pixel for pixel (ASSUMPTIONS: "Cheat details").
+
 ## v1.2.13: cheat codes, the F10 missile camera, game folders copied from Windows, the fade after the drop screen — 2026-11-17
 
 - **The mission cheat codes work.** Hold Ctrl, Alt and Shift and type a code, as in the original. These work as they do

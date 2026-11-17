@@ -165,6 +165,13 @@ static void mercs_mfd_draw_one(int slot, int w, int h)
                     if (rg[2] <= 0 || rg[3] <= 0) continue;
                     /* DOS 0x3af08 / Windows 0x100117f2: 15 - 3 x (armour / 4 + structure) / the condition baseline -
                      * the port had graded armour lost alone, turning a location yellow on its first hit */
+                    if (g_cheat_bubble) {   /* "bubbleboy" also frames each region of the damage display (DOS 0x3af08 -> 0x13ac0) */
+                        float x0 = dx + (float)rg[0] * 2.0f * g_hud_s, y0 = dy + (float)rg[1] * 2.0f * g_hud_s;
+                        float x1 = x0 + (float)rg[2] * 2.0f * g_hud_s, y1 = y0 + (float)rg[3] * 2.0f * g_hud_s;
+                        const float *fc = HP(15);
+                        hud_line(g_hud, x0, y0, x1, y0, 1.0f, fc); hud_line(g_hud, x1, y0, x1, y1, 1.0f, fc);
+                        hud_line(g_hud, x1, y1, x0, y1, 1.0f, fc); hud_line(g_hud, x0, y1, x0, y0, 1.0f, fc);
+                    }
                     lv = combat_loc_level(pu, loc);
                     pick = pu->loc_gone[loc] ? 3 : lv <= 0 ? 0 : lv < 12 ? 1 : 2;
                     if (pick == 0) continue;
