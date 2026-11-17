@@ -10,6 +10,9 @@
 #include <errno.h>
 #include <stdint.h>
 #include <strings.h>
+#ifndef _WIN32
+#include <dirent.h>
+#endif
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -36,7 +39,45 @@ static int find_ci(const char *dir, const char *name, char *out, size_t outlen)
     snprintf(p, sizeof p, "%s/%s", dir, name); if (exists(p)) { snprintf(out, outlen, "%s", p); return 1; }
     snprintf(p, sizeof p, "%s/%s", dir, upper); if (exists(p)) { snprintf(out, outlen, "%s", p); return 1; }
     snprintf(p, sizeof p, "%s/%s", dir, lower); if (exists(p)) { snprintf(out, outlen, "%s", p); return 1; }
+#ifndef _WIN32
+    {   /* any other mix ("Mercs", "Cd", "Product.ini"): a folder copied from Windows, where case never mattered */
+        DIR *d = opendir(dir);
+        struct dirent *e;
+        int found = 0;
+        if (!d) return 0;
+        while (!found && (e = readdir(d)))
+            if (strcasecmp(e->d_name, name) == 0) {
+                snprintf(p, sizeof p, "%s/%s", dir, e->d_name);
+                if (exists(p)) { snprintf(out, outlen, "%s", p); found = 1; }
+            }
+        closedir(d);
+        return found;
+    }
+#else
     return 0;
+#endif
+}
+/* a relative path ("3d/s3/MW2.PRJ") under a folder, each part matched case-insensitively; out is the path as spelt on
+ * disk, or as asked when a part is missing (so a later exists() fails as before) */
+static int path_ci(const char *dir, const char *rel, char *out, size_t outlen)
+{
+    char cur[PORTCFG_PATH * 3], part[256], next[PORTCFG_PATH * 3];
+    const char *r = rel;
+    snprintf(cur, sizeof cur, "%s", dir);
+    while (*r) {
+        size_t n = strcspn(r, "/");
+        if (n >= sizeof part) n = sizeof part - 1;
+        memcpy(part, r, n); part[n] = 0;
+        r += n; if (*r == '/') r++;
+        if (!part[0]) continue;
+        if (!find_ci(cur, part, next, sizeof next)) {
+            snprintf(out, outlen, "%s/%s%s%s", cur, part, *r ? "/" : "", r);
+            return 0;
+        }
+        snprintf(cur, sizeof cur, "%s", next);
+    }
+    snprintf(out, outlen, "%s", cur);
+    return 1;
 }
 
 const char *portcfg_file(void)
@@ -350,39 +391,39 @@ int portcfg_resolve(portcfg *c, const char *exe_dir, const char *hint)
             }
     }
     if (c->game[0]) {   /* the folder's parts, unless overridden */
-        snprintf(p, sizeof p, "%s/install", c->game);
+        path_ci(c->game, "install", p, sizeof p);
         if (!c->install[0]) snprintf(c->install, sizeof c->install, "%s", p);
-        snprintf(p, sizeof p, "%s/cd", c->game);
+        path_ci(c->game, "cd", p, sizeof p);
         if (!c->cd[0] && is_dir(p)) snprintf(c->cd, sizeof c->cd, "%s", p);
-        snprintf(p, sizeof p, "%s/music", c->game);
+        path_ci(c->game, "music", p, sizeof p);
         if (!c->music[0] && is_dir(p)) snprintf(c->music, sizeof c->music, "%s", p);
-        snprintf(p, sizeof p, "%s/ultrasnd", c->game);
+        path_ci(c->game, "ultrasnd", p, sizeof p);
         if (!c->ultrasnd[0] && is_dir(p)) snprintf(c->ultrasnd, sizeof c->ultrasnd, "%s", p);
-        snprintf(p, sizeof p, "%s/mt32", c->game);
+        path_ci(c->game, "mt32", p, sizeof p);
         if (!c->mt32[0] && is_dir(p)) snprintf(c->mt32, sizeof c->mt32, "%s", p);
-        snprintf(p, sizeof p, "%s/3d/models.prj", c->game);
+        path_ci(c->game, "3d/models.prj", p, sizeof p);
         if (!c->models[0] && exists(p)) snprintf(c->models, sizeof c->models, "%s", p);
-        snprintf(p, sizeof p, "%s/3d/textures.prj", c->game);
+        path_ci(c->game, "3d/textures.prj", p, sizeof p);
         if (!c->textures[0] && exists(p)) snprintf(c->textures, sizeof c->textures, "%s", p);
-        snprintf(p, sizeof p, "%s/3d/skygnd.par", c->game);
+        path_ci(c->game, "3d/skygnd.par", p, sizeof p);
         if (!c->skygnd[0] && exists(p)) snprintf(c->skygnd, sizeof c->skygnd, "%s", p);
-        snprintf(p, sizeof p, "%s/3d/skygnd_pvr.par", c->game);
+        path_ci(c->game, "3d/skygnd_pvr.par", p, sizeof p);
         if (!c->skygnd_fog[0] && exists(p)) snprintf(c->skygnd_fog, sizeof c->skygnd_fog, "%s", p);
-        snprintf(p, sizeof p, "%s/3d/pvr/skygnd.par", c->game);   /* the PowerVR edition's own file: the fog densities */
+        path_ci(c->game, "3d/pvr/skygnd.par", p, sizeof p);   /* the PowerVR edition's own file: the fog densities */
         if (!c->skygnd_fog[0] && exists(p)) snprintf(c->skygnd_fog, sizeof c->skygnd_fog, "%s", p);
-        snprintf(p, sizeof p, "%s/titanium", c->game);   /* the Titanium edition's 16-bit files */
+        path_ci(c->game, "titanium", p, sizeof p);   /* the Titanium edition's 16-bit files */
         if (!c->titanium[0] && is_dir(p)) snprintf(c->titanium, sizeof c->titanium, "%s", p);
     }
     /* A 3dfx base disc already supplies the 3D models and sky; a second copy in
      * 3d/ is unnecessary. A retail base falls back to its DOS archive. */
     if (!c->models[0] && mercs_product_edition(c->cd) == PORTCFG_ED_3DFX) {
-        snprintf(p, sizeof p, "%s/MERCS", c->cd);
+        path_ci(c->cd, "MERCS", p, sizeof p);
         find_ci(p, "MW2.PRJ", c->models, sizeof c->models);
         if (!c->skygnd[0]) find_ci(p, "SKYGND.PAR", c->skygnd, sizeof c->skygnd);
     }
     if (!c->models[0] && c->install[0]) {
         if (!find_ci(c->install, "MW2.PRJ", c->models, sizeof c->models) && c->cd[0]) {
-            snprintf(p, sizeof p, "%s/MERCS", c->cd);
+            path_ci(c->cd, "MERCS", p, sizeof p);
             if (!find_ci(p, "MW2.PRJ", c->models, sizeof c->models)) find_ci(c->cd, "MW2.PRJ", c->models, sizeof c->models);
         }
     }
@@ -390,7 +431,7 @@ int portcfg_resolve(portcfg *c, const char *exe_dir, const char *hint)
     {   /* the 3D archives present: a models archive that isn't the DOS one (the fallback above, or models= naming it) */
         char d[PORTCFG_PATH] = "";
         if (!c->install[0] || !find_ci(c->install, "MW2.PRJ", d, sizeof d)) {
-            snprintf(p, sizeof p, "%s/MERCS", c->cd);
+            path_ci(c->cd, "MERCS", p, sizeof p);
             if (!c->cd[0] || (!find_ci(p, "MW2.PRJ", d, sizeof d) && !find_ci(c->cd, "MW2.PRJ", d, sizeof d))) d[0] = 0;
         }
         c->no3d = !(c->models[0] && (strcmp(c->models, d) != 0 || mercs_product_edition(c->cd) == PORTCFG_ED_3DFX));
@@ -520,14 +561,14 @@ int portcfg_edition(const portcfg *c, int ed, char *models, char *textures, char
      * the Titanium archive lacks; available with the Titanium folder only */
     if (ed == PORTCFG_ED_RENDITION) return portcfg_titanium(c, NULL, NULL) == 0 ? 0 : -1;
     if (ed == PORTCFG_ED_DOS) {   /* original retail data, separate from the writable overlay */
-        snprintf(b, sizeof b, "%s/MERCS", c->cd);
+        path_ci(c->cd, "MERCS", b, sizeof b);
         if (!c->cd[0] || (!find_ci(b, "MW2.PRJ", a, sizeof a) && !find_ci(c->cd, "MW2.PRJ", a, sizeof a))) return -1;
         cp(models, a); cp(textures, a); cp(kind, "dos"); cp(sky, ""); cp(fog, "");
         return 0;
     }
     if (!c->game[0]) return -1;
     if (ed == PORTCFG_ED_ATI) {
-        snprintf(a, sizeof a, "%s/3d/ati/skygnd.par", c->game);
+        path_ci(c->game, "3d/ati/skygnd.par", a, sizeof a);
         if (!c->textures[0] || !c->textures_ati) return -1;
         cp(models, c->textures); cp(kind, "ati"); cp(fog, "");
         if (exists(a)) cp(sky, a);
@@ -535,8 +576,8 @@ int portcfg_edition(const portcfg *c, int ed, char *models, char *textures, char
     }
     {
         const char *dir = ed == PORTCFG_ED_S3 ? "s3" : ed == PORTCFG_ED_MGA ? "mga" : "pvr";
-        snprintf(a, sizeof a, "%s/3d/%s/MW2.PRJ", c->game, dir);
-        snprintf(b, sizeof b, "%s/3d/%s/skygnd.par", c->game, dir);
+        { char r2[64]; snprintf(r2, sizeof r2, "3d/%s/MW2.PRJ", dir); path_ci(c->game, r2, a, sizeof a); }
+        { char r2[64]; snprintf(r2, sizeof r2, "3d/%s/skygnd.par", dir); path_ci(c->game, r2, b, sizeof b); }
     }
     if (!exists(a)) return -1;
     cp(models, a); cp(textures, a); cp(sky, exists(b) ? b : c->skygnd);

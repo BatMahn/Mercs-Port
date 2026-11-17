@@ -1786,6 +1786,56 @@ static int follow_newest(void)
     g_follow = g_sim.shots[k].id;
     return 1;
 }
+
+/* The mission cheats (Mercs DOS 0x571dc / Windows 0x10052235): with Ctrl, Alt and Shift held (the key's modifier byte 7)
+ * each key's character goes into a 63-character buffer (Win 0x10052080), and a code matches when the buffer ENDS with it
+ * (0x100520c7). The codes are XOR 0x0a in both binaries (table Win 0x100b0a28: code, on message, off message). Messages
+ * as the engine's (0x1005be24: 0x16a ticks, priority 0x32). */
+static int g_time_comp_key, g_time_comp, g_time_exp;   /* "ontimeeverytime" arms CRACK_MODE (0xab) as x8 time; "antijolt" /4 */
+static void cheat_key(SDL_Keycode k)
+{
+    static char buf[64];
+    static const char *const CODE[15] = {
+        "superfunkicalifragisexy", "iseenfireandiseenrain", "ooohhhlllaaalllaaa", "wediditagain", "itsdabooomb",
+        "inmybeautifulballoon", "redjackandtikrules", "likethecomstarbaby", "ontimeeverytime", "bubbleboy",
+        "crazysexycool", "beholdmyglory", "antijolt", "flashyflashy", "walkthisway"};
+    static int bubble, autogroup, lead;
+    combat_unit *pu = &g_sim.player_unit;
+    size_t n = strlen(buf);
+    int c, tgt = g_tgt_sel >= 0 && g_tgt_sel < g_sim.actor_count && g_sim.armed[g_tgt_sel] && !g_sim.units[g_tgt_sel].destroyed ? g_tgt_sel : -1;
+    if (k < 0x20 || k > 0x7e) return;
+    if (n >= sizeof buf - 1) { memmove(buf, buf + 1, n); n--; }
+    buf[n] = (char)(k >= 'A' && k <= 'Z' ? k + 32 : k); buf[n + 1] = 0; n++;
+    for (c = 0; c < 15; c++) {
+        size_t l = strlen(CODE[c]);
+        if (n >= l && strcmp(buf + n - l, CODE[c]) == 0) break;
+    }
+    if (c == 15) return;
+    buf[0] = 0;   /* (the original keeps the buffer; a code cannot match twice on one key either way) */
+    switch (c) {
+    case 0: pu->invulnerable = !pu->invulnerable; hud_message_ex(pu->invulnerable ? "Invulnerbility ON." : "Invulnerbility OFF.", 0x16a, 0x32); break;
+    case 1: pu->unlimited_ammo = !pu->unlimited_ammo; hud_message_ex(pu->unlimited_ammo ? "Unlimited Ammo ON." : "Unlimited Ammo OFF.", 0x16a, 0x32); break;
+    case 2: pu->no_heat = !pu->no_heat; hud_message_ex(pu->no_heat ? "Heat tracking OFF." : "Heat tracking ON.", 0x16a, 0x32); break;
+    case 3: hud_message_ex("We coming at cha again.", 0x16a, 0x32); break;   /* DOS 0x21a50 swaps in another frame routine: not reproduced */
+    case 4: if (tgt >= 0) msim_nuke_actor(&g_sim, tgt); break;
+    case 5: hud_message_ex("jumpjets", 0x16a, 0x32); break;   /* sets a flag (DOS 0xb5f7d / Win 0x100ba99d) nothing reads */
+    case 6:   /* the target's centre torso lost (DOS 0x2f56c / Win 0x10005207(-2, target, 3)), with its arms, side torsos and head */
+        if (tgt >= 0) {
+            combat_destroy_location(&g_sim.units[tgt], 3, &g_sim.rng);
+            if (g_sim.units[tgt].destroyed) msim_record_unit_loss(&g_sim, tgt, -2, 4);
+        }
+        break;
+    case 7: g_sim.logic.cheat_success = 1; break;
+    case 8: g_time_comp_key = !g_time_comp_key; hud_message_ex(g_time_comp_key ? "Time compression key enabled." : "Time compression key disabled.", 0xb5, 0x32); break;
+    case 9: bubble = !bubble; hud_message_ex("Bounding spheres.", 0x16a, 0x32); break;   /* a debug drawing: not reproduced */
+    case 10: pu->infinite_jets = !pu->infinite_jets; hud_message_ex(pu->infinite_jets ? "Infinite jumpjets ON." : "Infinite jumpjets OFF.", 0x16a, 0x32); break;
+    case 11: hud_message_ex("free-eye mode on.", 0x16a, 0x32); break;   /* camera mode 2: not reproduced */
+    case 12: g_time_exp = !g_time_exp; hud_message_ex(g_time_exp ? "time expansion enabled." : "time expansion disabled.", 0x16a, 0x32); break;
+    case 13: autogroup = !autogroup; hud_message_ex(autogroup ? "AutoGrouping enabled." : "AutoGrouping disabled.", 0x16a, 0x32); break;   /* not reproduced */
+    case 14: lead = !lead; hud_message_ex(lead ? "Leading Recticle enabled." : "Leading Recticle disabled.", 0x16a, 0x32); break;   /* not reproduced */
+    }
+    (void)bubble; (void)autogroup; (void)lead;
+}
 static int followed(void)   /* 0x100469b0: the followed projectile while it flies, else none */
 {
     int k = shot_by_id(g_follow);
@@ -2953,6 +3003,7 @@ static int    g_drop_dos;                  /* the DOS edition: the overlay where
 static Uint64 g_drop_t0;
 static float  g_drop_level = 1.0f;         /* the drop screen's brightness (its fade-out) */
 static int    g_drop_over;                 /* the mission runs under the drop screen (its fade-out, see the main loop) */
+static int32_t g_drop_gone = -1;           /* the mission time when the drop screen went (-1: none yet / none) */
 static int drop_shp(const char *disc, const char *name, shp_frame *fr, uint8_t pal[256][3])
 {
     char path[1200];
@@ -5951,6 +6002,7 @@ int main(int argc, char **argv)
                 }
             } else {
                 g_drop_over = 0;
+                g_drop_gone = g_sim_ok ? g_sim.now : 0;
                 rb_tex_delete(g_drop_tex); g_drop_tex = 0;
                 { int j; for (j = 0; j < 5; j++) rb_tex_delete(g_drop_texs[j]); } memset(g_drop_texs, 0, sizeof g_drop_texs);
             }
@@ -6075,6 +6127,8 @@ int main(int argc, char **argv)
                     }
                     continue;
                 }
+                if (g_world && g_sim_ok && !g_sim.ending && (e.key.mod & SDL_KMOD_CTRL) && (e.key.mod & SDL_KMOD_ALT) && (e.key.mod & SDL_KMOD_SHIFT) &&
+                    k >= 0x20 && k <= 0x7e) { cheat_key(k); continue; }   /* the cheats (cheat_key) */
                 if (g_world && g_sim_ok && g_cc_page >= 0 && (k == SDLK_ESCAPE || (k >= SDLK_0 && k <= SDLK_9))) {
                     /* 0x10065df0: a digit picks the row with that number (0 the Esc row); Esc / the Esc row go back a page
                      * (0x10066330), from the first page close the menu */
@@ -6339,8 +6393,15 @@ int main(int argc, char **argv)
                                               54,status==1?75:79);
                 }
                 else if (g_world && g_sim_ok && A("CRACK_MODE")) {
-                    combat_destroy_location(&g_sim.player_unit,8,&g_sim.rng);
+                    /* action 0xab (DOS 0x56727 / Win 0x10063... case 0xab): with the "ontimeeverytime" cheat on, time
+                     * compression (x8) on / off; otherwise nothing. The port had destroyed the player's left leg - that is
+                     * action 0x85 (SELECT_LEFT_LEG, unbound in GAMEKEY.MAP), not CRACK_MODE (GitHub: Ctrl+Alt+F) */
+                    if (g_time_comp_key) {
+                        g_time_comp = !g_time_comp;
+                        hud_message_ex(g_time_comp ? "Time compression enabled" : "Time compression disabled", g_time_comp ? 0xb50 : 0x16a, 0x32);
+                    }
                 }
+                else if (g_world && g_sim_ok && A("SELECT_LEFT_LEG")) combat_destroy_location(&g_sim.player_unit,8,&g_sim.rng);   /* 0x85 */
                 else if (g_world && A("FEET_TO_TORSO")) g_feet_to_torso = 1;
                 else if (g_world && g_sim_ok && A("INSPECT_TARGET")) inspect_now();
                 else if (g_world && A("TOGGLE_GROUP_FIRE")) {
@@ -6446,6 +6507,14 @@ int main(int argc, char **argv)
                     mm_key(mk, 0);
                 }
             }
+            /* the opening (the drop screen's fade-out, the black and the fade-in): a frame counts for at most 1/20 s, so the
+             * first frames' cost (shaders being built, the mission's first draw) does not jump the fall and the fade
+             * forward - the drop-in had landed under the drop screen on slow first frames (GitHub: the fade "a second
+             * too quickly"). Port choice: DOS's own first frames run on its clock */
+            if (!g_auto_on && g_sim_ok && g_sim.now < 4000 && dt > 0.05f) dt = 0.05f;
+            /* the cheats' clock (Win 0x10037... : the frame's ticks x 8 with time compression, else / 4 with time expansion) */
+            if (g_time_comp) dt *= 8.0f;
+            else if (g_time_exp) dt *= 0.25f;
             if (g_mm_depth || g_paused) dt = 0;   /* the MAIN MENU (and PAUSE_GAME) pauses the game (WinMain 0x10009770: "pause timer TRUE") */
             /* Establish the same integer delta before player-generated flames
              * and the later simulation step. Consume sim_ms's remainder once. */
@@ -8876,7 +8945,14 @@ int main(int argc, char **argv)
             /* DOSBox's Instant Action drop: the fade starts 1.55 s of mission time in (the drop screen's fade-out and
              * the first, slow frames run on the mission clock - see g_drop_over); not before the third frame */
             if (!g_drop_over) frame++;
-            if (frame == 3 && !t3) t3 = g_sim.now > 1550 ? g_sim.now : 1550;
+            /* and never before 0.44 s after the drop screen has gone (DOSBox: 15.46 -> 15.9 s black): the fade comes after
+             * the "Synchronizing" picture, whatever the first frames cost (GitHub: "a second too quickly") */
+            if (frame == 3 && !t3) {
+                int32_t at = g_sim.now > 1550 ? g_sim.now : 1550;
+                if (g_drop_gone >= 0 && at < g_drop_gone + 440) at = g_drop_gone + 440;
+                t3 = at;
+            }
+            if (t3 && g_drop_gone >= 0 && t3 < g_drop_gone + 440) t3 = g_drop_gone + 440;   /* (frame 3 came under the drop screen) */
             level = frame <= 3 || g_sim.now < t3 ? 0.0f : (float)(g_sim.now - t3) * 0.182f / 362.0f;
             g_fade_level = level > 1.0f ? 1.0f : level;
             if (level < 1.0f) {

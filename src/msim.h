@@ -393,6 +393,8 @@ void msim_step(msim *s, int32_t dt_ms);
 int  msim_player_restart(msim *s);
 /* Skip the end-sequence wait (the engine's key during the ending), or abort a running mission. */
 void msim_end_now(msim *s);
+/* the nuclear effect and its expanding area damage at actor a (cheat "itsdabooomb") */
+void msim_nuke_actor(msim *s, int a);
 /* "Mission successful" / "Mission failed" / "Mission time exceeded" / NULL (engine strings). */
 const char *msim_outcome_text(const msim *s);
 /* Snapshot the complete CAR and the explicitly selected player's runtime star.

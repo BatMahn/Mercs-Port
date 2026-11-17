@@ -142,6 +142,7 @@ typedef struct {
     int           unlimited_ammo;    /* +0: shots use no ammunition */
     int           invulnerable;      /* +1: no damage taken (0x10016280) */
     int           no_heat;           /* +4 heat tracking off: heat held at 0 (0x10015f50) */
+    int           infinite_jets;     /* cheat "crazysexycool" (Mercs DOS 0xa8e18 / Win 0x100ab2f8): the jets burn no fuel */
     int           no_collision_damage;   /* +3 = 0: collision damage off (0x1000c160 / 0x1000c3c0) */
     float         seq_ticks;         /* ticks since the sequence / shutdown began (engine c[0x23]) */
     unsigned      rng;

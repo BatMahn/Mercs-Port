@@ -84,6 +84,30 @@ int main(int argc, char **argv)
 #endif
     dp_clear_roots(); dp_add_root(cd);
     check(dp_fopen("SETTINGS.CFG", "wb") == NULL, "clearing roots also clears writable state");
+#ifndef _WIN32
+    {   /* a game folder copied from Windows, where case never mattered: "CD" holding "Mercs" (GitHub: Fedora refused a
+         * folder that worked on Windows - "The requested DOS data is missing or invalid") */
+        char mixed[2048], mixed_cd[2056], from[2048], to[2080], models[2048], tex[2048], kind[64], sky[2048], fog[2048];
+        const char *const parts[] = {"PRODUCT.INI", "MERCS"};
+        int k, have;
+        snprintf(mixed, sizeof mixed, "%s/mixed", argv[4]);
+        snprintf(mixed_cd, sizeof mixed_cd, "%s/CD", mixed);
+        check(mkdir(mixed, 0755) == 0 && mkdir(mixed_cd, 0755) == 0, "mixed-case folder created");
+        for (k = 0; k < 2; k++) {
+            snprintf(from, sizeof from, "%s/cd/%s", argv[1], parts[k]);
+            snprintf(to, sizeof to, "%s/%s", mixed_cd, k ? "Mercs" : "Product.ini");
+            check(symlink(from, to) == 0, "mixed-case entry linked");
+        }
+        check(portcfg_is_game_dir(mixed), "mixed-case game folder accepted");
+        portcfg_defaults(&c);
+        check(portcfg_resolve(&c, NULL, mixed) == 0, "mixed-case game folder resolves");
+        have = portcfg_edition(&c, PORTCFG_ED_DOS, models, tex, kind, sky, fog) == 0;
+        check(have && strstr(models, "/CD/Mercs/") != NULL, "DOS archive found through CD/Mercs");
+        dp_clear_roots(); setenv("MERCS_CD_DIR", c.cd, 1); setenv("MERCS_INSTALL_DIR", install, 1); dp_add_roots_from_env();
+        check(dp_resolve("GAMEKEY.MAP", from, sizeof from) == 0 && strstr(from, "/CD/Mercs/") != NULL, "game files found through CD/Mercs");
+        unsetenv("MERCS_CD_DIR"); unsetenv("MERCS_INSTALL_DIR"); dp_clear_roots();
+    }
+#endif
     printf("test_mercs_paths: %s (%d failures)\n", failures ? "FAILED" : "ok", failures);
     return failures != 0;
 }

@@ -332,6 +332,13 @@ static int SDLCALL mercs_app_main(int argc, char **argv)
         ed = edition ? portcfg_mercs_parse(edition) :
              gui && portcfg_mercs_name(cfg.renderer) ? cfg.renderer : PORTCFG_ED_DOS;
         rc = portcfg_edition(&cfg, ed, models, textures, kind, sky, fog);
+        if (rc && !edition) {   /* not asked for by name: the first look this folder has (a 3Dfx disc has no DOS archive;
+                                 * a folder brought from another computer arrives without that computer's settings) */
+            static const int FALLBACK[] = {PORTCFG_ED_DOS, PORTCFG_ED_3DFX, PORTCFG_ED_D3D, PORTCFG_ED_ENHANCED};
+            int k;
+            for (k = 0; rc && k < (int)(sizeof FALLBACK / sizeof FALLBACK[0]); k++)
+                if (FALLBACK[k] != ed && portcfg_mercs_name(FALLBACK[k]) && portcfg_edition(&cfg, FALLBACK[k], models, textures, kind, sky, fog) == 0) { ed = FALLBACK[k]; rc = 0; }
+        }
         if (rc) snprintf(err, sizeof err, "The requested %s data is missing or invalid in %s. Choose a game folder containing that edition's complete archive and sky data.",
                          portcfg_mercs_label(ed), cfg.game);
         else if (portcfg_overlay_dir(&cfg, portcfg_mercs_overlay(ed), save, sizeof save, 0) != 0)

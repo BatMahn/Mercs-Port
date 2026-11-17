@@ -262,7 +262,8 @@ void dp_add_roots_from_env(void)
     dp_set_write_root(getenv("MERCS_INSTALL_DIR"));
     if (cd) {
         char sub[1100];
-        snprintf(sub, sizeof sub, "%s/MERCS", cd);
+        /* (the folder as spelt on disk: "Mercs" in a copy made on Windows, where case never mattered) */
+        if (resolve_in_dir(cd, "MERCS", sub, sizeof sub) != 0) snprintf(sub, sizeof sub, "%s/MERCS", cd);
         dp_add_root(sub);      /* game files live in \\MERCS on the disc */
         dp_add_root(cd);
     }

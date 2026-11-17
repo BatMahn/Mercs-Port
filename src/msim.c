@@ -1519,6 +1519,14 @@ static void nuclear_start(msim *s, const float p[3])
     s->nuclear_wave.remaining_ticks = 2 * fx_duration(22);
     effect(s, 22, p, 0);
 }
+void msim_nuke_actor(msim *s, int a)
+{
+    /* cheat "itsdabooomb" (DOS 0x65ba8 / Win 0x1004c173 on the target): the nuclear producer at the object's position */
+    float p[3];
+    if (!s || a < 0 || a >= s->actor_count) return;
+    p[0] = (float)s->actors[a].mech.origin[0]; p[1] = s->units[a].y; p[2] = (float)s->actors[a].mech.origin[2];
+    nuclear_start(s, p);
+}
 static void projectile_impact_point(msim *s, const msim_shot *shot, const float p[3], int flags, int actor, int node, const float backoff[3])
 {
     int visual = combat_weapon_visual(shot->weapon), type = fx_impact_type(visual, flags);
@@ -3336,7 +3344,10 @@ static void spawn_shot_h(msim *s, int weapon, int owner, const float from[3], co
     sh->ams_distance = -1;
     sh->first = 0;
     sh->id = ++s->shot_serial;
-    if (owner == -1) s->player_last_shot = sh->id;   /* 0x10044xxx: DAT_1025a69c (kept only for a missile) */
+    /* 0x10044xxx: DAT_1025a69c, kept only for a missile (types 3 / 4) - the F10 ordnance and F9 weapon cameras follow it.
+     * It had been set by every shot, so a laser or autocannon fired after the missiles (one trigger, or a group) left the
+     * last shot a non-missile and F10 did nothing (GitHub report) */
+    if (owner == -1 && weapon >= 0 && weapon < SIM_WEAPON_COUNT && (sim_weapons[weapon].type == 3 || sim_weapons[weapon].type == 4)) s->player_last_shot = sh->id;
     if (s->on_particle && combat_weapon_kind(weapon) == 5) {
         /* DOS66458 ->2a0d4; dedicated3dfx1000beef ->100427a0:
          * launch position plus TWO initial velocity vectors, not frame dt. */

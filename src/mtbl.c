@@ -279,7 +279,7 @@ void mtbl_logic_step(mtbl_logic *ml, int32_t now, const mtbl_world *w)
                 all = 0;
                 if (ml->state[t][i] == MTBL_FAILED || ml->state[t][i] == 8) failed = 1;
             }
-            if (all) ml->result[t] = 2;
+            if (all || ml->cheat_success) ml->result[t] = 2;
             else if (failed) ml->result[t] = 3;
             else if ((int32_t)ml->tables[t].time_limit > 0 &&
                      (int64_t)(now / 1000) - ml->start_time[t] / 1000 >= (int32_t)ml->tables[t].time_limit)

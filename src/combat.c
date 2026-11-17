@@ -1248,7 +1248,7 @@ int combat_jets(combat_unit *u, int jetting, float dt, unsigned *rng)
     if (u->body_detached) { u->vy = 0; u->jet_on = 0; return 0; }
     if (u->jets > 0 && u->jet_fuel >= 0) {
         if (held) {
-            u->jet_fuel -= ticks;
+            if (!u->infinite_jets) u->jet_fuel -= ticks;   /* (Win 0x1001a5xx: no burn with the cheat on) */
             if (u->jet_fuel <= 0) u->jet_fuel = 0;
         } else if (combat_jet_refill_dos) {   /* DOS 0x27c57..0x27c7d, one step per 30 fps frame */
             int n;
@@ -1327,7 +1327,7 @@ float combat_jets_dy(const combat_unit *u, int jetting, float dt)
     const float g = 0.0296f * g_planet.gravity_g;
     float ticks = dt * COMBAT_TICKS_PER_S, a, fuel = u->jet_fuel;
     int held = jetting && u->jets > 0 && !u->no_jump && !u->shutdown && !u->destroyed && u->jet_fuel >= 0, jet;
-    if (held && u->jets > 0 && fuel >= 0) { fuel -= ticks; if (fuel <= 0) fuel = 0; }
+    if (held && u->jets > 0 && fuel >= 0) { if (!u->infinite_jets) fuel -= ticks; if (fuel <= 0) fuel = 0; }
     jet = held && fuel > 0;
     if (!jet && fabsf(u->vy) < 1e-7f && u->y <= u->ground) return 0.0f;
     a = -g;

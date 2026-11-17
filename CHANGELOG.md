@@ -1,5 +1,39 @@
 # Mercenaries development history
 
+## v1.2.13: cheat codes, the F10 missile camera, game folders copied from Windows, the fade after the drop screen — 2026-11-17
+
+- **The mission cheat codes work.** Hold Ctrl, Alt and Shift and type a code, as in the original. These work as they do
+  in DOS (read from the DOS game and the Windows edition):
+
+  | Code | Effect |
+  | --- | --- |
+  | `superfunkicalifragisexy` | Invulnerability on / off |
+  | `iseenfireandiseenrain` | Unlimited ammunition on / off |
+  | `ooohhhlllaaalllaaa` | Heat tracking on / off |
+  | `crazysexycool` | Infinite jump jets on / off |
+  | `itsdabooomb` | A nuclear blast on your target |
+  | `redjackandtikrules` | Your target's centre torso is destroyed |
+  | `likethecomstarbaby` | The mission succeeds |
+  | `ontimeeverytime` | Arms Ctrl+Alt+F as an 8x time compression key |
+  | `antijolt` | Time expansion (quarter speed) on / off |
+
+  `wediditagain`, `inmybeautifulballoon`, `bubbleboy`, `beholdmyglory`, `flashyflashy` and `walkthisway` show their
+  messages; their other effects are not reproduced yet (KNOWN_ISSUES).
+- **Ctrl+Alt+F no longer wrecks your own left leg.** The port had given CRACK_MODE (Ctrl+Alt+F) the action of an unbound
+  debug key; in the original it is the time compression key, live only after `ontimeeverytime`.
+- **F10 (the missile camera) works.** Every shot you fired counted as your "last missile", so with lasers or autocannon
+  firing after the missiles F10 had nothing to follow and did nothing. Only missiles count now, as in the original. The
+  F9 weapon view follows the same missile.
+- **A game folder copied from Windows works on Linux.** Windows ignores letter case, so a folder can hold `CD`,
+  `Mercs` or `Product.ini` where the port looked for `cd`, `MERCS` and `PRODUCT.INI`. On Linux the port then reported
+  "The requested DOS data is missing or invalid". Every part of the game folder is now found whatever its case. And
+  when the look you last chose is not in the folder (a 3Dfx-only disc, say), the game opens with one that is instead
+  of stopping.
+- **The mission fades in after the "Synchronizing Neurohelmet Interface" screen, not under it.** The first mission
+  frames can take a second or more while shaders are built, and since v1.2.12 that time counted on the mission clock,
+  so the fall and the fade ran ahead and the picture came up as the loading screen left. Opening frames now count for
+  at most 1/20 s, and the fade starts no sooner than 0.44 s after the loading screen has gone, as in DOS.
+
 ## v1.2.12: the drop-in falls as fast as DOS, Alt and Speed show from the start — 2026-11-16
 
 - **The Instant Action drop no longer looks like moon gravity.** A tester's DOS recording, read frame by frame, gives

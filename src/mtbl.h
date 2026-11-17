@@ -126,6 +126,7 @@ typedef struct {
      * line plays once (0x10009d60); RESET clears them (start nodes excepted), RE-ARM clears its own index */
     uint8_t    announced[MTBL_MAX_NODES];
     int32_t    now;                                        /* the step's time (ms) */
+    int        cheat_success;   /* cheat "likethecomstarbaby" (DOS 0xa7eb0 / Win 0x100b07d8): every running star succeeds */
     int        silent;                                     /* set during a finished() call that has no message */
 } mtbl_logic;
 
