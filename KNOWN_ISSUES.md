@@ -27,6 +27,10 @@ What is still open in the Mercenaries port, in plain language.
     port shows the lit face nearest it. The rest of the view lines up, so the camera is in the same place. Neither the
     fog nor DOS's near plane (v1.0.2) is the cause; DOS draws without a depth buffer, in its sorted polygon order, and
     the likeliest cause is that order letting faces behind the near rock paint over it. Not reproduced.
+  - **Every mission crashes at start on one Windows 11 machine** (AMD Radeon RX 9070 XT; status 0xC0000005, access
+    violation, campaign and Instant Action alike). Not reproduced; suspected the Direct3D 12 driver building the world
+    shaders. Workaround to try: Combat Variables -> GPU -> Vulkan. MERCS-MISSION.LOG in the installation folder holds
+    the mission's last messages.
   - **Enemies react as soon as the player fires at them** (GitHub report: a locked missile volley alerts the target
     before it lands; in DOS only the hit does). The port follows the 3D engine's attacker rule, where the player counts as
     attacking its target while the trigger is held; DOS's equivalent is not traced yet.

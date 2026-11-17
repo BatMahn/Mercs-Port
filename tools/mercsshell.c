@@ -1540,6 +1540,20 @@ static void mission_log_reason(const char *path, char *out, size_t size)
     fclose(f);
 }
 
+/* Why the mission stopped, for the notice: a crash by name (Windows exception codes come back as the exit status), else
+ * the status, and the last message the mission wrote (MERCS-MISSION.LOG beside the installation) */
+static void mission_end_reason(const shell *s, int result, char *out, size_t size)
+{
+    const unsigned code = (unsigned)result;
+    const char *crash = code == 0xC0000005u ? "the mission crashed: access violation" :
+                        code == 0xC00000FDu ? "the mission crashed: stack overflow" :
+                        code == 0xC000001Du ? "the mission crashed: illegal instruction" :
+                        (code & 0xF0000000u) == 0xC0000000u ? "the mission crashed" : NULL;
+    if (crash) snprintf(out, size, "%s, code 0x%08X%s%.200s", crash, code, s->child_reason[0] ? "; last message: " : "", s->child_reason);
+    else if (result < 0) snprintf(out, size, "the mission stopped abnormally%s%.200s", s->child_reason[0] ? ": " : "", s->child_reason);
+    else snprintf(out, size, "status %d%s%.200s", result, s->child_reason[0] ? ": " : "", s->child_reason);
+}
+
 static int run_mission_child(shell *s, const char *scene, const char *return_token, const char *instant_token)
 {
     const char *edition = portcfg_mercs_name(s->edition);
@@ -1761,8 +1775,11 @@ static void launch_mission(shell *s)
     mercs_shell_audio_resume(s->shell_audio);
     captured = consume_return(s, overlay, &launch);
     if (captured > 0 && !restore_unreturned_launch(s))
+    {   char why[300];
+        mission_end_reason(s, result, why, sizeof why);
         snprintf(s->status, sizeof s->status,
-                 "The mission has no complete return (status %d). Your previous mech condition has been kept.", result);
+                 "The mission has no complete return (%s). Your previous mech condition has been kept.", why);
+    }
     fprintf(stderr, "mercs shell: mission-return=%s result=%d capture=%d\n", scene, result, captured);
 done:
     mercs_campaign_free(&next); free(view); mercs_launch_lock_release(launch_lock);
@@ -2037,8 +2054,8 @@ static void launch_instant(shell *s)
      * original selected slots on the original Instant Action screen. */
     s->instant.restart=1;
     if(s->running)instant_next_scenario(s);
-    if(result&&s->running)snprintf(s->status,sizeof s->status,"Instant Action ended with status %d%s%s%s",result,
-                                     s->child_reason[0]?": ":".",s->child_reason,s->child_reason[0]?"":" Your career has not changed.");
+    if(result&&s->running){char why[300];mission_end_reason(s,result,why,sizeof why);
+        snprintf(s->status,sizeof s->status,"Instant Action ended (%s). Your career has not changed.",why);}
     fprintf(stderr,"mercs shell: instant-return result=%d\n",result);
 done:
     mercs_launch_lock_release(lock);free(launch);

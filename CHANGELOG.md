@@ -1,5 +1,28 @@
 # Mercenaries development history
 
+## v1.2.12: the drop-in falls as fast as DOS, Alt and Speed show from the start — 2026-11-16
+
+- **The Instant Action drop no longer looks like moon gravity.** A tester's DOS recording, read frame by frame, gives
+  the same fall as the port: 0.8 g on that planet from a 100 m start (DOS's "m" readout is the height in centimetres
+  x 1000 / 65536, about 1.53 times metres). The difference was when the fall starts. In DOS the mission clock starts
+  a quarter second before the drop screen fades out, and the cockpit fades in about 1.55 s into the mission, with the
+  mech already falling at 22 m/s. The port held the mission until the drop screen was gone and faded in from the
+  start of the fall, so you watched all 5 seconds of it instead of DOS's 3.5. The mission now runs under the drop
+  screen's fade-out and the fade from black starts 1.55 s in, so the mech lands about 3.5 s after the picture
+  appears, as in the recording.
+- **Alt and Speed show while the mech starts up.** In DOS the altitude and speed readouts (with the throttle bar)
+  come up with the first faded-in frame and read out the fall; the rest of the HUD stays dark until start-up ends.
+  The port had kept them dark until then.
+
+## v1.2.11: a crashed mission says so — 2026-11-16
+
+- **When a mission stops with an error, the notice says why.** Windows reports a crash as a large negative exit
+  status (-1073741819 is 0xC0000005, an access violation). The campaign and Instant Action notices now name the crash,
+  show the code, and give the last message the mission wrote to `MERCS-MISSION.LOG` in the installation folder.
+  Before, the campaign notice gave only the raw number (GitHub report: on one Windows 11 machine with an AMD
+  Radeon RX 9070 XT every mission stops this way; not reproduced here, including under Wine with Direct3D 12 and
+  Vulkan. Workaround to try: Combat Variables -> GPU -> Vulkan.)
+
 ## v1.2.10: the mission fades in from black again at high frame rates — 2026-11-16
 
 - **Missions fade in from black again on fast machines.** The DOS look's opening fade took one step a frame, with

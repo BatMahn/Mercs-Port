@@ -2952,6 +2952,7 @@ static rb_tex g_drop_tex, g_drop_texs[5];   /* the picture; with each LAUNCH6 fr
 static int    g_drop_dos;                  /* the DOS edition: the overlay where the DOS capture has it */
 static Uint64 g_drop_t0;
 static float  g_drop_level = 1.0f;         /* the drop screen's brightness (its fade-out) */
+static int    g_drop_over;                 /* the mission runs under the drop screen (its fade-out, see the main loop) */
 static int drop_shp(const char *disc, const char *name, shp_frame *fr, uint8_t pal[256][3])
 {
     char path[1200];
@@ -3059,7 +3060,7 @@ static void drop_screen_build(prj_archive *ma, const char *mission)
     free(rgba);
 }
 /* draw the drop screen into the window (4:3, centred) through a framebuffer blit */
-static void drop_screen_draw(SDL_Window *win)
+static void drop_screen_quad(SDL_Window *win, int begin)
 {
     int w, h, vw, vh;
     rb_tex tex = g_drop_tex;
@@ -3085,7 +3086,7 @@ static void drop_screen_draw(SDL_Window *win)
             int k;
             for (k = 0; k < 6; k++) memcpy(q + k * 4, qv[TRI[k]], sizeof qv[0]);
         }
-        rb_frame(w, h);
+        if (begin) rb_frame(w, h);
         rb_target(0);
         rb_viewport(0, 0, w, h);
         rb_scissor(0, 0, 0, 0, 0);
@@ -3100,8 +3101,8 @@ static void drop_screen_draw(SDL_Window *win)
         rb_uniforms(0, &u, sizeof u);
         rb_draw(0, 6);
     }
-    rb_present();
 }
+static void drop_screen_draw(SDL_Window *win) { if (g_drop_tex) { drop_screen_quad(win, 1); rb_present(); } }
 /* the target viewer's range (DOS 0x30173, 3Dfx 0x10021150): whole metres (cm / 100, truncated) "%3ldm" up to 1000, then
  * "%2.2fk" km. The 3Dfx edition: (float)m x 0.001f (0x102475d0) through the C library's %f. The DOS edition: m x 0.001
  * (double 0x90ba3, x87 product stored as a double) through Watcom's %f, which rounds the value's 17 significant
@@ -5932,15 +5933,27 @@ int main(int argc, char **argv)
             Uint64 el = SDL_GetTicks() - g_drop_t0;
             static int music_on;
             if (el >= 2000 && !music_on) { music_on = 1; if (g_world && g_sim_ok) music_start(g_sim.music_track); }
+            /* The mission clock starts a quarter second before the drop screen fades out and runs under it: DOSBox (an
+             * Instant Action drop, filmed at 120 fps) - the mech leaves its 100 m start at rest about 0.25 s before the
+             * drop screen's 0.86 s fade begins (its fall read back from the Alt readout: 0.8 g from 100 m), the screen
+             * stays black about 0.4 s more and the mission's own fade from black starts 1.55 s into the mission
+             * (g_fade_*), with the mech already falling at 22 m/s. The port had held the mission until the drop screen
+             * was gone and started the fall with the fade, so the visible drop took 5 s for DOS's 3.5 (GitHub: "moon
+             * gravity"). The 0.25 s lead: one capture, INFERRED */
+            g_drop_over = el >= 2000 - 250;
             if (el < 2000 + 860) {
                 g_drop_level = el <= 2000 ? 1.0f : 1.0f - (float)(el - 2000) / 860.0f;
-                while (SDL_PollEvent(&e)) if (e.type == SDL_EVENT_QUIT) running = 0;
-                drop_screen_draw(win);
-                SDL_Delay(15);
-                continue;
+                if (!g_drop_over) {
+                    while (SDL_PollEvent(&e)) if (e.type == SDL_EVENT_QUIT) running = 0;
+                    drop_screen_draw(win);
+                    SDL_Delay(15);
+                    continue;
+                }
+            } else {
+                g_drop_over = 0;
+                rb_tex_delete(g_drop_tex); g_drop_tex = 0;
+                { int j; for (j = 0; j < 5; j++) rb_tex_delete(g_drop_texs[j]); } memset(g_drop_texs, 0, sizeof g_drop_texs);
             }
-            rb_tex_delete(g_drop_tex); g_drop_tex = 0;
-            { int j; for (j = 0; j < 5; j++) rb_tex_delete(g_drop_texs[j]); } memset(g_drop_texs, 0, sizeof g_drop_texs);
         }
         sfx_log_time = g_sim_ok && g_world ? g_sim.now / 1000.0 : -1;   /* TEST ONLY (MW2_SFX_LOG) */
         vq_drain();   /* the voice queue (0x100313d0) */
@@ -7096,6 +7109,7 @@ int main(int argc, char **argv)
                             if (g_sim.player_unit.y <= g_sim.player_unit.ground) combat_land(&g_sim.player_unit, g_pl_vy3, &g_sim.rng);
                         }
                         g_pl_imp3 = 0;
+                        if (getenv("MERCS_FALL_TRACE")) fprintf(stderr, "fall %d ms y %.0f ground %.0f vy %.3f fade %.2f g %.3f\n", (int)g_sim.now, g_sim.player_unit.y, g_sim.player_unit.ground, g_sim.player_unit.vy, g_fade_level, g_sim.planet.gravity_g);   /* TEST ONLY */
                         if (was_wreck && g_sim.player_unit.landed_vy < -0x56276 / 65536.0f) msim_break_wreck(&g_sim, -1);
                     }
                     if (jet && g_sim.player_unit.jet_fuel > 0) msim_jet_flames_at(&g_sim, &g_pl, (float)g_pl.origin[0], g_sim.player_unit.y, (float)g_pl.origin[2], g_pl.heading);
@@ -8859,9 +8873,11 @@ int main(int argc, char **argv)
             static int frame;
             static int32_t t3;
             float level;
-            frame++;
-            if (frame == 3) t3 = g_sim.now;
-            level = frame <= 3 ? 0.0f : (float)(g_sim.now - t3) * 0.182f / 362.0f;
+            /* DOSBox's Instant Action drop: the fade starts 1.55 s of mission time in (the drop screen's fade-out and
+             * the first, slow frames run on the mission clock - see g_drop_over); not before the third frame */
+            if (!g_drop_over) frame++;
+            if (frame == 3 && !t3) t3 = g_sim.now > 1550 ? g_sim.now : 1550;
+            level = frame <= 3 || g_sim.now < t3 ? 0.0f : (float)(g_sim.now - t3) * 0.182f / 362.0f;
             g_fade_level = level > 1.0f ? 1.0f : level;
             if (level < 1.0f) {
                 int fw, fh;
@@ -8874,6 +8890,7 @@ int main(int argc, char **argv)
                 hud_end(g_hud);
             }
         }
+        if (g_drop_over && g_drop_tex) drop_screen_quad(win, 0);   /* the mission running under the drop screen's fade-out */
         test_frame(w, h);   /* TEST hook (tests/sequences) */
         if (g_auto_on && (g_world || getenv("MERCS_TEST_VIEWER")) && (g_auto_elapsed += g_auto_dt) >= g_auto_secs) {
             test_dump("final");   /* TEST hook */

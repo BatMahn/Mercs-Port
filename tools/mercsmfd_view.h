@@ -26,7 +26,10 @@ static void mercs_mfd_draw_one(int slot, int w, int h)
                      (float)g_actors[tgt].mech.origin[2]-g_pl.origin[2]);
     else tgt=-1;
     g_mfd_active=slot; g_vport=mfd_view_kind(mode);
-            if (mode == MERCS_MFD_ALTITUDE && !hud_dead) {
+            /* Mercs windows 22 / 26 (Alt, Speed and the throttle bar) draw in start-up as well: DOSBox, an Instant Action
+             * drop - "Alt:" and "Speed:" read the fall from the first faded-in frame, seconds before the weapons; the
+             * rest of the HUD dark. (Shut down: kept dark, not seen - INFERRED; the jets gauge with them, not seen) */
+            if (mode == MERCS_MFD_ALTITUDE && (!hud_dead || g_pow == 1)) {
                 const hud_win aw = mercs_instrument(MERCS_HUD_ALTITUDE);
                 const float fh = hud_text_height(g_hud);
                 const float ax = (float)aw.rx * aw.ux, ay = (float)aw.ry * aw.uy;
@@ -170,7 +173,7 @@ static void mercs_mfd_draw_one(int slot, int w, int h)
             }
             HUD_SIDE(side);
 
-            if (mode == MERCS_MFD_SPEED && !hud_dead) {   /* the instruments (dark while shut down) */
+            if (mode == MERCS_MFD_SPEED && (!hud_dead || g_pow == 1)) {   /* (dark while shut down; on in start-up, above) */
             /* Mercs speed/throttle window 22, MERCSW 0x1002e822 /
              * 0x10016801. The frame fractions are independent of the text
              * reference at (0, .25); this gauge sits above the damage viewer. */
