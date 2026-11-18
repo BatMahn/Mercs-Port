@@ -1,5 +1,12 @@
 # Mercenaries development history
 
+## v1.2.16: the drop-in lands on "Weapons on-line", not "All systems nominal" — 2026-11-17
+
+- **The mech now touches down as the start-up ends and "Weapons on-line" sounds**, with the full HUD coming up.
+  v1.2.15 timed the landing to the end of the first start-up voice, which ends on "All systems nominal"; the
+  "Weapons on-line" call is a separate sound, played when the mech comes on line 6 to 8 seconds into the mission (the
+  original's random start-up time). The fall and the fade work as in v1.2.15.
+
 ## v1.2.15: the drop-in lands as "Weapons on-line" ends, heavy mechs land harder — 2026-11-17
 
 - **The mech touches down as the start-up voice finishes "...and Weapons on-line".** In DOS it lands about 1.4 s
