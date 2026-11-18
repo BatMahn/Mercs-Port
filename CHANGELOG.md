@@ -1,5 +1,17 @@
 # Mercenaries development history
 
+## v1.2.17: the drop-in lands on "Weapons on-line", with no damage to the legs — 2026-11-17
+
+- **The mech touches down as the start-up voice finishes saying "Weapons on-line".** The voice is four phrases
+  ("Reactor on-line", "Sensors on-line", "Weapons on-line", "All systems nominal"); the end of the third, 4.7 s into
+  it, is now the landing time. A free fall from the 100 m start takes longer than that, so the mech now drops a
+  little faster from the start (gravity unchanged; it lands at about the same speed as DOS's drop); on a planet where
+  the fall would be quicker it waits at its start height while the screen is still black. If an opening radio call
+  holds the voice back, the timing follows the voice.
+- **No more leg damage from the drop.** v1.2.16 landed the mech after it came on line, and damage only goes live at
+  that moment, so the 100 m fall hurt the legs. The landing is now always at least 0.2 s before the mech comes on
+  line, as in DOS.
+
 ## v1.2.16: the drop-in lands on "Weapons on-line", not "All systems nominal" — 2026-11-17
 
 - **The mech now touches down as the start-up ends and "Weapons on-line" sounds**, with the full HUD coming up.

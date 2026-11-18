@@ -287,7 +287,10 @@ static int g_rcl = -1;   /* the reticle sprite chosen last frame (state dump): -
 static int g_cheat_bubble, g_cheat_autogroup, g_cheat_lead, g_cheat_balloon, g_cheat_again;
 static int32_t g_cheat_again_t0;
 /* the drop-in's touch-down held for the start-up voice (drop_hold) */
-static int     g_drop_state;                 /* 0 not decided, 1 held in the air, 2 falling / not held */
+static int     g_drop_state;                 /* 0 not decided, 1 waiting for the voice / held, 2 timed (falling) */
+static int32_t g_startvoice_at = -1;         /* sim ms the start-up voice (BETSTART) began, -1 not yet */
+static float   g_game_speed = 1.0f;          /* mercsport.cfg speed= (sim seconds per wall second) */
+static int     g_drop_holding;               /* held at the start height this frame */
 static int32_t g_drop_release = -1;          /* sim ms the hold ended */
 static float   g_drop_hold_y;
 static float g_reticle_x,g_reticle_y;
@@ -1760,6 +1763,7 @@ static void start_up_sounds(void)
      * posts message 38 (0x100a5350), combined BETSTART voice 607. */
     if (g_sfx) { float p3[3]; snd_player_pos(p3); snd_at(0x10c, p3, 0, !snd_cockpit()); }
     hud_message_v("Reactor, Sensors, and Weapons on-line", 607);   /* 0x1001ac01: the mech minus the camera */
+    if (!g_sfx || !sfx_voice_audible(g_sfx, 607)) g_startvoice_at = g_sim.now;   /* (no voice: timed from the text) */
     for (a = 0; g_sfx && a < g_actor_count; a++) {
         const world_actor *ac = &g_actors[a];
         int uc = ac->unit_class;
@@ -1850,26 +1854,48 @@ static void cheat_key(SDL_Keycode k)
 /* "inmybeautifulballoon" (Win 0x10019xxx after the controller step, DOS the same): while the flag is set, a unit whose tank
  * reads "no jets" (-2) gets a full tank (0x712), three jets (+0x3f8) and a thrust of 3 x gravity (+0x420 = DAT_100a40a8 x 3).
  * The port keeps a mech built without jets at an empty tank and 0 jets: both count. A lost gyro keeps its no-jump flag */
-/* The drop-in lands as the mech comes on line (port choice, by request): the moment the start-up ends - state 1 -> 2 at
- * player_online_at, 0x43e plus rand(0x16a) ticks (6.0-8.0 s), when MECBSYRX "weapons on-line" sounds and the HUD comes
- * up. DOS lets the mech land at about 5 s from 100 m (0.8 g), during "All systems nominal". A player who starts in the
- * air is held at the start height, the clock running, until the fall from there - at the planet's gravity, unchanged -
- * would end at that moment. The fade from black then starts 1.55 s after the release, as DOS's starts 1.55 s into its
- * fall, so the picture always opens on the mech already falling */
+/* The drop-in touches down as the start-up voice says "Weapons on-line" (port choice, by request). BETSTART, 6.9 s, is
+ * four phrases with silences between (its decoded samples): "Reactor on-line" 0-1.3 s, "Sensors on-line" 1.7-2.9,
+ * "Weapons on-line" 3.2-4.68, "All systems nominal" 5.1-6.4. DOS (and the port before) let the mech fall freely from
+ * its 100 m start, landing during "All systems nominal" at the game's 0.85 speed. Once the voice is heard to start
+ * (it can wait behind an opening radio call) the time left to the end of the third phrase - in mission time at the
+ * game speed, and never later than 0.2 s before the mech comes on line, when damage goes live (DAT_1024c570: no fall
+ * damage before it, as in DOS) - fixes the fall: a mech that would land too late is given the downward speed that
+ * lands it then (gravity unchanged; it reaches about DOS's own landing speed), one that would land too soon waits at
+ * its start height (the screen still black) and drops in time. Before the voice starts it falls as DOS's does */
+#define DROP_PHRASE_END_S 4.68f
 static void drop_hold(void)
 {
     combat_unit *pu = &g_sim.player_unit;
+    float g, h, t, land_at, nat;
+    g_drop_holding = 0;
     if (g_drop_state == 2) return;
     if (g_drop_state == 0) {
         if (getenv("MERCS_NO_STARTUP") || pu->y - pu->ground < 100.0f || pu->vy < -1.0f) { g_drop_state = 2; g_drop_release = -1; return; }
         g_drop_state = 1; g_drop_hold_y = pu->y;
     }
-    {
-        float g = 0.0296f * (g_sim.planet.gravity_g > 0 ? g_sim.planet.gravity_g : 1.0f), h = g_drop_hold_y - pu->ground;
-        float fall_ms = sqrtf(2.0f * (h > 0 ? h : 0) / g) * 1000.0f / 182.0f;
-        if ((float)g_sim.now >= g_sim.player_online_at - fall_ms || g_sim.now >= 15000) { g_drop_state = 2; g_drop_release = g_sim.now; return; }
-        pu->y = g_drop_hold_y; pu->vy = 0; pu->landed_vy = 0;
+    if (g_startvoice_at < 0) { if (g_sim.now > 15000) g_drop_state = 2; return; }
+    g = 0.0296f * (g_sim.planet.gravity_g > 0 ? g_sim.planet.gravity_g : 1.0f);
+    h = pu->y - pu->ground;
+    land_at = (float)g_startvoice_at + DROP_PHRASE_END_S * 1000.0f * (getenv("MERCS_AUTOPILOT") ? 1.0f : g_game_speed);
+    if (land_at > g_sim.player_online_at - 200.0f) land_at = g_sim.player_online_at - 200.0f;
+    t = (land_at - (float)g_sim.now) * 0.182f;   /* ticks left */
+    if (h <= 0) { g_drop_state = 2; return; }
+    /* the natural fall from here: h = v t + g t^2 / 2 with v = -vy */
+    nat = (-(-pu->vy) + sqrtf(pu->vy * pu->vy + 2.0f * g * h)) / g;
+    if (t <= 1.0f || nat > t) {
+        if (t > 1.0f) {   /* too slow: the speed that lands it at land_at */
+            float v = (h - 0.5f * g * t * t) / t;
+            if (v > -pu->vy) pu->vy = -v;
+        }
+        g_drop_state = 2; return;
     }
+    if (pu->vy > -0.01f) {   /* too soon, still at rest: wait, then drop from rest */
+        float rest = sqrtf(2.0f * h / g);
+        if (t > rest + 0.5f) { pu->y = g_drop_hold_y; pu->vy = 0; pu->landed_vy = 0; g_drop_holding = 1; return; }
+        g_drop_release = g_sim.now;
+    }
+    g_drop_state = 2;
 }
 static void cheat_frame(void)
 {
@@ -2643,7 +2669,7 @@ static void vq_drain(void)
     if (g_vq_phase == 1 && g_vq[0].v2 > 0) { sfx_play_voice(g_sfx, g_vq[0].v2, 0.9f); g_vq_phase = 2; return; }   /* the second line (sample user data 3) */
     if (g_vq_phase) vq_pop();
     if (!g_vq_n || (g_radio_waiting && g_vq[0].pri < 0x50)) return;   /* queued radio (0x50) goes first */
-    if (g_vq[0].v1 > 0) { sfx_play_voice(g_sfx, g_vq[0].v1, 0.9f); g_vq_phase = 1; }
+    if (g_vq[0].v1 > 0) { sfx_play_voice(g_sfx, g_vq[0].v1, 0.9f); g_vq_phase = 1; if (g_vq[0].v1 == 607 && g_startvoice_at < 0) g_startvoice_at = g_sim.now; }
     else { sfx_play_voice(g_sfx, g_vq[0].v2, 0.9f); g_vq_phase = 2; }
 }
 /* 0x10031150 for a voiced message: text (the parts joined, "." added) shown only when the voice can't play (0x10031440:
@@ -6556,6 +6582,7 @@ int main(int argc, char **argv)
                     speed = getenv("MERCS_SPEED") ? (float)atof(getenv("MERCS_SPEED")) : pc.speed;
                     if (speed < 0.5f || speed > 1.5f) speed = 1.0f;
                 }
+                g_game_speed = speed;
                 dt *= speed;
             }
             if (g_auto_on && getenv("MERCS_TEST_HITCH")) {   /* TEST ONLY: "every_s,ms[,jitter_ms]" - one long frame of ms every
@@ -9134,7 +9161,7 @@ int main(int argc, char **argv)
             }
             if (t3 && g_drop_gone >= 0 && t3 < g_drop_gone + 440) t3 = g_drop_gone + 440;   /* (frame 3 came under the drop screen) */
             /* and with the drop-in held for the start-up voice (drop_hold): 1.55 s after the fall begins */
-            if (t3 && g_drop_state == 1) t3 = g_sim.now + 1550;
+            if (t3 && g_drop_holding) t3 = g_sim.now + 1550;
             else if (t3 && g_drop_release >= 0 && t3 < g_drop_release + 1550) t3 = g_drop_release + 1550;
             level = frame <= 3 || g_sim.now < t3 ? 0.0f : (float)(g_sim.now - t3) * 0.182f / 362.0f;
             g_fade_level = level > 1.0f ? 1.0f : level;
