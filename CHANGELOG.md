@@ -1,5 +1,16 @@
 # Mercenaries development history
 
+## v1.2.15: the drop-in lands as "Weapons on-line" ends, heavy mechs land harder — 2026-11-17
+
+- **The mech touches down as the start-up voice finishes "...and Weapons on-line".** In DOS it lands about 1.4 s
+  before the line ends. The fall itself is unchanged (the planet's gravity, as DOS); the mech now waits at its start
+  height while the screen is still black, then drops so it lands as the voice ends. The voice's length comes from its
+  own recording, and if it is held back behind a mission's opening radio call, the drop waits for it too. The fade
+  from black still opens 1.55 s into the fall, as in DOS, so the picture never shows the mech hanging in the air.
+- **Heavy mechs land harder.** The landing nod of the view and the dip of the eye now scale with the mech's weight,
+  and a heavy mech takes longer to settle: a 100-ton mech nods about one and a half times as far as a 55-tonner, a
+  20-ton mech about half as far. DOS gives every mech the same landing.
+
 ## v1.2.14: the last six cheat codes do what they did in the original — 2026-11-17
 
 Hold Ctrl, Alt and Shift and type the code, as before. Each was read from the DOS game and the Windows edition:
