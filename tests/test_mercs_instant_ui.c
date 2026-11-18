@@ -45,7 +45,16 @@ int main(int argc,char **argv)
      * path, including the independently unlimited MechLab session. */
     assert(!mercs_campaign_new(s->archive,1,"CAREER PRESERVED","TEST COMPANY",&s->campaign,&s->career,error,sizeof error));
     assert(!mercs_save_encode(s->campaign.document,1,&before,&before_size));
-    set_page(s,PAGE_MENU);{const mercs_ui_hotspot *h=&ui_mainmenu_hotspots[3];mouse(s,(h->x1+h->x2)/2,(h->y1+h->y2)/2);}
+    set_page(s,PAGE_MENU);
+    {   /* a push button: pressed (drawn depressed) while held, acting on the release over it; off it, nothing
+         * (GitHub: DOS shows the depressed frame on the click, never on hover) */
+        const mercs_ui_hotspot *h=&ui_mainmenu_hotspots[3];SDL_Event e;SDL_Rect d;int ww,wh,ow,oh,x=(h->x1+h->x2)/2,y=(h->y1+h->y2)/2;
+        SDL_GetWindowSize(s->window,&ww,&wh);assert(SDL_GetCurrentRenderOutputSize(s->renderer,&ow,&oh));assert(mercs_viewport_fit(ow,oh,&d));
+        SDL_zero(e);e.type=SDL_EVENT_MOUSE_BUTTON_DOWN;e.button.windowID=SDL_GetWindowID(s->window);e.button.button=SDL_BUTTON_LEFT;e.button.clicks=1;
+        e.button.x=(int)lround((d.x+(x+0.5)*(double)d.w/640)*ww/ow);e.button.y=(int)lround((d.y+(y+0.5)*(double)d.h/480)*wh/oh);
+        dispatch_event(s,&e);healthy(s);assert(s->page==PAGE_MENU&&s->press_held&&pressed_now(s,h->index));frame(s,"menu-button-pressed");
+        e.type=SDL_EVENT_MOUSE_BUTTON_UP;dispatch_event(s,&e);healthy(s);assert(!s->press_held);actions++;
+    }
     assert(s->page==PAGE_INSTANT&&s->instant.ready);frame(s,"instant-main");
     mouse(s,100,100);assert(s->instant.selected==1);mouse(s,570,220);assert(s->instant.slots[1].chassis==0);
     mouse(s,100,145);mouse(s,570,220);assert(s->instant.slots[2].chassis==0);frame(s,"instant-friendly-roster");

@@ -2042,6 +2042,13 @@ static void player_messages(void)
 /* per simulated frame: the self-destruct countdown (state 7); the ejection's messages (0x10016280: state 5 on a
  * breathable planet message 0xc "Ejecting", end status 2; automatic ejection on a hostile one message 0x20, status 4)
  * and camera mode 4 for state 5 (0x1001adf0) */
+static void player_self_destruct(void)
+{
+    if (g_sim.player_unit.destroyed || g_sd_at >= 0) return;
+    hud_message_v("Self-destruct sequence initiated", 9);   /* Mercs message4 */
+    if (g_edition == PORTCFG_ED_DOS) { player_eject(0); g_sim.player_unit.down_in_update = 1; }   /* DOS: at once, inside the unit's update (its case 4 at once: msim on_player_down) */
+    else g_sd_at = g_sim.now + 0x16a * 1000 / 182;            /* state 7: 0x16a ticks */
+}
 static void player_upkeep(void)
 {
     static int last_ej, last_out;
@@ -3910,7 +3917,8 @@ static int  g_mm_v[MV_COUNT], g_mm_old[MV_COUNT];   /* the pages' values (slider
 static int  g_mm_eds[PORTCFG_ED_COUNT], g_mm_ned = -1;   /* the renderers the Renderer item offers */
 static int  g_mm_tx_lock = -1;                  /* Textures locked to Original: a DOS mission, or no titanium/ folder */
 static int  g_mm_vol[3] = {-1, -1, -1};         /* music, effects, voice in force (16.16; -1 = not read yet) */
-static int  g_mm_ed_req = -1, g_mm_tx_req = -1, g_mm_world_dirty, g_mm_quit;
+static int  g_mm_ed_req = -1, g_mm_tx_req = -1, g_mm_world_dirty, g_mm_quit, g_mm_flee;   /* g_mm_flee: leaving once the self-destruct ends the mission */
+static void player_self_destruct(void);
 static int  g_mm_save_failed;
 static int mm_native_graphics(int pg) { return pg == MP_MERCS_GRAPHICS || pg == MP_MERCS_GRAPHICS_DOS; }
 static int mm_graphics(int pg) { return pg == MP_GRAPHICS || pg == MP_GRAPHICS_DOS || mm_native_graphics(pg); }
@@ -4140,6 +4148,13 @@ static void mm_activate(int k)
     } else if (it->type == MI_ACCEPT) { if (!mm_commit_page(pg)) mm_pop(); }
     else if (it->type == MI_CONFIRM) {
         mm_close_all();
+        if (it->arg && g_sim_ok && g_world && !g_sim.over && !g_sim.ending && !g_sim.player_unit.destroyed) {
+            /* Flee in a mission (DOS 0x61c5b -> 0x265f0, GitHub report): the self-destruct sequence, as the key's; the
+             * game leaves once the mission has ended (its death sequence and exit fade) */
+            g_mm_flee = 1;
+            player_self_destruct();
+            return;
+        }
         if (it->arg) g_mm_quit = 1;                                          /* Flee: leave the game */
         if (g_sim_ok && g_world && !g_sim.over) msim_end_now(&g_sim);         /* Abort: as EXIT_SIM (action 0x3b) */
     }
@@ -6440,11 +6455,7 @@ int main(int argc, char **argv)
                 }
                 else if (g_world && g_sim_ok && A("SELF_DESTRUCT")) {   /* 0x57: input +0x43, taken by 0x1001a180 in state 2 */
                     const combat_unit *pu2 = &g_sim.player_unit;
-                    if (!pu2->destroyed && !pu2->shutdown && g_sd_at < 0 && !(g_sim.now < g_sim.player_online_at && !getenv("MERCS_NO_STARTUP"))) {
-                        hud_message_v("Self-destruct sequence initiated", 9);   /* Mercs message4 */
-                        if (g_edition == PORTCFG_ED_DOS) { player_eject(0); g_sim.player_unit.down_in_update = 1; }   /* DOS: at once, inside the unit's update (its case 4 at once: msim on_player_down) */
-                        else g_sd_at = g_sim.now + 0x16a * 1000 / 182;            /* state 7: 0x16a ticks */
-                    }
+                    if (!pu2->shutdown && !(g_sim.now < g_sim.player_online_at && !getenv("MERCS_NO_STARTUP"))) player_self_destruct();
                 }
                 else if (g_world && g_sim_ok && A("EJECT")) player_eject(1);   /* 0x3b: 0x100174f0(c, 1) */
                 else if (g_world && g_sim_ok && A("TOGGLE_AUTOEJECT")) {   /* 0x3c: only with the mech up (+0x15 & 0x20) */
@@ -7982,6 +7993,7 @@ int main(int argc, char **argv)
             test_dump("over");   /* TEST hook */
             write_results();
             running = 0;
+            if (g_mm_flee) exit_code = 42;   /* Flee, after its self-destruct: the shell leaves too */
         }
         if (g_world && g_sim_ok && getenv("MERCS_DEBUG_KILL") && g_sim.now >= 1000) {   /* test: destroy actor n at 1 s */
             int q = atoi(getenv("MERCS_DEBUG_KILL"));
@@ -8386,10 +8398,7 @@ int main(int argc, char **argv)
         if (g_hud && g_world && g_sim_ok) {   /* the red palette flash (red_flash): the world, then the HUD's colours */
             int ex_red;
             float ek = exit_fade_level(&ex_red);
-            if (g_exit_fade_t0 >= 0) {   /* DOS, leaving: the picture toward black / red (exit_fade_level), the bar not */
-                const float mul[3] = {1.0f - ek, 1.0f - ek, 1.0f - ek}, add[3] = {ex_red ? ek : 0.0f, 0, 0};
-                HUD_BEGIN(g_hud, w, h); hud_tint(g_hud, w, h, mul, add); hud_end(g_hud);
-            }
+            (void)ek; (void)ex_red;   /* (the exit fade: after the HUD, below) */
             /* Indexed DOS world and HUD already use the submitted palette,
              * including the unchanged gray-ramp entries. No uniform overlay. */
             hud_set_flash(g_hud, 1.0f, 0.0f, 0.0f, 0.0f);
@@ -9125,6 +9134,22 @@ int main(int argc, char **argv)
                     { float fk = hud_flash_level(g_hud); hud_set_flash(g_hud, 1, 0, 0, 0); msg_bar(k, w, h); hud_set_flash(g_hud, 1, 0, 0, fk); }   /* the bar: the palette's grey ramp (0xf0-0xff), which the red flash leaves alone */
                     msg_text(k, w, h, green2);
                 }
+            }
+            hud_end(g_hud);
+        }
+        if (g_hud && g_world && g_sim_ok && g_exit_fade_t0 >= 0) {
+            /* DOS, leaving (exit_fade_level): the whole 3D window toward black / red - the HUD is drawn into that buffer
+             * (0xa46bc) and fades with the picture; the message bars, outside it, stay until the screen goes black. The
+             * port had faded the world alone and left the HUD lit (GitHub report) */
+            int ex_red, k;
+            float ek = exit_fade_level(&ex_red);
+            const float mul[3] = {1.0f - ek, 1.0f - ek, 1.0f - ek}, add[3] = {ex_red ? ek : 0.0f, 0, 0};
+            HUD_BEGIN(g_hud, w, h);
+            hud_tint(g_hud, w, h, mul, add);
+            for (k = 0; k < 2 && ek < 1.0f; k++) {
+                if (g_msg_line[k].until <= g_sim.now) continue;
+                hud_set_flash(g_hud, 1, 0, 0, 0); msg_bar(k, w, h);
+                msg_text(k, w, h, HP(0xe));
             }
             hud_end(g_hud);
         }

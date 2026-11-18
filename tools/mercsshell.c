@@ -111,6 +111,7 @@ typedef struct {
     int scroll, brief_tab, select_all, training_choice;
     float wheel_remainder;
     int accepted, previous_page, mouse_x, mouse_y, transition, transition_x, transition_y;
+    int press_held, press_page, press_spot;   /* a push button held down (press_button): its page and button */
     int transition_restart, portrait_restart, brief_video, letter_heard, regular_unassigned;
     const char *transition_clip;
     mercs_art *art;
@@ -2181,6 +2182,7 @@ static int clicked(const mercs_ui_hotspot *h, int n, int x, int y)
     return -1;
 }
 
+static int pressed_now(shell *s, int b);
 static void sprite(shell *s, const mercs_ui_sprite *v)
 { mercs_art_clip_flags(s->art, v->name, v->x, v->y, v->flags, 0); }
 
@@ -2251,12 +2253,12 @@ static void draw_original(shell *s)
             "Join Battle right away", "Game settings and options"};
         mercs_art_background(s->art, ui_mainmenu_background);
         for (i = 0; i < 5; i++) {
-            art_button(s, &ui_mainmenu_sprites[i], &ui_mainmenu_hotspots[i]);
+            mercs_art_button(s->art, ui_mainmenu_sprites[i].name, ui_mainmenu_sprites[i].x, ui_mainmenu_sprites[i].y, pressed_now(s, ui_mainmenu_hotspots[i].index));
             if ((!s->options.snd_size || mercs_options_get(&s->options, MO_SUBTITLES)) &&
                 spot(s, &ui_mainmenu_hotspots[i])) mercs_art_text(s->art, 5, 29, 442, hints[i], 17);
         }
     } else if (s->page == PAGE_INSTANT || s->page == PAGE_INSTANT_PARAMS) {
-        mercs_instant_view_draw(s->art,&s->instant,s->page==PAGE_INSTANT_PARAMS,s->mouse_x,s->mouse_y);
+        mercs_instant_view_draw(s->art,&s->instant,s->page==PAGE_INSTANT_PARAMS,s->press_held&&pressed_now(s,s->press_spot)?s->press_spot:-1);
     } else if (s->page == PAGE_REGISTER) {
         mercs_art_background(s->art, ui_registration_background);
         art_button(s, &ui_registration_sprites[0], &ui_registration_hotspots[0]);
@@ -2511,6 +2513,22 @@ static void open_briefing(shell *s)
     if (s->accepted < 0 || s->accepted >= s->career.mission_count) return;
     s->selected = s->accepted; s->brief_tab = 0; set_page(s, PAGE_BRIEFING);
 }
+
+/* The main menu's and Instant Action's push buttons (GitHub: DOS shows a button depressed while the mouse button holds
+ * it, never on hover): the button under (x, y), -1 none. Pressed, a button shows its second frame while held over it
+ * and acts when released over it; moved off, it pops up and does nothing. (The Instant Action parameters' skill and
+ * mission-type buttons are toggles and keep acting at once.) */
+static int press_button(shell *s, int x, int y)
+{
+    int b;
+    if (s->transition >= 0) return -1;
+    if (s->page == PAGE_MENU) return clicked(ui_mainmenu_hotspots, 5, x, y);
+    if (s->page == PAGE_INSTANT) { b = mercs_instant_view_hit(0, x, y); return b >= 0 && b < 8 ? b : -1; }
+    if (s->page == PAGE_INSTANT_PARAMS) return mercs_instant_view_hit(1, x, y) == 0 ? 0 : -1;
+    return -1;
+}
+static int pressed_now(shell *s, int b)
+{ return s->press_held && s->press_spot == b && s->press_page == s->page && s->mouse_x >= 0 && press_button(s, s->mouse_x, s->mouse_y) == b; }
 
 static void click(shell *s, int x, int y, int clicks)
 {
@@ -3054,8 +3072,16 @@ static void dispatch_event(shell *s, const SDL_Event *event)
     }
     else if (event->type == SDL_EVENT_TEXT_INPUT) text_input(s, event->text.text);
     else if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN && event->button.button == SDL_BUTTON_LEFT &&
-             s->mouse_x >= 0 && s->mouse_y >= 0)
-        click(s, s->mouse_x, s->mouse_y, event->button.clicks);
+             s->mouse_x >= 0 && s->mouse_y >= 0) {
+        int b = press_button(s, s->mouse_x, s->mouse_y);
+        if (b >= 0) { s->press_held = 1; s->press_page = s->page; s->press_spot = b; }   /* drawn pressed; acts on the release */
+        else click(s, s->mouse_x, s->mouse_y, event->button.clicks);
+    }
+    else if (event->type == SDL_EVENT_MOUSE_BUTTON_UP && event->button.button == SDL_BUTTON_LEFT && s->press_held) {
+        int b = s->press_page == s->page && s->mouse_x >= 0 ? press_button(s, s->mouse_x, s->mouse_y) : -1, was = s->press_spot;
+        s->press_held = 0;
+        if (b == was) click(s, s->mouse_x, s->mouse_y, 1);   /* released over the same button: its action */
+    }
     else if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN && event->button.button == SDL_BUTTON_RIGHT)
         open_game_menu(s);
     else if (event->type == SDL_EVENT_MOUSE_WHEEL && (s->page == PAGE_BRIEFING || s->page == PAGE_NEWS ||

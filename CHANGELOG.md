@@ -1,5 +1,17 @@
 # Mercenaries development history
 
+## v1.2.18: buttons press like DOS, Flee self-destructs, the HUD fades out with the mission — 2026-11-18
+
+- **The main menu's and Instant Action's buttons press like DOS's.** A button shows its depressed frame while you
+  hold the mouse button on it and acts when you let go over it; slide off before letting go and nothing happens. The
+  main menu's buttons had never shown pressed, and Instant Action's had shown pressed whenever the pointer was over
+  them (GitHub report). The Instant Action parameters' skill and mission-type buttons stay toggles.
+- **Flee to Windows / Linux / macOS from the mission's Esc menu now sets off the self-destruct sequence, as in DOS**,
+  and the game leaves once the mission has ended. Before, the game closed at once (GitHub report).
+- **Leaving a mission, the HUD fades to black with the picture.** In DOS the HUD is drawn into the 3D view and
+  fades with it; only the message bar stays until the screen is black. The port had faded the view alone and left
+  the HUD lit to the end (GitHub report).
+
 ## v1.2.17: the drop-in lands on "Weapons on-line", with no damage to the legs — 2026-11-17
 
 - **The mech touches down as the start-up voice finishes saying "Weapons on-line".** The voice is four phrases
