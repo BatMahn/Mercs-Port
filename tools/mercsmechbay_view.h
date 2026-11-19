@@ -45,8 +45,9 @@ static inline void mercs_mechops_draw(mercs_art *a,const mercs_save_state *s,int
     int i,hit=mercs_mechops_hit(x,y);
     mercs_art_background(a,17);mev_funds(a,s);
     mercs_art_clip_flags(a,"mbay",352,113,0x28,restart);
-    for(i=0;i<5;i++)mercs_art_button(a,names[i],19,ys[i],hit==MERCS_MECHOPS_ARMS+i);
-    mercs_art_button(a,"bmexit",525,437,hit==MERCS_MECHOPS_EXIT);
+    for(i=0;i<5;i++)mercs_art_button(a,names[i],19,ys[i],0);
+    mercs_art_button(a,"bmexit",525,437,0);
+    (void)hit;
 }
 
 #endif

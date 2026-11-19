@@ -72,8 +72,9 @@ static inline int mercs_crew_bio_exit(int x,int y)
 static inline void mercs_crew_bio_draw(mercs_art *art,const mercs_text_layout *body,
                                        int scroll,int visible_rows,int x,int y)
 {
+    (void)x;(void)y;   /* (the exit's pressed look: mercs_art_button) */
     mercs_art_background(art,32);
     mercs_text_draw_rows(body,art,47,65,286,scroll,22,visible_rows);
-    mercs_art_button(art,"ocbce",510,440,mercs_crew_bio_exit(x,y));
+    mercs_art_button(art,"ocbce",510,440,0);
 }
 #endif

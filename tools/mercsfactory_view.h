@@ -84,14 +84,15 @@ static inline void mfv_detail_rows(const uint8_t *m,char rows[21][320],int *coun
 static inline void mercs_factory_view_draw(mercs_factory_view *v,mercs_art *a,const mercs_save_state *s,int x,int y)
 {
     int side,h=mercs_art_height(a,10),selected=v->side>=0;size_t i;
+    (void)x;(void)y;   /* (the buttons' pressed look: mercs_art_button) */
     const uint8_t *m=selected?mercs_save_list_record(s,mfv_list(v->side),v->selected):NULL;
     mercs_art_background(a,16);
-    mercs_art_button(a,"mfbs",495,386,mev_inside(x,y,488,381,583,417));
-    mercs_art_button(a,"mfbb",292,386,mev_inside(x,y,284,381,380,415));
-    mercs_art_button(a,"mfbe",510,440,mev_inside(x,y,498,432,601,473));
-    mercs_art_button(a,"mfbp",47,428,mev_inside(x,y,34,422,129,462));
-    mercs_art_button(a,"mfbn",136,430,mev_inside(x,y,130,422,225,462));
-    mercs_art_button(a,v->details?"mfbc":"mfbd",v->details?49:50,v->details?133:135,mev_inside(x,y,45,148,209,185));
+    mercs_art_button(a,"mfbs",495,386,0);
+    mercs_art_button(a,"mfbb",292,386,0);
+    mercs_art_button(a,"mfbe",510,440,0);
+    mercs_art_button(a,"mfbp",47,428,0);
+    mercs_art_button(a,"mfbn",136,430,0);
+    mercs_art_button(a,v->details?"mfbc":"mfbd",v->details?49:50,v->details?133:135,0);
     if(mev_u32(mercs_save_header(s)+0x23bb)==1){
         int32_t funds=mev_i32(mercs_save_header(s)+0x12a),price;
         mfv_money(a,10,"Funds:",funds);

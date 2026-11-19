@@ -45,6 +45,9 @@ struct mercs_art {
     unsigned page;
     sfx *audio;
     char extra_dir[2048];   /* a second folder for named clips (Titanium's shell art), searched after the game's */
+    /* push buttons (mercs_art_button): the ones drawn this frame, and the one the mouse button holds down */
+    struct { int x0, y0, x1, y1; } buttons[64];
+    int button_count, press_held, press_x, press_y, mouse_x, mouse_y;
 };
 struct mercs_art_snapshot {
     Uint32 frame[ART_W * ART_H];
@@ -374,13 +377,45 @@ int mercs_art_clip_flags(mercs_art *a, const char *name, int x, int y,
 int mercs_art_clip(mercs_art *a, const char *name, int x, int y, int restart)
 { return mercs_art_clip_flags(a, name, x, y, 8u, restart); }
 
+/* Every push button in the shell is drawn here, so the pressed look lives here too (GitHub: buttons that never showed
+ * pressed, or showed pressed on hover): a button shows its second frame while the mouse button that went down on it
+ * is still held over it - whatever its own state asks for - and its bounds go on the frame's list, which the shell
+ * uses to act on the release over the same button (mercs_art_button_at) */
+static void shape_bounds(const shp_frame *f, int x, int y, int *x0, int *y0, int *x1, int *y1)
+{
+    if (!f->pix) return;
+    if (x + f->left < *x0) *x0 = x + f->left;
+    if (y + f->top < *y0) *y0 = y + f->top;
+    if (x + f->left + f->w - 1 > *x1) *x1 = x + f->left + f->w - 1;
+    if (y + f->top + f->h - 1 > *y1) *y1 = y + f->top + f->h - 1;
+}
 int mercs_art_button(mercs_art *a, const char *name, int x, int y, int active)
 {
     art_clip *clip = a && name ? open_clip(a, name) : NULL;
+    int x0 = 1 << 20, y0 = 1 << 20, x1 = -(1 << 20), y1 = -(1 << 20), pressed = 0;
     if (!clip || !clip->have_shape) return -1;
-    blit_shape(a, active && clip->have_active_shape ? &clip->active_shape : &clip->shape, x, y);
+    shape_bounds(&clip->shape, x, y, &x0, &y0, &x1, &y1);
+    if (clip->have_active_shape) shape_bounds(&clip->active_shape, x, y, &x0, &y0, &x1, &y1);
+    if (x0 <= x1 && a->button_count < (int)(sizeof a->buttons / sizeof a->buttons[0])) {
+        a->buttons[a->button_count].x0 = x0; a->buttons[a->button_count].y0 = y0;
+        a->buttons[a->button_count].x1 = x1; a->buttons[a->button_count].y1 = y1; a->button_count++;
+        pressed = a->press_held && a->press_x >= x0 && a->press_x <= x1 && a->press_y >= y0 && a->press_y <= y1 &&
+                  a->mouse_x >= x0 && a->mouse_x <= x1 && a->mouse_y >= y0 && a->mouse_y <= y1;
+    }
+    blit_shape(a, (active || pressed) && clip->have_active_shape ? &clip->active_shape : &clip->shape, x, y);
     return 0;
 }
+void mercs_art_buttons_begin(mercs_art *a) { if (a) a->button_count = 0; }
+int mercs_art_button_at(const mercs_art *a, int x, int y)
+{
+    int i;
+    if (!a) return -1;
+    for (i = a->button_count - 1; i >= 0; i--)   /* (the last drawn is on top) */
+        if (x >= a->buttons[i].x0 && x <= a->buttons[i].x1 && y >= a->buttons[i].y0 && y <= a->buttons[i].y1) return i;
+    return -1;
+}
+void mercs_art_press(mercs_art *a, int held, int press_x, int press_y, int mouse_x, int mouse_y)
+{ if (a) { a->press_held = held; a->press_x = press_x; a->press_y = press_y; a->mouse_x = mouse_x; a->mouse_y = mouse_y; } }
 
 int mercs_art_named_shape(mercs_art *a, const char *name, int frame, int x, int y)
 {

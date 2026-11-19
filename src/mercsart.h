@@ -48,6 +48,11 @@ int mercs_art_clip(mercs_art *art, const char *name, int x, int y, int restart);
 int mercs_art_clip_flags(mercs_art *art, const char *name, int x, int y,
                          unsigned flags, int restart);
 int mercs_art_button(mercs_art *art, const char *name, int x, int y, int active);
+/* push buttons: the list of those drawn starts each frame; the one under (x, y) (-1 none); the held mouse button's
+ * press point and the pointer (drawn pressed while both are over the same button) */
+void mercs_art_buttons_begin(mercs_art *art);
+int  mercs_art_button_at(const mercs_art *art, int x, int y);
+void mercs_art_press(mercs_art *art, int held, int press_x, int press_y, int mouse_x, int mouse_y);
 /* Named shell SHP, explicit authored frame. Repair body pieces use states
  * 0..2, their selected states3..5, and selected destroyed state6. */
 int mercs_art_named_shape(mercs_art *art, const char *name, int frame, int x, int y);

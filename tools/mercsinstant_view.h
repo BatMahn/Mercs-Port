@@ -22,15 +22,14 @@ static inline int mercs_instant_view_hit(int parameters,int x,int y)
 }
 static inline int mercs_instant_view_row(int x,int y)
 {int i;for(i=0;i<6;i++)if(x>=32&&x<232&&y>=mia_rows[i]&&y<mia_rows[i]+21)return i;return -1;}
-/* pressed: the push button held down (shell press_button), -1 none - drawn with its second frame */
-static inline void mercs_instant_view_draw(mercs_art *a,mercs_instant *s,int parameters,int pressed)
+static inline void mercs_instant_view_draw(mercs_art *a,mercs_instant *s,int parameters)
 {
     int i;
     if(parameters){
         static const char *const names[]={"laaeasy","laamed","laahard","laadest","laadefd","laarecn"};
         static const int bx[]={183,247,311,183,272,361};
         mercs_art_background(a,21);
-        mercs_art_button(a,"iabexit",510,440,pressed==0);
+        mercs_art_button(a,"iabexit",510,440,0);
         for(i=0;i<6;i++)mercs_art_button(a,names[i],bx[i],i<3?62:98,
             i<3?s->parameters.skill==i+1:s->parameters.kind==i-2);
         mercs_art_text(a,6,205,134,s->parameters.planet,22);
@@ -41,7 +40,7 @@ static inline void mercs_instant_view_draw(mercs_art *a,mercs_instant *s,int par
             {"iaaprev",437,297,0},{"iaanext",528,300,1},{"iaaprev",437,208,2},{"iaanext",528,212,3},
             {"iaaexit",510,440,4},{"iaamisp",157,440,7},{"iaalnch",428,393,5},{"iaamlab",25,440,6}};
         mercs_art_background(a,20);
-        for(i=0;i<8;i++)mercs_art_button(a,buttons[i].name,buttons[i].x,buttons[i].y,pressed==buttons[i].spot);
+        for(i=0;i<8;i++)mercs_art_button(a,buttons[i].name,buttons[i].x,buttons[i].y,0);
         for(i=0;i<6;i++){
             const mercs_instant_slot *p=&s->slots[i];char label[160];
             if(p->chassis<0)snprintf(label,sizeof label,"Point %d: %s",i,p->chassis==-1?"NO MECH ASSIGNED":"RANDOM MECH");

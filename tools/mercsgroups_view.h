@@ -25,10 +25,10 @@ static inline void mercs_groups_view_draw(mercs_groups_view *v,mercs_art *a,cons
     const uint8_t *m=mercs_save_list_record(s,MERCS_SAVE_OWNED_MECHS,v->selected);
     int i,yy,h=mercs_art_height(a,10);char name[257];const char *title;
     mercs_art_background(a,41);
-    mercs_art_button(a,"bwexit",510,440,mev_inside(x,y,500,430,602,474));
-    mercs_art_button(a,"bwdefl",390,440,mev_inside(x,y,380,430,483,474));
-    mercs_art_button(a,"bwprev",71,355,mev_inside(x,y,60,347,152,395));
-    mercs_art_button(a,"bwnext",159,356,mev_inside(x,y,153,347,247,395));
+    mercs_art_button(a,"bwexit",510,440,0);
+    mercs_art_button(a,"bwdefl",390,440,0);
+    mercs_art_button(a,"bwprev",71,355,0);
+    mercs_art_button(a,"bwnext",159,356,0);
     if(!m)return;
     title=miv_mech_name(m,name);
     if(mercs_art_width(a,5,title)>186){const char *space=strchr(title,' ');if(space&&space[1])title=space+1;}

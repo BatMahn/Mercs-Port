@@ -52,7 +52,8 @@ int main(int argc,char **argv)
         SDL_GetWindowSize(s->window,&ww,&wh);assert(SDL_GetCurrentRenderOutputSize(s->renderer,&ow,&oh));assert(mercs_viewport_fit(ow,oh,&d));
         SDL_zero(e);e.type=SDL_EVENT_MOUSE_BUTTON_DOWN;e.button.windowID=SDL_GetWindowID(s->window);e.button.button=SDL_BUTTON_LEFT;e.button.clicks=1;
         e.button.x=(int)lround((d.x+(x+0.5)*(double)d.w/640)*ww/ow);e.button.y=(int)lround((d.y+(y+0.5)*(double)d.h/480)*wh/oh);
-        dispatch_event(s,&e);healthy(s);assert(s->page==PAGE_MENU&&s->press_held&&pressed_now(s,h->index));frame(s,"menu-button-pressed");
+        draw(s);   /* (the buttons a frame draws are the ones that press) */
+        dispatch_event(s,&e);healthy(s);assert(s->page==PAGE_MENU&&s->press_held&&mercs_art_button_at(s->art,x,y)>=0);frame(s,"menu-button-pressed");
         e.type=SDL_EVENT_MOUSE_BUTTON_UP;dispatch_event(s,&e);healthy(s);assert(!s->press_held);actions++;
     }
     assert(s->page==PAGE_INSTANT&&s->instant.ready);frame(s,"instant-main");

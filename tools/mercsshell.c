@@ -111,7 +111,8 @@ typedef struct {
     int scroll, brief_tab, select_all, training_choice;
     float wheel_remainder;
     int accepted, previous_page, mouse_x, mouse_y, transition, transition_x, transition_y;
-    int press_held, press_page, press_spot;   /* a push button held down (press_button): its page and button */
+    int press_held, press_page, press_x, press_y;
+    int quiet_page;   /* set_page without the room's sound (the Mech Lab's own mech switch) */   /* a push button held down (mercs_art_button): its page, where */
     int transition_restart, portrait_restart, brief_video, letter_heard, regular_unassigned;
     const char *transition_clip;
     mercs_art *art;
@@ -345,15 +346,16 @@ static void set_page(shell *s, int page)
     if (s->save_editing) finish_save_description(s, 0);
     if (s->mechlab_editing) finish_mechlab_name(s, 0);
     if (s->page == PAGE_MENU && page == PAGE_HALL) center_pointer(s);
-    s->previous_page = s->page; s->page = page;
+    s->previous_page = s->page; s->page = page; s->press_held = 0;
     s->status[0] = 0; s->select_all = 0; s->scroll = 0; s->wheel_remainder = 0;
     s->transition = -1; s->transition_clip = NULL; s->portrait_restart = 0;
     s->completed_transition = 0;
     s->brief_video = 0;
     s->room_restart = 1;
     mercs_art_begin_page(s->art);
-    mercs_shell_audio_enter(s->shell_audio, (mercs_shell_audio_page)page,
-                           s->career.registered, (mercs_shell_audio_page)s->previous_page);
+    if (!s->quiet_page)
+        mercs_shell_audio_enter(s->shell_audio, (mercs_shell_audio_page)page,
+                               s->career.registered, (mercs_shell_audio_page)s->previous_page);
     if (page == PAGE_REGISTER) SDL_StartTextInput(s->window); else SDL_StopTextInput(s->window);
     if (page == PAGE_COMMAND) command_auto_assign(s);
     prepare_lines(s);
@@ -2151,9 +2153,15 @@ static void mechlab_action(shell *s, int action, int value, int clicks)
         if (s->mechlab_instant || s->career.owned_count <= 1) return;
         if (!play_cue(s, MSA_CUE_MECHLAB_SELECT)) return;
         index = (index + s->career.owned_count + (action == MERCS_MECHLAB_VIEW_NEXT ? 1 : -1)) % s->career.owned_count;
-        close_mechlab(s, !mercs_mechlab_dirty(s->mechlab) ||
-                         game_question(s, "Accept customizations?", 0), destination);
-        if (!s->mechlab) (void)start_mechlab(s, index);
+        /* the next mech in the same Mech Lab: the lab closes and reopens on it without leaving the room, so the
+         * room's sound is not started again (GitHub: each arrow click restarted the Mech Lab's audio) */
+        {
+            int accept = !mercs_mechlab_dirty(s->mechlab) || game_question(s, "Accept customizations?", 0);
+            s->quiet_page = 1;
+            close_mechlab(s, accept, destination);
+            if (!s->mechlab) (void)start_mechlab(s, index);
+            s->quiet_page = 0;
+        }
         return;
     }
     if (action == MERCS_MECHLAB_VIEW_RENAME) {
@@ -2182,7 +2190,6 @@ static int clicked(const mercs_ui_hotspot *h, int n, int x, int y)
     return -1;
 }
 
-static int pressed_now(shell *s, int b);
 static void sprite(shell *s, const mercs_ui_sprite *v)
 { mercs_art_clip_flags(s->art, v->name, v->x, v->y, v->flags, 0); }
 
@@ -2253,12 +2260,12 @@ static void draw_original(shell *s)
             "Join Battle right away", "Game settings and options"};
         mercs_art_background(s->art, ui_mainmenu_background);
         for (i = 0; i < 5; i++) {
-            mercs_art_button(s->art, ui_mainmenu_sprites[i].name, ui_mainmenu_sprites[i].x, ui_mainmenu_sprites[i].y, pressed_now(s, ui_mainmenu_hotspots[i].index));
+            art_button(s, &ui_mainmenu_sprites[i], &ui_mainmenu_hotspots[i]);
             if ((!s->options.snd_size || mercs_options_get(&s->options, MO_SUBTITLES)) &&
                 spot(s, &ui_mainmenu_hotspots[i])) mercs_art_text(s->art, 5, 29, 442, hints[i], 17);
         }
     } else if (s->page == PAGE_INSTANT || s->page == PAGE_INSTANT_PARAMS) {
-        mercs_instant_view_draw(s->art,&s->instant,s->page==PAGE_INSTANT_PARAMS,s->press_held&&pressed_now(s,s->press_spot)?s->press_spot:-1);
+        mercs_instant_view_draw(s->art,&s->instant,s->page==PAGE_INSTANT_PARAMS);
     } else if (s->page == PAGE_REGISTER) {
         mercs_art_background(s->art, ui_registration_background);
         art_button(s, &ui_registration_sprites[0], &ui_registration_hotspots[0]);
@@ -2451,7 +2458,12 @@ static void draw(shell *s)
             char clipped[110]; snprintf(clipped, sizeof clipped, "%.105s", s->status);
             centered(s, 320, 418, 9, 0xf0b9a6, clipped);
         }
-    } else { SDL_HideCursor(); draw_original(s); }
+    } else {
+        SDL_HideCursor();
+        mercs_art_buttons_begin(s->art);
+        mercs_art_press(s->art, s->press_held && s->press_page == s->page, s->press_x, s->press_y, s->mouse_x, s->mouse_y);
+        draw_original(s);
+    }
     if (mercs_viewport_end(&s->viewport)) {
         fprintf(stderr, "mercs shell: presentation failed: %s\n", SDL_GetError());
         s->running = 0; return;
@@ -2513,22 +2525,6 @@ static void open_briefing(shell *s)
     if (s->accepted < 0 || s->accepted >= s->career.mission_count) return;
     s->selected = s->accepted; s->brief_tab = 0; set_page(s, PAGE_BRIEFING);
 }
-
-/* The main menu's and Instant Action's push buttons (GitHub: DOS shows a button depressed while the mouse button holds
- * it, never on hover): the button under (x, y), -1 none. Pressed, a button shows its second frame while held over it
- * and acts when released over it; moved off, it pops up and does nothing. (The Instant Action parameters' skill and
- * mission-type buttons are toggles and keep acting at once.) */
-static int press_button(shell *s, int x, int y)
-{
-    int b;
-    if (s->transition >= 0) return -1;
-    if (s->page == PAGE_MENU) return clicked(ui_mainmenu_hotspots, 5, x, y);
-    if (s->page == PAGE_INSTANT) { b = mercs_instant_view_hit(0, x, y); return b >= 0 && b < 8 ? b : -1; }
-    if (s->page == PAGE_INSTANT_PARAMS) return mercs_instant_view_hit(1, x, y) == 0 ? 0 : -1;
-    return -1;
-}
-static int pressed_now(shell *s, int b)
-{ return s->press_held && s->press_spot == b && s->press_page == s->page && s->mouse_x >= 0 && press_button(s, s->mouse_x, s->mouse_y) == b; }
 
 static void click(shell *s, int x, int y, int clicks)
 {
@@ -3073,14 +3069,16 @@ static void dispatch_event(shell *s, const SDL_Event *event)
     else if (event->type == SDL_EVENT_TEXT_INPUT) text_input(s, event->text.text);
     else if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN && event->button.button == SDL_BUTTON_LEFT &&
              s->mouse_x >= 0 && s->mouse_y >= 0) {
-        int b = press_button(s, s->mouse_x, s->mouse_y);
-        if (b >= 0) { s->press_held = 1; s->press_page = s->page; s->press_spot = b; }   /* drawn pressed; acts on the release */
-        else click(s, s->mouse_x, s->mouse_y, event->button.clicks);
+        /* a push button (mercs_art_button, any page): drawn pressed while held, acting on the release over it; slide
+         * off and nothing happens. Anything else acts on the press as before */
+        if (s->transition < 0 && mercs_art_button_at(s->art, s->mouse_x, s->mouse_y) >= 0) {
+            s->press_held = 1; s->press_page = s->page; s->press_x = s->mouse_x; s->press_y = s->mouse_y;
+        } else click(s, s->mouse_x, s->mouse_y, event->button.clicks);
     }
     else if (event->type == SDL_EVENT_MOUSE_BUTTON_UP && event->button.button == SDL_BUTTON_LEFT && s->press_held) {
-        int b = s->press_page == s->page && s->mouse_x >= 0 ? press_button(s, s->mouse_x, s->mouse_y) : -1, was = s->press_spot;
+        int b = s->press_page == s->page && s->mouse_x >= 0 ? mercs_art_button_at(s->art, s->mouse_x, s->mouse_y) : -1;
         s->press_held = 0;
-        if (b == was) click(s, s->mouse_x, s->mouse_y, 1);   /* released over the same button: its action */
+        if (b >= 0 && b == mercs_art_button_at(s->art, s->press_x, s->press_y)) click(s, s->press_x, s->press_y, 1);   /* released over it */
     }
     else if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN && event->button.button == SDL_BUTTON_RIGHT)
         open_game_menu(s);

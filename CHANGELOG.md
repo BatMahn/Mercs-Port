@@ -1,5 +1,18 @@
 # Mercenaries development history
 
+## v1.2.21: every shell button presses like DOS, the Mech Lab's sound stays put, the loading line animates — 2026-11-19
+
+- **Every button in the shell now presses the same way.** Rather than fixing screens one at a time, the pressed look
+  is now part of drawing any button: a button shows its depressed frame while the mouse button that went down on it
+  is held over it, and acts when you let go over it; slide off first and nothing happens. Buttons that had shown
+  pressed whenever the pointer was over them (the Mech Ops menu, the 'Mech purchase screen, weapon groups, the crew
+  biography's exit) now behave the same. Tab-style buttons still show which tab is chosen. (GitHub report)
+- **Cycling through your 'Mechs in the Mech Lab no longer restarts its sound.** Each arrow click had closed and
+  reopened the Mech Lab, starting its background loop again (GitHub report, Mercenary mode).
+- **The loading screen's heartbeat line animates, as in DOS:** a bright pulse runs along the trace, a new frame every
+  third of a second, at the original's place on the screen. The port had drawn MW2's version of that overlay
+  (a text and spinner), which left nothing visible.
+
 ## v1.2.20: the loading screen stays up for 5 seconds — 2026-11-18
 
 - **"Synchronizing Neurohelmet Interface" now holds for 5 seconds from launch** (it had been 2), then fades out as

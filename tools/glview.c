@@ -3107,7 +3107,9 @@ static void sim_log(void *u, const char *line)
 /* the drop screen (DOSBox: the simulation's own loading screen): the mission's launch picture (its brief record's SUPS
  * chunk names the disc's LAUNCH\<name>6.SHP, a 640 x 480 shape with its own palette) and LAUNCH6.SHP's "DROP PROCEDURE
  * INITIATED" at (368, 20) in light grey; drawn 4:3 in the window before the mission loads and held 5 s from launch (user choice: 2 s, then 5 s again) */
-static rb_tex g_drop_tex, g_drop_texs[5];   /* the picture; with each LAUNCH6 frame 0-4 (0: the text alone) */
+#define DROP_FRAMES 8
+static rb_tex g_drop_tex, g_drop_texs[DROP_FRAMES];   /* the picture; with each LAUNCH6 frame over it */
+static int    g_drop_nframes;                     /* LAUNCH6's frames (6 on the Mercenaries disc) */
 static int    g_drop_dos;                  /* the DOS edition: the overlay where the DOS capture has it */
 static Uint64 g_drop_t0;
 static float  g_drop_level = 1.0f;         /* the drop screen's brightness (its fade-out) */
@@ -3139,7 +3141,7 @@ static int drop_shp(const char *disc, const char *name, shp_frame *fr, uint8_t p
     return 0;
 }
 #define DROP_HOLD_MS 5000   /* the drop screen's time on screen from launch, ms (user choice) */
-static uint32_t *g_drop_cpu[6];   /* the drop screen's pictures before the GPU has them: [0] the picture, [1 + n] LAUNCH6 frame n */
+static uint32_t *g_drop_cpu[1 + DROP_FRAMES];   /* the drop screen's pictures before the GPU has them: [0] the picture, [1 + n] LAUNCH6 frame n */
 static void drop_screen_load(prj_archive *ma, const char *mission)
 {
     char brf[16], sups[16] = "", nm[24], disc[1024];
@@ -3174,23 +3176,24 @@ static void drop_screen_load(prj_archive *ma, const char *mission)
         for (x = 0; x < pic.w && x < 640; x++)
             if (pic.mask[y * pic.w + x]) { const uint8_t *c = pal[pic.pix[y * pic.w + x]]; rgba[y * 640 + x] = 0xff000000u | (uint32_t)c[2] << 16 | (uint32_t)c[1] << 8 | c[0]; }
     for (y = 0; y < 480; y++) for (x = 0; x < 640; x++) if (!rgba[y * 640 + x]) rgba[y * 640 + x] = 0xff000000u;
-    {   /* LAUNCH6.SHP: five shapes at one hotspot - the text alone, then the text with the spinner (four diamonds
-         * turning, right of the text) - drawn in the simulation's fixed interface colours (indices 1-7, 10, 13, 14; the
-         * file has no palette): matched to the DOS capture's bevelled grey letters */
-        static const uint8_t UI[16][3] = {{0, 0, 0}, {207, 211, 219}, {158, 162, 174}, {130, 130, 142}, {109, 113, 121}, {93, 101, 109},
-                                          {85, 85, 93}, {20, 20, 20}, {0, 0, 0}, {0, 0, 0}, {158, 162, 174}, {0, 0, 0}, {0, 0, 0},
-                                          {207, 211, 219}, {16, 16, 20}, {0, 0, 0}};
+    {   /* LAUNCH6.SHP, the animated line (GitHub: DOS animates a line on the loading screen): six frames of the
+         * heartbeat trace - the line, then a bright pulse running along it - each a full 422 x 91 rectangle in the
+         * picture's palette (the file has none of its own), drawn over the picture at (0.34, 0.76) of the screen:
+         * Mercs DOS 0x8e0aa / Windows 0x10033300 (x = trunc(639 x 0.34) = 217, y = trunc(479 x 0.76) = 364), frame by
+         * frame on the AIL timer every 330 ms (0x100337fe: (n + 1) % the shape's count). The port had drawn MW2's
+         * LAUNCH6 placement and colours - the "DROP PROCEDURE INITIATED" text and spinner - which dropped every pixel */
         char path[1200];
         FILE *f;
         snprintf(path, sizeof path, "%s/LAUNCH/LAUNCH6.SHP", disc);
         (void)tpal; (void)txt;
         if ((f = fopen(path, "rb"))) {
             long n;
-            uint8_t *d;
+            uint8_t *d = NULL;
             fseek(f, 0, SEEK_END); n = ftell(f); fseek(f, 0, SEEK_SET);
             if (n > 16 && (d = malloc((size_t)n)) && fread(d, 1, (size_t)n, f) == (size_t)n) {
-                int fr;
-                for (fr = 0; fr <= 4; fr++) {   /* one texture per frame: 0x10007730 cycles all five, 0 included */
+                int fr, count = shp_count(d, (size_t)n);
+                if (count > DROP_FRAMES) count = DROP_FRAMES;
+                for (fr = 0; fr < count; fr++) {
                     shp_frame sf;
                     uint32_t *img = malloc(640 * 480 * 4);
                     if (!img) break;
@@ -3198,17 +3201,18 @@ static void drop_screen_load(prj_archive *ma, const char *mission)
                     if (shp_decode(d, (size_t)n, fr, &sf) == 0) {
                         for (y = 0; y < sf.h; y++)
                             for (x = 0; x < sf.w; x++) {
-                                /* 3D editions: x = trunc(639 x 0.55) = 351 (0x102470e0), y 0, by the hotspot; DOS: as captured */
-                                int px = (g_drop_dos ? 348 : 351) + sf.left + x, py = (g_drop_dos ? -4 : 0) + sf.top + y, ci = sf.pix[y * sf.w + x];
-                                if (!sf.mask[y * sf.w + x] || px < 0 || py < 0 || px >= 640 || py >= 480 || ci > 15) continue;
-                                img[py * 640 + px] = 0xff000000u | (uint32_t)UI[ci][2] << 16 | (uint32_t)UI[ci][1] << 8 | UI[ci][0];
+                                int px = 217 + sf.left + x, py = 364 + sf.top + y;
+                                const uint8_t *c = pal[sf.pix[y * sf.w + x]];
+                                if (!sf.mask[y * sf.w + x] || px < 0 || py < 0 || px >= 640 || py >= 480) continue;
+                                img[py * 640 + px] = 0xff000000u | (uint32_t)c[2] << 16 | (uint32_t)c[1] << 8 | c[0];
                             }
                         shp_frame_free(&sf);
                     }
                     g_drop_cpu[1 + fr] = img;
+                    g_drop_nframes = fr + 1;
                 }
-                free(d);
             }
+            if (d) free(d);
             fclose(f);
         }
     }
@@ -3219,7 +3223,7 @@ static void drop_screen_build(prj_archive *ma, const char *mission)
 {
     int k;
     if (!g_drop_cpu[0]) drop_screen_load(ma, mission);
-    for (k = 0; k < 6; k++) {
+    for (k = 0; k < 1 + DROP_FRAMES; k++) {
         rb_tex t;
         if (!g_drop_cpu[k]) continue;
         t = rb_tex_new();
@@ -3267,7 +3271,7 @@ static void drop_screen_quad(SDL_Window *win, int begin)
     rb_tex tex = g_drop_tex;
     if (!g_drop_tex) return;
     {   /* the AIL timer (330000 us, 0x10007730): the next of the five frames every 330 ms */
-        int fr = (int)((SDL_GetTicks() / 330) % 5);
+        int fr = g_drop_nframes > 0 ? (int)((SDL_GetTicks() / 330) % (Uint64)g_drop_nframes) : 0;
         if (g_drop_texs[fr]) tex = g_drop_texs[fr];
     }
     SDL_GetWindowSizeInPixels(win, &w, &h);
@@ -6166,7 +6170,7 @@ int main(int argc, char **argv)
                 g_drop_over = 0;
                 g_drop_gone = g_sim_ok ? g_sim.now : 0;
                 rb_tex_delete(g_drop_tex); g_drop_tex = 0;
-                { int j; for (j = 0; j < 5; j++) rb_tex_delete(g_drop_texs[j]); } memset(g_drop_texs, 0, sizeof g_drop_texs);
+                { int j; for (j = 0; j < DROP_FRAMES; j++) rb_tex_delete(g_drop_texs[j]); } memset(g_drop_texs, 0, sizeof g_drop_texs);
             }
         }
         sfx_log_time = g_sim_ok && g_world ? g_sim.now / 1000.0 : -1;   /* TEST ONLY (MW2_SFX_LOG) */
