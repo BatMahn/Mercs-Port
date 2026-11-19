@@ -478,6 +478,10 @@ static SDL_GPUGraphicsPipeline *pipeline(int prog, int has_depth, int samples, i
     e->prog = prog; e->blend = blend; e->dtest = dtest; e->dwrite = dwrite; e->dfunc = dtest ? dfunc : 0; e->bias = bias;
     e->slope = bias ? S.slope : 0; e->units = bias ? S.units : 0; e->cmask = cmask & 15; e->samples = samples; e->dfmt = dfmt; e->cfmt = cfmt;
     e->p = SDL_CreateGPUGraphicsPipeline(g_dev, &pi);
+    if (getenv("MERCS_PIPE_LOG") && !g_probe) {   /* TEST ONLY: each pipeline as it is made - the prewarm table's source */
+        const int win = g_win_tex && cfmt == g_win_fmt && samples == g_tex[g_win_tex].samples && (samples > 1 || cfmt != COLOR_FMT);
+        fprintf(stderr, "PIPE {%d,%d,%d,%d,%d,%d,%.6g,%.6g,%d,%d,%d},\n", prog, blend, dtest, dwrite, e->dfunc, bias, e->slope, e->units, e->cmask, win, has_depth != 0);
+    }
     if (!e->p) { fprintf(stderr, "rb: pipeline (program %d): %s\n", prog, SDL_GetError()); if (g_probe) return NULL; exit(1); }
     g_npipes++;
     return e->p;
@@ -771,6 +775,34 @@ static SDL_Rect rect_tl(const rtex *t, int x, int y, int w, int h)
 /* ---- state */
 void rb_viewport(int x, int y, int w, int h) { S.vp[0] = x; S.vp[1] = y; S.vp[2] = w; S.vp[3] = h; }
 void rb_scissor(int on, int x, int y, int w, int h) { S.sc_on = on; S.sc[0] = x; S.sc[1] = y; S.sc[2] = w; S.sc[3] = h; }
+/* The pipelines a mission makes, built ahead of it (rb_prewarm): every one the game made in a sweep of the looks (DOS,
+ * 3Dfx, Direct3D), anti-aliasing on and off, native and the original resolutions, with every HUD display, the menus,
+ * the satellite map, the external, ordnance and rear cameras, light amplification and effects (MERCS_PIPE_LOG). A
+ * driver compiles each pipeline when it is made - on a new install or after a driver update that took about a minute
+ * on Windows (GitHub report), with the screen black and the game looking hung. {prog, blend, depth test, depth
+ * write, depth func, bias, slope, units, colour mask, the window (1) or an offscreen target (0), depth buffer} */
+static const struct { int prog, blend, dtest, dwrite, dfunc, bias; float slope, units; int cmask, win, depth; } PREWARM[] = {
+    {0,0,1,1,0,0,0,0,15,0,1}, {0,0,1,1,0,0,0,0,15,1,1}, {0,0,1,1,1,0,0,0,15,0,1}, {0,0,1,1,1,0,0,0,15,1,1},
+    {0,1,0,0,0,0,0,0,15,0,1}, {0,1,0,0,0,0,0,0,15,1,1}, {0,1,1,0,0,0,0,0,15,0,1}, {0,1,1,0,0,0,0,0,15,1,1},
+    {1,0,0,0,0,0,0,0,15,0,1}, {1,0,0,0,0,0,0,0,15,1,1}, {1,0,1,1,0,0,0,0,15,0,1}, {1,0,1,1,0,0,0,0,15,1,1},
+    {1,0,1,1,1,0,0,0,15,0,1}, {1,0,1,1,1,0,0,0,15,1,1}, {2,1,0,0,0,0,0,0,15,0,1}, {2,1,0,0,0,0,0,0,15,1,1},
+    {3,0,1,0,0,0,0,0,15,0,1}, {3,0,1,0,0,0,0,0,15,1,1}, {PROG_CLEAR,0,0,0,0,0,0,0,15,1,1},
+    {PROG_CLEAR,0,1,1,2,0,0,0,15 | 16,0,1}, {PROG_CLEAR,0,1,1,2,0,0,0,15 | 16,1,1}};
+int rb_prewarm_count(void) { return (int)(sizeof PREWARM / sizeof PREWARM[0]); }
+void rb_prewarm(int i)
+{
+    int blend = S.blend, dtest = S.dtest, dwrite = S.dwrite, dfunc = S.dfunc, bias = S.bias;
+    float slope = S.slope, units = S.units;
+    const rtex *w = g_win_tex ? &g_tex[g_win_tex] : NULL;
+    if (!g_dev || i < 0 || i >= rb_prewarm_count()) return;
+    if (PREWARM[i].win && (!w || !w->t)) return;   /* (no window target yet: built on its first use) */
+    S.blend = PREWARM[i].blend; S.dtest = PREWARM[i].dtest; S.dwrite = PREWARM[i].dwrite; S.dfunc = PREWARM[i].dfunc;
+    S.bias = PREWARM[i].bias; S.slope = PREWARM[i].slope; S.units = PREWARM[i].units;
+    pipeline(PREWARM[i].prog, PREWARM[i].depth && g_depth_fmt != SDL_GPU_TEXTUREFORMAT_INVALID, PREWARM[i].win ? w->samples : 1,
+             PREWARM[i].cmask, PREWARM[i].win ? w->fmt : COLOR_FMT);
+    S.blend = blend; S.dtest = dtest; S.dwrite = dwrite; S.dfunc = dfunc; S.bias = bias; S.slope = slope; S.units = units;
+}
+
 void rb_blend(int mode) { S.blend = mode; }
 void rb_depth_test(int on) { S.dtest = on; }
 void rb_depth_write(int on) { S.dwrite = on; }

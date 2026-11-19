@@ -1,5 +1,21 @@
 # Mercenaries development history
 
+## v1.2.20: the loading screen stays up for 5 seconds — 2026-11-18
+
+- **"Synchronizing Neurohelmet Interface" now holds for 5 seconds from launch** (it had been 2), then fades out as
+  before into the mission. If loading takes longer, the screen stays until it is done.
+
+## v1.2.19: no more black screen while the shaders build — 2026-11-18
+
+- **The loading screen comes up at once, and the shaders are built behind it.** On a new install (or after a
+  graphics-driver update) the driver compiles the game's shaders the first time each is used, which on one Windows
+  machine left the window black for about a minute before the mission appeared (GitHub report). Now:
+  - the "Synchronizing Neurohelmet Interface" picture is shown as soon as the window opens, before the graphics device
+    starts (Windows and Linux; macOS's Metal builds quickly);
+  - every pipeline a mission uses (21, found by sweeping the looks, anti-aliasing, resolutions, HUD displays, menus and
+    cameras) is built during the loading screen, one at a time, the screen redrawn between them, before the mission
+    starts. The driver keeps them in its own cache, so later launches are quick.
+
 ## v1.2.18: buttons press like DOS, Flee self-destructs, the HUD fades out with the mission — 2026-11-18
 
 - **The main menu's and Instant Action's buttons press like DOS's.** A button shows its depressed frame while you

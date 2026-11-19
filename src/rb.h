@@ -63,6 +63,9 @@ void rb_frame(int w, int h);
 void rb_samples(int samples);
 /* an off-screen target (colour, with a depth buffer if depth), usable as a texture */
 rb_tex rb_target_new(int w, int h, int depth);
+/* building the mission's pipelines ahead of it (shader compiles), one per call: i from 0 to rb_prewarm_count() - 1 */
+int  rb_prewarm_count(void);
+void rb_prewarm(int i);
 void rb_target(rb_tex t);                /* draw into t (0: the window's picture) */
 int  rb_target_height(void);
 /* glBlitFramebuffer: colour from src's rectangle to dst's (0: the window's picture), bottom-left coordinates */

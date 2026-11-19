@@ -3106,7 +3106,7 @@ static void sim_log(void *u, const char *line)
 
 /* the drop screen (DOSBox: the simulation's own loading screen): the mission's launch picture (its brief record's SUPS
  * chunk names the disc's LAUNCH\<name>6.SHP, a 640 x 480 shape with its own palette) and LAUNCH6.SHP's "DROP PROCEDURE
- * INITIATED" at (368, 20) in light grey; drawn 4:3 in the window before the mission loads and held 2 s from launch (user choice) */
+ * INITIATED" at (368, 20) in light grey; drawn 4:3 in the window before the mission loads and held 5 s from launch (user choice: 2 s, then 5 s again) */
 static rb_tex g_drop_tex, g_drop_texs[5];   /* the picture; with each LAUNCH6 frame 0-4 (0: the text alone) */
 static int    g_drop_dos;                  /* the DOS edition: the overlay where the DOS capture has it */
 static Uint64 g_drop_t0;
@@ -3138,7 +3138,9 @@ static int drop_shp(const char *disc, const char *name, shp_frame *fr, uint8_t p
     free(d);
     return 0;
 }
-static void drop_screen_build(prj_archive *ma, const char *mission)
+#define DROP_HOLD_MS 5000   /* the drop screen's time on screen from launch, ms (user choice) */
+static uint32_t *g_drop_cpu[6];   /* the drop screen's pictures before the GPU has them: [0] the picture, [1 + n] LAUNCH6 frame n */
+static void drop_screen_load(prj_archive *ma, const char *mission)
 {
     char brf[16], sups[16] = "", nm[24], disc[1024];
     const char *cd = getenv("MERCS_CD_DIR");
@@ -3203,10 +3205,7 @@ static void drop_screen_build(prj_archive *ma, const char *mission)
                             }
                         shp_frame_free(&sf);
                     }
-                    g_drop_texs[fr] = rb_tex_new();
-                    rb_tex_image(g_drop_texs[fr], 640, 480, img, 0);
-                    rb_tex_filter(g_drop_texs[fr], RB_LINEAR, RB_LINEAR);
-                    free(img);
+                    g_drop_cpu[1 + fr] = img;
                 }
                 free(d);
             }
@@ -3214,10 +3213,52 @@ static void drop_screen_build(prj_archive *ma, const char *mission)
         }
     }
     shp_frame_free(&pic);
-    g_drop_tex = rb_tex_new();
-    rb_tex_image(g_drop_tex, 640, 480, rgba, 0);
-    rb_tex_filter(g_drop_tex, RB_LINEAR, RB_LINEAR);
-    free(rgba);
+    g_drop_cpu[0] = rgba;
+}
+static void drop_screen_build(prj_archive *ma, const char *mission)
+{
+    int k;
+    if (!g_drop_cpu[0]) drop_screen_load(ma, mission);
+    for (k = 0; k < 6; k++) {
+        rb_tex t;
+        if (!g_drop_cpu[k]) continue;
+        t = rb_tex_new();
+        rb_tex_image(t, 640, 480, g_drop_cpu[k], 0);
+        rb_tex_filter(t, RB_LINEAR, RB_LINEAR);
+        if (k == 0) g_drop_tex = t; else g_drop_texs[k - 1] = t;
+        free(g_drop_cpu[k]); g_drop_cpu[k] = NULL;
+    }
+}
+/* The drop screen before the GPU is up: drawn through the window's own surface (SDL's software framebuffer), then the
+ * surface released for the GPU device. Starting the GPU builds and tests the shaders (rb_init's probe), which on a new
+ * install can take many seconds; the window had stayed black meanwhile (GitHub report). Not on macOS (its window is a
+ * Metal layer; Metal builds quickly) */
+static void drop_screen_splash(SDL_Window *win)
+{
+#ifndef __APPLE__
+    const uint32_t *src = g_drop_cpu[1] ? g_drop_cpu[1] : g_drop_cpu[0];
+    SDL_Surface *ws, *pic;
+    int q;
+    if (!win || !src) return;
+    for (q = 0; q < 4; q++) { SDL_PumpEvents(); SDL_Delay(4); }
+    SDL_SetHint(SDL_HINT_FRAMEBUFFER_ACCELERATION, "0");   /* the platform's own framebuffer (no renderer on the window) */
+    ws = SDL_GetWindowSurface(win);
+    if (!ws) return;
+    pic = SDL_CreateSurfaceFrom(640, 480, SDL_PIXELFORMAT_ABGR8888, (void *)src, 640 * 4);
+    if (pic) {
+        SDL_Rect d;
+        int w = ws->w, h = ws->h, vw, vh;
+        vh = h; vw = h * 4 / 3; if (vw > w) { vw = w; vh = w * 3 / 4; }
+        d.x = (w - vw) / 2; d.y = (h - vh) / 2; d.w = vw; d.h = vh;
+        SDL_FillSurfaceRect(ws, NULL, SDL_MapSurfaceRGB(ws, 0, 0, 0));
+        SDL_BlitSurfaceScaled(pic, NULL, ws, &d, SDL_SCALEMODE_LINEAR);
+        SDL_DestroySurface(pic);
+        SDL_UpdateWindowSurface(win);
+    }
+    SDL_DestroyWindowSurface(win);
+#else
+    (void)win;
+#endif
 }
 /* draw the drop screen into the window (4:3, centred) through a framebuffer blit */
 static void drop_screen_quad(SDL_Window *win, int begin)
@@ -5908,6 +5949,7 @@ int main(int argc, char **argv)
         }
         if (!win) win = SDL_CreateWindow("MechWarrior 2: Mercenaries", 1280, 720, SDL_WINDOW_RESIZABLE);
         mercs_set_window_icon(win);
+        if (win && mission && mission[0] && !getenv("MERCS_AUTOPILOT") && !getenv("MERCS_NO_LOADING")) { drop_screen_load(ma, mission); drop_screen_splash(win); }
         if (!win || rb_init(win, gpu, aa, gerr, sizeof gerr) != 0) {
             char m[1024];
             snprintf(m, sizeof m,
@@ -6030,6 +6072,9 @@ int main(int argc, char **argv)
              * frames before loading */
             int q;
             for (q = 0; q < 8; q++) { SDL_PumpEvents(); drop_screen_draw(win); SDL_Delay(16); }
+            /* then the mission's pipelines, built under the drop screen (rb_prewarm): one at a time, the screen redrawn
+             * between them so its spinner turns and the window keeps answering */
+            for (q = 0; q < rb_prewarm_count(); q++) { rb_prewarm(q); SDL_PumpEvents(); drop_screen_draw(win); }
         }
     }
     {   /* the look (the shell's Combat Variables RENDERER and TEXTURES, mercsport.cfg renderer= / textures=): known before
@@ -6093,14 +6138,14 @@ int main(int argc, char **argv)
             if (due > wall) SDL_Delay((Uint32)(due - wall));
         }
         perf_frame_start();
-        if (g_drop_tex) {   /* hold the drop screen until 2 s after launch (user choice; was 5 s); the mission waits. Then
+        if (g_drop_tex) {   /* hold the drop screen until 5 s after launch (DROP_HOLD_MS, user choice; had been 2 s); the mission waits. Then
                              * as the original: the mission's CD track starts and the drop screen fades to black over 0.86 s
                              * before the first mission frame (DOSBox YELLSCN1 / TNJ1SCN1: the music from the start of the
                              * fade). DOS MW2.EXE 0x15d49 -> 0x3eb10(0) -> VFX 0x58e0d(window 0xa46bc, palette, 0x3c): a DDA
                              * fade, every colour linear to its target over 0x3c steps - 60 / 70 Hz retraces = 0.857 s */
             Uint64 el = SDL_GetTicks() - g_drop_t0;
             static int music_on;
-            if (el >= 2000 && !music_on) { music_on = 1; if (g_world && g_sim_ok) music_start(g_sim.music_track); }
+            if (el >= DROP_HOLD_MS && !music_on) { music_on = 1; if (g_world && g_sim_ok) music_start(g_sim.music_track); }
             /* The mission clock starts a quarter second before the drop screen fades out and runs under it: DOSBox (an
              * Instant Action drop, filmed at 120 fps) - the mech leaves its 100 m start at rest about 0.25 s before the
              * drop screen's 0.86 s fade begins (its fall read back from the Alt readout: 0.8 g from 100 m), the screen
@@ -6108,9 +6153,9 @@ int main(int argc, char **argv)
              * (g_fade_*), with the mech already falling at 22 m/s. The port had held the mission until the drop screen
              * was gone and started the fall with the fade, so the visible drop took 5 s for DOS's 3.5 (GitHub: "moon
              * gravity"). The 0.25 s lead: one capture, INFERRED */
-            g_drop_over = el >= 2000 - 250;
-            if (el < 2000 + 860) {
-                g_drop_level = el <= 2000 ? 1.0f : 1.0f - (float)(el - 2000) / 860.0f;
+            g_drop_over = el >= DROP_HOLD_MS - 250;
+            if (el < DROP_HOLD_MS + 860) {
+                g_drop_level = el <= DROP_HOLD_MS ? 1.0f : 1.0f - (float)(el - DROP_HOLD_MS) / 860.0f;
                 if (!g_drop_over) {
                     while (SDL_PollEvent(&e)) if (e.type == SDL_EVENT_QUIT) running = 0;
                     drop_screen_draw(win);
