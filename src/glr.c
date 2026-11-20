@@ -460,18 +460,21 @@ static float *coplanar_lifts(const wtb_object *o)
     }
     out = calloc((size_t)n * 3, sizeof *out);
     if (!out) { free(pl); free(bb); return NULL; }
-    for (i = 1; i < n; i++) {
+    for (i = 0; i < n; i++) {
         const float *P = pl + i * 4, *B = bb + i * 6;
         int cover = 0;
         if (P[0] == 0 && P[1] == 0 && P[2] == 0) continue;
-        for (j = 0; j < i; j++) {
+        for (j = 0; j < n; j++) {
             const float *Q = pl + j * 4, *C = bb + j * 6;
             int d, inside = 1, wide = 0;
-            if (o->polys[j].color == o->polys[i].color) continue;
-            if (P[0] * Q[0] + P[1] * Q[1] + P[2] * Q[2] < 0.999f || fabsf(P[3] - Q[3]) > 2.0f) continue;
+            if (j == i || o->polys[j].color == o->polys[i].color) continue;
+            if (j > i && Q[3] - P[3] <= 2.0f) continue;   /* on the face: only over the polygons before it */
+            /* on the face, or standing a little proud of it on its seen side (the corners' cross product points
+             * inward, so out is a smaller n.x): S_1SMTWR's window bands are 7 cm off its walls */
+            if (P[0] * Q[0] + P[1] * Q[1] + P[2] * Q[2] < 0.999f || Q[3] - P[3] < -2.0f || Q[3] - P[3] > 60.0f) continue;
             for (d = 0; d < 3 && inside; d++) {
                 float lo = B[d] > C[d] ? B[d] : C[d], hi = B[3 + d] < C[3 + d] ? B[3 + d] : C[3 + d];
-                if (hi < lo - 0.5f) inside = 0;
+                if (hi < lo - 61.0f) inside = 0;
                 else if (hi - lo > 0.5f) wide++;
             }
             if (inside && wide >= 2) cover++;
@@ -600,7 +603,7 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
              * fought and the windows cut in and out. Each is lifted off the face it lies on, along that face's front
              * normal, 4 cm per earlier polygon it covers (pass 1 only; INFERRED amount) */
             float *cop_lift = NULL;
-            if (pass == 1 && o->poly_count > 1 && o->poly_count <= 2048)
+            if (pass == 1 && !part->dos_pit && o->poly_count > 1 && o->poly_count <= 2048)   /* (the cockpit set keeps its own draw order) */
                 cop_lift = coplanar_lifts(o);
             for (k = 0; k < o->poly_count; k++) {
                 const wtb_poly *q = &o->polys[k];

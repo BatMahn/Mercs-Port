@@ -1,5 +1,15 @@
 # Mercenaries development history
 
+## v1.2.28: the office tower's window bands, for real — 2026-11-20
+
+- **The Instant Action office tower's window bands stay whole.** Its bands (S_1SMTWR, the "Office Building" target)
+  stand 7 cm proud of the walls, not on them, so the v1.2.23 / v1.2.26 overlay handling (polygons within 2 cm of a
+  face) never applied: seen at an angle from a few hundred metres the walls ate the bands' ends (GitHub report,
+  video). Polygons standing up to 60 cm proud of a face on its seen side now get the same depth bias. Checked by
+  rendering seed 13's office area at 1080 x 720 from the side: the bands now reach the ends they should. Cockpit
+  sets are left out (they keep their own draw order).
+- (Test hook: `MERCS_RMG_TRACE` prints the procedural mission's areas and where they are placed.)
+
 ## v1.2.27: the commander's letter only on a fresh career; a taken contract hides its buttons — 2026-11-20
 
 - **Cmdr. Holly Harris's letter no longer replays after loading a save** (GitHub #28). The DOS shell plays it on the
