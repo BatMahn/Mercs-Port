@@ -600,7 +600,7 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
              * fought and the windows cut in and out. Each is lifted off the face it lies on, along that face's front
              * normal, 4 cm per earlier polygon it covers (pass 1 only; INFERRED amount) */
             float *cop_lift = NULL;
-            if (pass == 1 && !ti && o->poly_count > 1 && o->poly_count <= 2048)
+            if (pass == 1 && o->poly_count > 1 && o->poly_count <= 2048)
                 cop_lift = coplanar_lifts(o);
             for (k = 0; k < o->poly_count; k++) {
                 const wtb_poly *q = &o->polys[k];
@@ -1065,7 +1065,7 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
                         /* the wireframe's edges: this corner (0-2) + 3 x the polygon's own edges in this fan triangle
                          * (bit 0: corner 1 - 2, always; bit 1: corner 2 - 0 when it closes the polygon; bit 2: corner 0 - 1
                          * when it starts it), so the triangulation's diagonals are not drawn (DOS draws polygon outlines) */
-                        f[12] = (float)(a + 3 * (1 | (j + 2 == q->n ? 2 : 0) | (j == 1 ? 4 : 0)) + 32 * wire_code + (ti ? 256 : 0) + (ti_flat || (hi_card && ((q->color >> 12) == 0xb || ((q->color >> 12) == 0x8 && !test_lit8))) ? 512 : 0) + 2048 * dnib);   /* + 512: unlit; cockpit ids have their own packed field */
+                        f[12] = (float)(a + 3 * (1 | (j + 2 == q->n ? 2 : 0) | (j == 1 ? 4 : 0)) + 32 * wire_code + (ti ? 256 : 0) + (ti_flat || (hi_card && ((q->color >> 12) == 0xb || ((q->color >> 12) == 0x8 && !test_lit8))) ? 512 : 0) + 2048 * dnib + 32768 * (lift ? (int)lroundf(sqrtf(lx * lx + ly * ly + lz * lz) / 4.0f) : 0));   /* + 512: unlit; cockpit ids have their own packed field; + 32768 x the overlay level (world.vert) */
                         /* Packing id*65536 into f[12] loses low edge/material
                          * bits above id256 in a float. Keep the exact small id
                          * separate, including on accelerated cockpit geometry. */

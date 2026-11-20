@@ -1,5 +1,13 @@
 # Mercenaries development history
 
+## v1.2.26: tower windows hold still at any distance — 2026-11-20
+
+- **The office tower's window bands no longer flicker.** The tall glass tower in the report (S_1SMTWR, 232 m - the tall
+  model with window bands laid over its walls) has them as separate polygons 1 cm off the glass. v1.2.23 lifted such overlays 4 cm, but the depth
+  buffer's precision falls with distance - at the 650 m in the report's video it is about 4 cm - so they still fought
+  (GitHub report, video). Overlays now also get a fixed depth-buffer bias toward the eye, which holds at any distance,
+  and the same handling now covers the Titanium look's models.
+
 ## v1.2.25: the training missions' dune pits are no longer "quicksand" — 2026-11-20
 
 - **Walking into a dip in the dunes no longer sinks you into the ground.** The dunes in Sgt. Unther's training

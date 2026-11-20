@@ -254,6 +254,7 @@ int mercs_rmg_generate(prj_archive *a,const mercs_rmg_config *cfg,mercs_rmg_bund
         if(ar->required){snprintf(name,sizeof name,"mis%dare%d",template_index/3,j++);
             if(copy_template(&out,ar->name,name,e,n))goto bad;}
         if(!place(ar,bounds,&x,&z))break;
+        if(getenv("MERCS_RMG_TRACE"))fprintf(stderr,"rmg area %s at %d %d\n",ar->name,x,z);   /* tests */
         block(&b,x,z);
         if(ar->required){snprintf(name,sizeof name,"mis%dstp%d",template_index/3,number);incl(&b,name,-1);
             snprintf(name,sizeof name,"mis%dare%d",template_index/3,number);incl(&b,name,-2);

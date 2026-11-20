@@ -80,6 +80,10 @@ VertexOut world_vertex(int vertex_id) {
   float a_mapmat = world_vtx[vertex_id * 25 + 24];
 
   int e = int(a_edge + 0.5), pit = int(a_pit + 0.5);
+  /* coplanar overlays (glr.c coplanar_lifts): 32768 x how many earlier polygons of the object this one lies on, a depth
+   * bias toward the eye in NDC so the window stays over its wall at any distance (a fixed lift loses to the depth
+   * buffer's precision far out) */
+  int olift = e / 32768; e -= olift * 32768;
   result.pit = pit;
   result.dnib = e / 2048; e -= result.dnib * 2048;
   result.bb = e >= 1024 ? 1 : 0;
@@ -145,6 +149,7 @@ VertexOut world_vertex(int vertex_id) {
     if (rk < 0) result.clip = vec4(2.0, 2.0, 2.0, 1.0);
     else result.clip.z = (-1.0 + 0.01 * (1.0 - float(rk + 1) / 1024.0)) * result.clip.w;
   }
+  if (olift > 0 && result.clip.w > 0.0) result.clip.z -= float(min(olift, 16)) * 1.5e-6 * result.clip.w;
   if (u_far > 0.0 && a_sphere.w > 0.0) {
     vec3 sc = (u_view * vec4(a_sphere.xyz, 1.0)).xyz;
     if (dot(sc, sc) > (u_far + a_sphere.w) * (u_far + a_sphere.w) || -sc.z - a_sphere.w > u_far) result.clip = vec4(2.0, 2.0, 2.0, 1.0);
