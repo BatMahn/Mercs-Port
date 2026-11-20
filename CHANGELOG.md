@@ -1,5 +1,34 @@
 # Mercenaries development history
 
+## v1.2.24: the near hillside stays in view at high resolutions — 2026-11-20
+
+- **Walking along a steep dune no longer cuts the slope out of the view.** DOS stops drawing anything nearer than a
+  near plane of a quarter of the view's width in pixels plus 1 cm: 161 cm at its 640 x 480. The port took the width of
+  its own window, so the near plane grew with the resolution - 271 cm at 1080 wide, 481 cm at 1920 - and a hillside
+  beside or ahead of a short mech was cut away, showing the far terrain through it (GitHub report, video from Sgt.
+  Unther's night mission). The near plane now stays at the 640-wide view's distance at any window size.
+
+## v1.2.23: night stars, office doors, windows that stay put, a self-destruct that coasts — 2026-11-20
+
+- **Stars in the night sky.** Some missions (Sgt. Unther's third training mission, the space station missions) place a
+  field of one-point "STAR" objects 25-35 km out. DOS draws each as a single pixel; the port skipped any polygon with
+  fewer than three corners, so the sky was empty. They are now drawn one 480-line pixel each, behind everything,
+  through the same distance haze (checked against DOSBox TRA3SCN1: same places and shades). (GitHub report)
+- **The Office's Mech Bay door animates.** Going from the Office to the Mech Bay plays the right-hand door opening
+  (OFFDOORB), and coming back from the Mech Bay plays it closing behind you (OFFDOORD); coming in from the starport hall
+  plays the left-hand door closing (OFFDOORC), as the DOS shell does. The port had cut straight to the next room.
+  (GitHub report)
+- **Building windows no longer cut in and out.** Windows, doors and markings are separate polygons lying on a wall.
+  DOS paints them over the wall in order; the port's depth buffer made the two fight. Each such overlay is now lifted
+  4 cm off the face it lies on. (GitHub report)
+- **The runway in the training missions no longer swallows feet.** The dark strips at the base in Sgt. Unther's
+  missions (TL1STRP*, with TL1LINE* markings) float 1.29 m above the ground; DOS draws them too (checked in DOSBox), but
+  paints units over them, while the port hid every foot below 1.29 m. Flat terrain overlays like these now sit at a
+  quarter of their height. (GitHub report)
+- **Self-destruct coasts to a stop.** In DOS the mech slows to a halt over about two seconds as it blows up (DOSBox,
+  full speed then the key); the port froze it mid-stride. A destroyed mech on the ground now coasts down at the
+  throttle-off rate and its stride winds down to standing. (GitHub report)
+
 ## v1.2.22: the ground texture fades out as in DOS in Instant Action and generated contracts — 2026-11-19
 
 - **No more hard line and bright band in the ground texture.** Generated scenes (Instant Action and generated

@@ -341,6 +341,7 @@ static void center_pointer(shell *s)
 }
 
 static void command_auto_assign(shell *s);
+static void transition(shell *s, const char *clip, int x, int y, int destination);
 static void set_page(shell *s, int page)
 {
     if (s->save_editing) finish_save_description(s, 0);
@@ -361,6 +362,11 @@ static void set_page(shell *s, int page)
     prepare_lines(s);
     (void)prepare_economy_page(s, 1);
     fprintf(stderr, "mercs shell: page=%s\n", page_names[page]);
+    /* arriving in the Office (DOS shell 0x60630, by the page it came from): from the Mech Bay the right-hand door
+     * closes behind you (offdoord, 0x6076a), from the starport hall the left-hand one (offdoorc, 0x60845) - the
+     * pages taken from the doors' places, the same as the leaving clips offdoorb / offdoora (INFERRED) */
+    if (page == PAGE_OFFICE && s->previous_page == PAGE_MECHBAY) transition(s, "offdoord", 427, 157, PAGE_OFFICE);
+    else if (page == PAGE_OFFICE && s->previous_page == PAGE_HALL) transition(s, "offdoorc", 103, 194, PAGE_OFFICE);
 }
 
 enum { SAVE_DISPLAY = 1, SAVE_MOVIE_LOOK = 2, SAVE_MOVIE_FIT = 4, SAVE_GAME_LOOK = 8,
@@ -2475,7 +2481,7 @@ static void draw(shell *s)
         int destination = s->completed_transition - 1;
         s->completed_transition = 0;
         if (destination == PAGE_DROPSHIP) play_movie(s, "MTO");
-        if (s->running) set_page(s, destination);
+        if (s->running && destination != s->page) set_page(s, destination);   /* (an arrival clip ends on its own page) */
     }
 }
 
@@ -2591,7 +2597,7 @@ static void click(shell *s, int x, int y, int clicks)
         at = clicked(ui_office_hotspots, COUNT(ui_office_hotspots), x, y);
         if (at == 3) { if (play_cue(s, MSA_CUE_OFFICE_COMPUTER)) set_page(s, PAGE_COMPUTER); }
         else if (at == 2) { play_cue(s, MSA_CUE_OFFICE_STARPORT); transition(s, "offdoora", 103, 194, PAGE_HALL); }
-        else if (at == 1) { if (play_cue(s, MSA_CUE_OFFICE_MECHBAY)) set_page(s, PAGE_MECHBAY); }
+        else if (at == 1) { if (play_cue(s, MSA_CUE_OFFICE_MECHBAY)) transition(s, "offdoorb", 427, 157, PAGE_MECHBAY); }   /* DOS shell 0x60bf6 */
     } else if (s->page == PAGE_COMPUTER) {
         at = clicked(ui_computer_hotspots, COUNT(ui_computer_hotspots), x, y);
         if (at >= 0 && !play_cue(s, at == 4 ? MSA_CUE_COMPUTER_EXIT : MSA_CUE_COMPUTER_SELECT)) return;

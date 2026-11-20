@@ -23,11 +23,28 @@ int main(int argc, char **argv)
     prj_archive *a;
     int t, i, rc = 0;
 
-    if (argc < 3) { fprintf(stderr, "usage: %s MW2.PRJ verify|missions|mission NAME|chunks NAME\n", argv[0]); return 2; }
+    if (argc < 3) { fprintf(stderr, "usage: %s MW2.PRJ verify|missions|mission NAME|chunks NAME|hex NAME\n", argv[0]); return 2; }
     if (!(a = prj_open(argv[1], err, sizeof err))) { fprintf(stderr, "%s\n", err); return 1; }
     dp_add_roots_from_env();
     t = prj_find_type(a, "BWD");
 
+    if (strcmp(argv[2], "hex") == 0 && argc >= 4) {
+        /* every chunk of one record, its payload in hex */
+        prj_record rec;
+        int n, k;
+        size_t i;
+        bwd_chunk *c;
+        if (prj_read_named(a, "BWD", argv[3], &rec) != PRJ_OK) { fprintf(stderr, "no record %s\n", argv[3]); return 1; }
+        n = bwd_chunks(rec.data, rec.size, NULL, 0);
+        c = calloc((size_t)(n > 0 ? n : 1), sizeof *c);
+        bwd_chunks(rec.data, rec.size, c, n);
+        for (k = 0; k < n; k++) {
+            printf("%-4s %4u:", c[k].tag, (unsigned)c[k].size);
+            for (i = 0; i < c[k].size && i < 256; i++) printf(" %02x", c[k].data[i]);
+            printf("\n");
+        }
+        return 0;
+    }
     if (strcmp(argv[2], "logic") == 0 && argc >= 4) {
         /* the scene's MTBL state tables, readable */
         prj_record rec;

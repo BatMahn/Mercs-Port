@@ -122,6 +122,9 @@ struct glr {
     rb_tex dome_tex[GLR_SLOTS];
     float *dome_v;                          /* x, y, z, u, v per vertex (game coordinates, GL z) */
     int    dome_n, dome_first[GLR_SLOTS], dome_count[GLR_SLOTS], dome_has[GLR_SLOTS];
+    float *dots[GLR_LAYERS];   /* DOS one-corner polygons (the night stars, TRA3STAR) per layer: GL x, y, z, colour word */
+    int    dots_n[GLR_LAYERS], dots_cap[GLR_LAYERS];
+    uint32_t dots_vbo;
     int   *dome_pfirst, *dome_pcount, *dome_pslot, dome_np;   /* per polygon, in the record's order */
     uint8_t dos_img[17][256][4];
     /* the main DOS frame's projection integers (glr_dos_project): rows x mantissas (2.29 x 16 bits), shifts, the eye
@@ -129,6 +132,7 @@ struct glr {
     int64_t dos_R[3][3];
     int     dos_sh[2], dos_vw, dos_vh, dos_ok, dos_ortho;
     uint32_t dos_zhw;   /* zoom (16.16) x the half width: the view's +0x94 (MW2.EXE 0x3ef30) */
+    int      dos_near4; /* the world's near plane, quarter cm, as at DOS's 640-wide view (see glr_draw) */
     float   dos_eye[3];
     /* sprites (weapon effects) */
     rb_buf spr_vbo;
@@ -200,7 +204,7 @@ glr *glr_create(void)
     glr_set_camo_sets(r, NULL);
     glr_use_variant(r, 0);
     for (l = 0; l < GLR_LAYERS; l++) r->layer[l].vbo = rb_buf_new();
-    r->env_vbo = rb_buf_new(); r->dome_vbo = rb_buf_new(); r->spr_vbo = rb_buf_new(); r->shd_vbo = rb_buf_new();
+    r->env_vbo = rb_buf_new(); r->dome_vbo = rb_buf_new(); r->dots_vbo = rb_buf_new(); r->spr_vbo = rb_buf_new(); r->shd_vbo = rb_buf_new();
     for (k = 0; k < GLR_SLOTS * 4; k++) r->tex[k] = rb_tex_new();
     for (k = 0; k < GLR_SLOTS; k++) { r->tex_a[k] = rb_tex_new(); r->dome_tex[k] = rb_tex_new(); }
     for (k = 0; k < 2; k++) r->env_tex[k] = rb_tex_new();
@@ -219,7 +223,7 @@ void glr_destroy(glr *r)
     for (k = 0; k < 2; k++) rb_tex_delete(r->env_tex[k]);
     rb_tex_delete(r->map_palette); rb_tex_delete(r->dos_tex); rb_tex_delete(r->ptab_tex);
     rb_tex_delete(r->ground_flat); rb_tex_delete(r->sky_flat); rb_tex_delete(r->mercs_ground_tex);
-    rb_buf_delete(r->env_vbo); rb_buf_delete(r->dome_vbo); rb_buf_delete(r->spr_vbo); rb_buf_delete(r->shd_vbo); free(r->shd); free(r->dvn);
+    rb_buf_delete(r->env_vbo); rb_buf_delete(r->dome_vbo); rb_buf_delete(r->dots_vbo); free(r->dots[0]); free(r->dots[1]); rb_buf_delete(r->spr_vbo); rb_buf_delete(r->shd_vbo); free(r->shd); free(r->dvn);
     free(r->dome_v); free(r->dome_pfirst); free(r->dome_pcount); free(r->dome_pslot);
     free(r->par); free(r->palpar); free(r->palpar_vertices);
     for (l = 0; l < GLR_LAYERS; l++) {
@@ -424,6 +428,61 @@ static void dos_normal_corners(const wtb_object *o, const wtb_poly *q, int *a, i
  * simulation retains its collision model. */
 /* a star's camouflage set c (0..7) -> the plates' base slot (Mercs MW2.EXE table 0xbc920; Titanium mercsw 0x100a11e0) */
 static const int MERCS_CAMO_BASE[8] = {0, 1, 0x56, 0x66, 0x76, 0x86, 0xf3, 0xf9};
+/* the lift of each polygon of o that lies on an earlier one of another colour (see set_layer): 0 for the rest, else
+ * 4 cm per such earlier polygon, as a local offset out of the face's seen side (x, y, z per polygon); NULL if none */
+static float *coplanar_lifts(const wtb_object *o)
+{
+    int n = o->poly_count, i, j, any = 0;
+    float *pl = malloc((size_t)n * 4 * sizeof *pl), *bb = malloc((size_t)n * 6 * sizeof *bb), *out;
+    if (!pl || !bb) { free(pl); free(bb); return NULL; }
+    for (i = 0; i < n; i++) {
+        const wtb_poly *q = &o->polys[i];
+        float *P = pl + i * 4, *B = bb + i * 6;
+        P[0] = P[1] = P[2] = P[3] = 0;
+        B[0] = B[1] = B[2] = 1e30f; B[3] = B[4] = B[5] = -1e30f;
+        if (q->n < 3) continue;
+        {
+            const wtb_vertex *a = &o->verts[q->idx[0]], *b = &o->verts[q->idx[1]], *c = &o->verts[q->idx[2]];
+            double u[3] = {b->x - a->x, b->y - a->y, b->z - a->z}, v[3] = {c->x - a->x, c->y - a->y, c->z - a->z};
+            double nn[3] = {u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]};
+            double l = sqrt(nn[0] * nn[0] + nn[1] * nn[1] + nn[2] * nn[2]);
+            int k2;
+            if (l < 1e-6) continue;
+            P[0] = (float)(nn[0] / l); P[1] = (float)(nn[1] / l); P[2] = (float)(nn[2] / l);
+            P[3] = P[0] * (float)a->x + P[1] * (float)a->y + P[2] * (float)a->z;
+            for (k2 = 0; k2 < q->n; k2++) {
+                const wtb_vertex *w = &o->verts[q->idx[k2]];
+                float c3[3] = {(float)w->x, (float)w->y, (float)w->z};
+                int d;
+                for (d = 0; d < 3; d++) { if (c3[d] < B[d]) B[d] = c3[d]; if (c3[d] > B[3 + d]) B[3 + d] = c3[d]; }
+            }
+        }
+    }
+    out = calloc((size_t)n * 3, sizeof *out);
+    if (!out) { free(pl); free(bb); return NULL; }
+    for (i = 1; i < n; i++) {
+        const float *P = pl + i * 4, *B = bb + i * 6;
+        int cover = 0;
+        if (P[0] == 0 && P[1] == 0 && P[2] == 0) continue;
+        for (j = 0; j < i; j++) {
+            const float *Q = pl + j * 4, *C = bb + j * 6;
+            int d, inside = 1, wide = 0;
+            if (o->polys[j].color == o->polys[i].color) continue;
+            if (P[0] * Q[0] + P[1] * Q[1] + P[2] * Q[2] < 0.999f || fabsf(P[3] - Q[3]) > 2.0f) continue;
+            for (d = 0; d < 3 && inside; d++) {
+                float lo = B[d] > C[d] ? B[d] : C[d], hi = B[3 + d] < C[3 + d] ? B[3 + d] : C[3 + d];
+                if (hi < lo - 0.5f) inside = 0;
+                else if (hi - lo > 0.5f) wide++;
+            }
+            if (inside && wide >= 2) cover++;
+        }
+        if (cover) { out[i * 3] = -P[0] * 4.0f * (float)cover; out[i * 3 + 1] = -P[1] * 4.0f * (float)cover; out[i * 3 + 2] = -P[2] * 4.0f * (float)cover; any = 1; }   /* (the corners' cross product points into the model: the face is seen from the other side, 0x4d3c9) */
+    }
+    free(pl); free(bb);
+    if (!any) { free(out); return NULL; }
+    return out;
+}
+
 static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256][3],
                      texture *const slots[GLR_SLOTS], int camo, int clan, int bounds)
 {
@@ -471,6 +530,7 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
             for (b = 0; b < GLR_BATCHES; b++) { pos[b] = acc; acc += count[b]; if (b < GLR_SLOTS) apos[b] = acc - acount[b]; }
             if (li == 1) r->pit_n = r->pit_present = 0;
             if (li == 1) r->shd_n = 0;
+            r->dots_n[li] = 0;
         }
         for (pi = 0; pi < m->part_count; pi++) {
             const mech3d_part *part = &m->parts[pi];
@@ -535,6 +595,13 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
                     }
                 }
             }
+            /* coplanar overlays (a building's windows and doors, a wall's markings: polygons of another colour lying on an
+             * earlier polygon of the object): DOS paints them over in the record's order; under a depth buffer the two
+             * fought and the windows cut in and out. Each is lifted off the face it lies on, along that face's front
+             * normal, 4 cm per earlier polygon it covers (pass 1 only; INFERRED amount) */
+            float *cop_lift = NULL;
+            if (pass == 1 && !ti && o->poly_count > 1 && o->poly_count <= 2048)
+                cop_lift = coplanar_lifts(o);
             for (k = 0; k < o->poly_count; k++) {
                 const wtb_poly *q = &o->polys[k];
                 float face[3], e1[3], e2[3], poly_col[3], ti_vmin;
@@ -543,6 +610,33 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
                 const wtb_vertex *v0, *v1, *v2;
                 int slot = q->color & 0xFF, batch = GLR_SLOTS;
                 float ground_lift = 0.0f;
+                if (q->n == 1 && r->dos && !model->extended && !ti && pass == 1) {
+                    /* a one-corner polygon (the STAR shape of TRA3STAR's night sky): DOS draws it as one pixel
+                     * (DOSBox TRA3SCN1); kept here and drawn as a point after the backdrop (glr_draw) */
+                    const wtb_vertex *pv = &o->verts[q->idx[0]];
+                    float wp[3];
+                    if (part->has_rot) {
+                        const float *R = part->rot;
+                        float vx = (float)pv->x, vy = (float)pv->y, vz = (float)pv->z;
+                        wp[0] = R[0] * vx + R[1] * vy + R[2] * vz + part_pos[0];
+                        wp[1] = R[3] * vx + R[4] * vy + R[5] * vz + part_pos[1];
+                        wp[2] = -(R[6] * vx + R[7] * vy + R[8] * vz + part_pos[2]);
+                    } else {
+                        float cy = cosf(part->yaw * 3.14159265f / 180.0f), sy = sinf(part->yaw * 3.14159265f / 180.0f);
+                        wp[0] = cy * (float)pv->x + sy * (float)pv->z + part_pos[0];
+                        wp[1] = fractional ? (float)pv->y + part_pos[1] : (float)(pv->y + part->pos[1]);
+                        wp[2] = -(-sy * (float)pv->x + cy * (float)pv->z + part_pos[2]);
+                    }
+                    if (r->dots_n[li] == r->dots_cap[li]) {
+                        float *g = realloc(r->dots[li], (size_t)(r->dots_cap[li] ? r->dots_cap[li] * 2 : 64) * 4 * sizeof *g);
+                        if (g) { r->dots[li] = g; r->dots_cap[li] = r->dots_cap[li] ? r->dots_cap[li] * 2 : 64; }
+                    }
+                    if (r->dots_n[li] < r->dots_cap[li]) {
+                        float *d = r->dots[li] + (size_t)r->dots_n[li]++ * 4;
+                        d[0] = wp[0]; d[1] = wp[1]; d[2] = wp[2]; d[3] = (float)q->color;
+                    }
+                    continue;
+                }
                 if (q->n < 3) continue;
                 /* Titanium (mercsw 0x10053280, the draw by colour kind in the normal view): kind 2 has no case there - not drawn
                  * (lattices, rotor blades, shields, the hex glass) unless its object's texture switch is off (then the kind 1
@@ -803,6 +897,18 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
                         if (wy > 2 || wy < -2) gnd = 0;
                     }
                     ground_lift = gnd && !part->has_rot ? 3.0f : 0.0f;
+                    if (!gnd && !part->has_rot && (part->objtype & 0x800) && q->n >= 3) {
+                        /* a flat terrain overlay a little above the ground (TL1STRP* runways at 1.29 m, TL1LINE* markings
+                         * at 1.61 m, in the training missions): DOS paints the scene far to near, so units standing on
+                         * it are drawn over it; with a depth buffer their feet sank into it. Kept flat and in its
+                         * order, at a quarter of its height (INFERRED; 1.29 m -> 32 cm) */
+                        double y0 = fractional ? (double)o->verts[q->idx[0]].y + part_pos[1]
+                                               : (double)((long)o->verts[q->idx[0]].y + part->pos[1]);
+                        int flat = y0 > 2 && y0 <= 300;
+                        for (k3 = 1; k3 < q->n && flat; k3++)
+                            if (o->verts[q->idx[k3]].y != o->verts[q->idx[0]].y) flat = 0;
+                        if (flat) ground_lift = (float)(y0 * 0.25 - y0);
+                    }
                 }
                 ti_flat = ti && batch == GLR_SLOTS && (((q->color >> 12) & 7) <= 1 || ((q->color >> 12) & 7) == 4 || tk2 || tk_missing);
                 /* coloured per vertex on the CPU each frame (glr_draw -> ti_colours): the lit polygons, colour kinds 1 / 2 */
@@ -865,9 +971,11 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
                         } else {
                             nx = face[0]; ny = face[1]; nz = face[2];
                         }
+                        const float *lift = cop_lift ? cop_lift + (size_t)k * 3 : NULL;
+                        const float lx = lift ? lift[0] : 0.0f, ly = lift ? lift[1] : 0.0f, lz = lift ? lift[2] : 0.0f;
                         if (part->has_rot) {
                             const float *R = part->rot;
-                            float vx = (float)v->x, vy = (float)v->y, vz = (float)v->z;
+                            float vx = (float)v->x + lx, vy = (float)v->y + ly, vz = (float)v->z + lz;
                             f[0] = R[0] * vx + R[1] * vy + R[2] * vz + part_pos[0];
                             f[1] = R[3] * vx + R[4] * vy + R[5] * vz + part_pos[1];
                             f[2] = -(R[6] * vx + R[7] * vy + R[8] * vz + part_pos[2]);
@@ -876,10 +984,10 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
                             f[5] = -(R[6] * nx + R[7] * ny + R[8] * nz);
                             if (wface) { f[3] = nx; f[4] = ny; f[5] = -nz; }
                         } else {
-                            rx = cy * (float)v->x + sy * (float)v->z;
-                            rz = -sy * (float)v->x + cy * (float)v->z;
+                            rx = cy * ((float)v->x + lx) + sy * ((float)v->z + lz);
+                            rz = -sy * ((float)v->x + lx) + cy * ((float)v->z + lz);
                             f[0] = rx + part_pos[0];
-                            f[1] = (fractional ? (float)v->y + part_pos[1] : (float)(v->y + part->pos[1])) + ground_lift;
+                            f[1] = (fractional ? (float)v->y + part_pos[1] : (float)(v->y + part->pos[1])) + ground_lift + ly;
                             f[2] = -(rz + part_pos[2]);
                             f[3] = cy * nx + sy * nz;
                             f[4] = ny;
@@ -1006,6 +1114,7 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
                 no_fp:
                 if (apoly) { size_t sw = pos[batch]; pos[batch] = apos[batch]; apos[batch] = sw; }
             }
+            free(cop_lift);
             }
         }
     }
@@ -1845,7 +1954,7 @@ int glr_dos_project(const glr *r, const float p[3], int *sx, int *sy, int *sz)
 {
     int64_t d[3], c[3];
     int k, z, beh;
-    const int cx = r->dos_vw >> 1, cy = r->dos_vh >> 1, near4 = (int)(((r->dos_zhw >> 17) + 1) * 4);
+    const int cx = r->dos_vw >> 1, cy = r->dos_vh >> 1, near4 = r->dos_near4 > 0 ? r->dos_near4 : (int)(((r->dos_zhw >> 17) + 1) * 4);
     if (!r->dos_ok) return -1;
     d[0] = (int64_t)floor((double)p[0] + 0.5) - (int64_t)floor((double)r->dos_eye[0] + 0.5);
     d[1] = (int64_t)floor((double)p[1] + 0.5) - (int64_t)floor((double)r->dos_eye[1] + 0.5);
@@ -2352,6 +2461,57 @@ static void draw_view(glr *r, const glr_view *v, int x0, int y0, int w, int h)
             glr_draw_arrays(r, 42, 6);
             rb_depth_write(1); rb_depth_test(1);
             r->D.u_horizon = 0;
+            if (r->dots_n[0] + r->dots_n[1] > 0 && v->ortho_w <= 0 && !v->wire) {
+                /* the one-corner polygons (TRA3STAR's stars, 25-35 km out): one DOS pixel each (a square one 480-line
+                 * pixel across, so the same size on any window), the colour word's flat index through the world's
+                 * haze, drawn straight after the backdrop without depth - everything nearer covers them, as the
+                 * original's far-to-near painting does */
+                static float *dv;
+                static int dcap;
+                float dview[16], dproj[16], dmvp[16], *f;
+                const float px = tanf(v->vfov * 3.14159265f / 360.0f) / 480.0f;
+                int k, c, nq = 0, nd = r->dots_n[0] + r->dots_n[1];
+                if (dcap < nd) { free(dv); dcap = nd; dv = malloc((size_t)dcap * 6 * FLOATS_PER_VERTEX * sizeof *dv); }
+                if (dv) {
+                    static const int QUAD6[6] = {0, 1, 2, 0, 2, 3};
+                    static const float SX[4] = {-1, 1, 1, -1}, SY[4] = {-1, -1, 1, 1};
+                    f = dv;
+                    for (k = 0; k < nd; k++) {
+                        const float *d = k < r->dots_n[0] ? r->dots[0] + (size_t)k * 4 : r->dots[1] + (size_t)(k - r->dots_n[0]) * 4;
+                        float rel[3] = {d[0] - eye[0], d[1] - eye[1], d[2] - eye[2]};
+                        float dist = sqrtf(rel[0] * rel[0] + rel[1] * rel[1] + rel[2] * rel[2]), hs = dist * px;
+                        int cw = (int)d[3];
+                        if (dist <= 0) continue;
+                        for (c = 0; c < 6; c++) {
+                            int q4 = QUAD6[c];
+                            float *st = f;
+                            f = env_vertex(f, rel[0] + (SX[q4] * Rv[0] + SY[q4] * Uv[0]) * hs,
+                                              rel[1] + (SX[q4] * Rv[1] + SY[q4] * Uv[1]) * hs,
+                                              rel[2] + (SX[q4] * Rv[2] + SY[q4] * Uv[2]) * hs, 0, 1, 0, 0, 0);
+                            st[8] = 0; st[9] = (float)((cw >> 4) & 0xff); st[10] = 0;
+                        }
+                        nq++;
+                    }
+                    memcpy(dview, view, sizeof dview); dview[12] = dview[13] = dview[14] = 0;
+                    perspective(dproj, v->vfov, (float)w / (float)(h > 0 ? h : 1), 100.0f, 2.0e8f);
+                    mat_mul(dmvp, dproj, dview);
+                    rb_storage(r->dots_vbo);
+                    glr_upload_aux(r->dots_vbo, dv, (size_t)nq * 6);
+                    UV(r->F.u_mvp, dmvp, 16);
+                    UV(r->F.u_view, dview, 16);
+                    r->F.u_fog_density = fog_k(v->fog_density);
+                    U4(r->F.u_tifog, v->ti_fog[0], v->ti_fog[1], (float)v->ti_fog_vtx, v->ti_fog[2]);
+                    r->F.u_dos = 1;
+                    r->D.u_textured = 0;
+                    r->D.u_unlit = 1;
+                    rb_depth_test(0); rb_depth_write(0);
+                    glr_draw_arrays(r, 0, nq * 6);
+                    rb_depth_write(1); rb_depth_test(1);
+                    r->D.u_textured = 1;
+                    r->F.u_dos = 0;
+                    rb_storage(r->env_vbo);
+                }
+            }
         }
         if (r->env_has[1] && !r->dos) {
             /* Rotation-only view so the tent stays centered on the eye,
@@ -2634,7 +2794,12 @@ static void draw_view(glr *r, const glr_view *v, int x0, int y0, int w, int h)
             r->dos_sh[0] = sh2[0]; r->dos_sh[1] = sh2[1]; r->dos_vw = w; r->dos_vh = h; r->dos_ok = 1;
             r->dos_zhw = (uint32_t)((uint64_t)zoom * hw);
             r->F.u_dos_zhw = (int32_t)r->dos_zhw;
-            r->F.u_dos_near = (int)(((r->dos_zhw >> 17) + 1) * 4);   /* the world polygons' near (0x504c1 -> 0x49fbc: +0x3c x 4, 0x4e1d0; the cockpit sets 8 for its own draw, 0x10626) */
+            /* the world polygons' near (0x504c1 -> 0x49fbc: +0x3c x 4, 0x4e1d0; the cockpit sets 8 for its own draw, 0x10626):
+             * (zoom x half width >> 17) + 1 cm - the half width in pixels, so it grows with the window: 161 cm at DOS's
+             * 640 x 480, but 271 cm at 1080 wide and 481 cm at 1920, which cut the near hillside out of the view
+             * (GitHub report, video: walking along a steep dune). Kept at the 640-wide view's distance at any size */
+            r->dos_near4 = (int)((((uint64_t)zoom * 320u >> 17) + 1) * 4);
+            r->F.u_dos_near = r->dos_near4;
             memcpy(r->dos_eye, eye, sizeof r->dos_eye);
             if (r->pit_n > 0) {   /* the cockpit set's draw order */
                 int rk[GLR_PIT_MAX];
@@ -2967,6 +3132,7 @@ void glr_draw_rect(glr *r, const glr_view *v, int x0, int y0, int w, int h)
     const int sx=r->dos_sh[0],sy=r->dos_sh[1],vw=r->dos_vw,vh=r->dos_vh;
     const int valid=r->dos_ok,ortho=r->dos_ortho;
     const uint32_t zoom=r->dos_zhw;
+    const int near4=r->dos_near4;
     memcpy(rows,r->dos_R,sizeof rows);memcpy(eye,r->dos_eye,sizeof eye);
     memcpy(center,r->center,sizeof center);
     draw_view(r,v,x0,y0,w,h);
@@ -2977,5 +3143,5 @@ void glr_draw_rect(glr *r, const glr_view *v, int x0, int y0, int w, int h)
     memcpy(r->dos_R,rows,sizeof rows);memcpy(r->dos_eye,eye,sizeof eye);
     memcpy(r->center,center,sizeof center);
     r->dos_sh[0]=sx;r->dos_sh[1]=sy;r->dos_vw=vw;r->dos_vh=vh;
-    r->dos_ok=valid;r->dos_ortho=ortho;r->dos_zhw=zoom;
+    r->dos_ok=valid;r->dos_ortho=ortho;r->dos_zhw=zoom;r->dos_near4=near4;
 }

@@ -2054,6 +2054,10 @@ static void player_upkeep(void)
     static int last_ej, last_out;
     combat_unit *pu = &g_sim.player_unit;
     if (g_sd_at >= 0 && g_sim.now > g_sd_at) { g_sd_at = -1; player_eject(0); }
+    if (getenv("MERCS_TEST_SELF_DESTRUCT_AT")) {   /* TEST: the self-destruct key at that many seconds of mission time */
+        static int sd_done;
+        if (!sd_done && g_sim.now >= 1000.0 * atof(getenv("MERCS_TEST_SELF_DESTRUCT_AT"))) { sd_done = 1; player_self_destruct(); }
+    }
     if (pu->ejected != last_ej) {
         if (pu->ejected == 1) hud_message_v("Ejecting", 4);
         else if (pu->ejected == 2) hud_message_v("Atmosphere hostile : ejection aborted", 58);
@@ -6754,7 +6758,13 @@ int main(int argc, char **argv)
                 if (g_auto_twist > -900.0f && !(g_sim_ok && (g_sim.player_unit.shutdown || (g_sim.now < g_sim.player_online_at && !getenv("MERCS_NO_STARTUP"))))) g_pl.twist = g_auto_twist;   /* twist -999 = free */
             }
             g_sim.no_player_muzzle = VIEW_IN_COCKPIT;
-            if (g_pl_ok && g_pilot && !g_sim.player_unit.destroyed) {
+            /* state 4 on the ground (destroyed, still in one piece): the drive runs on with every input cleared, so the
+             * mech coasts to a stop at the throttle-off rate and its stride winds down to the standing pose, as DOS does
+             * (DOSBox MCC4SCN1, full speed then the self-destruct key: the view slows over ~2 s and stops before the
+             * explosion; the port had frozen it mid-stride) */
+            const int wreck_coast = g_sim_ok && g_sim.player_unit.destroyed && !g_sim.player_unit.intact_out &&
+                                    !g_sim.player_unit.body_detached && g_sim.player_unit.y <= g_sim.player_unit.ground + 1.0f;
+            if (g_pl_ok && g_pilot && (!g_sim.player_unit.destroyed || wreck_coast)) {
                 /* Engine (3dfx MW2.DLL 0x1001a180 / 0x10041410): full throttle = walk MP x 105.49/64
                  * cm per 1/182 s tick = walk MP x 10.8 km/h; reverse at half; leg turn rate scales
                  * with cos(min(80, speed in km/h)) deg; FEET_TO_TORSO swings the legs at 55 deg/s.
@@ -6768,7 +6778,7 @@ int main(int argc, char **argv)
                  * are cleared; the controls block runs only in state 2. DOSBox (GREESCN1, s at full speed): no leg turn or
                  * torso twist while down, the mech coasts to a stop at the throttle-off rate, a twisted / tilted torso
                  * swings back to the centre within ~0.5 s */
-                int offline = starting || (g_sim_ok && g_sim.player_unit.shutdown);
+                int offline = starting || (g_sim_ok && (g_sim.player_unit.shutdown || g_sim.player_unit.destroyed));
                 float heading_before = g_pl.heading;
                 float top = g_pl_walk * (g_sim_ok ? g_sim.player_unit.speed_gain : 1.0f), kmh, turn;
                 if(g_masc || g_im_novice) {
@@ -7111,7 +7121,7 @@ int main(int argc, char **argv)
                  * velocity approach 1/45 per tick; 0x1001a180 / 0x100190d0), the throttle signed here (reverse at half) */
                 {   /* the frame's vertical move for the move test (as combat_jets below will make it) */
                     const bool *ks = test_ks();
-                    int jet = (H("jumpjet_enabled") || (g_auto_on && g_auto_jet)) && !(g_sim_ok && ((g_sim.now < g_sim.player_online_at && !getenv("MERCS_NO_STARTUP")) || g_sim.player_unit.shutdown));
+                    int jet = (H("jumpjet_enabled") || (g_auto_on && g_auto_jet)) && !(g_sim_ok && ((g_sim.now < g_sim.player_online_at && !getenv("MERCS_NO_STARTUP")) || g_sim.player_unit.shutdown || g_sim.player_unit.destroyed));
                     if (g_sim_ok) {   /* the no-lift flag (0x100196cc..0x10019711: |+0xc| >= 1e-7 or a directional jet held) */
                         int dj = H("jumpjet_fire_left") || H("jumpjet_fire_right") || H("jumpjet_fire_forward") || H("jumpjet_fire_backward");
                         g_sim.player_unit.jet_forward = jet && (g_pl_legs_turn || dj);
@@ -7642,7 +7652,7 @@ int main(int argc, char **argv)
                         if (getenv("MERCS_EYE_DY")) hp[1] += (float)atof(getenv("MERCS_EYE_DY"));   /* tests */
                         if (getenv("MERCS_EYE_DF")) { float df = (float)atof(getenv("MERCS_EYE_DF")), hh2 = g_pl.heading * 3.14159265f / 180.0f; hp[0] += sinf(hh2) * df; hp[2] += cosf(hh2) * df; }
                         v.eye[0] = hp[0]; v.eye[1] = hp[1]; v.eye[2] = hp[2];
-                        if (getenv("MERCS_DEBUG_EYE")) fprintf(stderr, "eye %.0f %.0f %.0f  origin %d %d %d\n", (double)hp[0], (double)hp[1], (double)hp[2], g_pl.origin[0], g_pl.origin[1], g_pl.origin[2]);
+                        if (getenv("MERCS_DEBUG_EYE")) fprintf(stderr, "eye %.0f %.0f %.0f  origin %d %d %d  feet %.0f ground_at_eye %.0f hd %.0f\n", (double)hp[0], (double)hp[1], (double)hp[2], g_pl.origin[0], g_pl.origin[1], g_pl.origin[2], (double)g_sim.player_unit.y, (double)msim_ground_fixed(&g_sim, hp[0], hp[2], hp[1] + 10000.0f), (double)g_pl.heading);
                     } else {
                         v.eye[0] = (float)g_pl.origin[0] + sinf(aim) * 250.0f;
                         v.eye[1] = 1050.0f + g_sim.player_unit.y;
