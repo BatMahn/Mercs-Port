@@ -1,5 +1,15 @@
 # Mercenaries development history
 
+## v1.2.22: the ground texture fades out as in DOS in Instant Action and generated contracts — 2026-11-19
+
+- **No more hard line and bright band in the ground texture.** Generated scenes (Instant Action and generated
+  contracts) have no line of their own in SKYGND.PAR. The port had used the game's starting values for them, which
+  draw the texture at full strength out to 100 m and then a brighter band beyond: the "invisible line" across the
+  ground, with shimmering in the bright band as you walk (GitHub report). DOS does not do that: its loader writes every
+  line's ground values as it reads, so a scene without a line keeps the file's last line (the texture fades out
+  from 15 m to 200 m, with the original's ground brightness and texture scale). Checked in DOSBox by removing a
+  mission's line and changing the last one. The ground grid's tiles follow the same leftover values (0x4a3d4).
+
 ## v1.2.21: every shell button presses like DOS, the Mech Lab's sound stays put, the loading line animates — 2026-11-19
 
 - **Every button in the shell now presses the same way.** Rather than fixing screens one at a time, the pressed look

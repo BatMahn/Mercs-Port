@@ -19,10 +19,12 @@
 int skygnd_dos_intensity(const char *path, const char *mission);
 
 /* Mercs retail DOS 0x49cc4. Values retain file units; ground_max is the
- * half-tile width before the original loader doubles it. */
+ * half-tile width before the original loader doubles it. Without a matching
+ * line the last line's ground values remain, as in the original. */
 typedef struct {
     int found, intensity, tile_ground, grounddelta, ground_max, shadowtable;
     int gclip[3];
+    int tile_side, tile_half;   /* 0xb3f48 / 0xb3f4c as 0x49cc4 leaves them */
 } skygnd_dos;
 int skygnd_dos_lookup(const char *path, const char *mission, skygnd_dos *out);
 

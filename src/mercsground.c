@@ -4,11 +4,16 @@
 
 int mercs_ground_tiles(int32_t x, int32_t z, int32_t side, int32_t tiles[4][2])
 {
+    return mercs_ground_tiles_half(x, z, side, side / 2, tiles);
+}
+
+int mercs_ground_tiles_half(int32_t x, int32_t z, int32_t side, int32_t half, int32_t tiles[4][2])
+{
     int tx, tz, dx, dz, q;
-    if (side < 2) return 0;
+    if (side < 2 || half < 1) return 0;
     tx = x / side - (x < 0); tz = z / side - (z < 0);
     dx = x < 0 ? -1 : 1; dz = z < 0 ? -1 : 1;
-    q = abs((x % side) / (side / 2)) * 2 + abs((z % side) / (side / 2));
+    q = abs((x % side) / half) * 2 + abs((z % side) / half);
     if (q > 3) return 0;
     if (!(q & 2)) dx = -dx;
     if (!(q & 1)) dz = -dz;
@@ -69,7 +74,8 @@ int mercs_ground_mesh(const mercs_ground *g, const float eye[3], const float for
         bands[1] = 2500; bands[2] = 8000; bands[3] = 10000000; nb = 3;
     } else {
         if (!(g->clip[0] > 0 && g->clip[1] > g->clip[0] && g->clip[2] > 0)) return 0;
-        nt = mercs_ground_tiles((int32_t)eye[0], (int32_t)eye[2], (int32_t)g->size, tiles);
+        nt = mercs_ground_tiles_half((int32_t)eye[0], (int32_t)eye[2], (int32_t)g->size,
+                                     g->half >= 1 ? (int32_t)g->half : (int32_t)g->size / 2, tiles);
         if (g->mode == MERCS_GROUND_DOS) {
             bands[1] = g->clip[0]; bands[2] = g->clip[1]; nb = 2;
         } else {

@@ -111,6 +111,7 @@ def main():
         run("test_mercs_ground", archive)
         run("test_mercs_projectile_terrain", archive, glide_archive, titanium_archive)
         run("test_mercs_projectile_effect_points")
+        run("test_mercs_skygnd")
         run("test_mercs_polygon_normals", archive, glide_archive, titanium_archive)
         run("test_mercs_aircraft", archive, glide_archive, titanium_archive)
         run("test_mercs_aircraft_coordinates", archive, glide_archive, titanium_archive)

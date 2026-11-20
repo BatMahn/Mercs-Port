@@ -10,29 +10,43 @@ int skygnd_dos_lookup(const char *path, const char *mission, skygnd_dos *out)
 {
     char line[512];
     FILE *f = path && mission ? fopen(path, "r") : NULL;
+    int intensity = 128, shadow = 0;
     memset(out, 0, sizeof *out);
-    /* No line for the mission (the generated RAN<n> scenes of Instant Action and generated contracts: SKYGND.PAR has
-     * none): MW2.EXE 0x49cc4 reads to the end and leaves its statics as they start, tile_ground 5000, ground_max
-     * 160000 (0xb3f4c; 0xb3f48 the doubled 320000), grounddelta 0, gclip 10000, 30000, 50000 (0xb3f54..0xb3f5c). The port
-     * had gclip 0, 0, 0, which drew no textured ground at all - the ground took the flat colour */
+    /* MW2.EXE 0x49cc4. Its statics start as tile_ground 5000, ground_max 160000 (0xb3f4c; 0xb3f48 the doubled
+     * 320000), grounddelta 0, gclip 10000, 30000, 50000 (0xb3f44..0xb3f5c). */
     out->intensity = 128;
     out->tile_ground = 5000;
     out->ground_max = 160000;
+    out->tile_side = 320000; out->tile_half = 160000;
     out->gclip[0] = 10000; out->gclip[1] = 30000; out->gclip[2] = 50000;
-    if (!f) return -1;
+    if (!f) {
+        /* no file (0x49df6): gclip[0] 0, so no textured ground is drawn (0x4b4fc) */
+        out->gclip[0] = 0;
+        return -1;
+    }
     while (fgets(line, sizeof line, f)) {
-        char name[5];
-        skygnd_dos row = *out;
-        if (sscanf(line, "mission=%4s globalintensity=%d tile_ground=%d grounddelta=%d ground_max=%d shadowtable=%d gclip=%d,%d,%d",
-                   name, &row.intensity, &row.tile_ground, &row.grounddelta, &row.ground_max,
-                   &row.shadowtable, &row.gclip[0], &row.gclip[1], &row.gclip[2]) < 2 ||
-            strncasecmp(name, mission, 4) != 0) continue;
-        row.intensity = row.intensity < 0 ? 0 : row.intensity > 128 ? 128 : row.intensity;
-        row.found = 1;
-        *out = row;
+        char name[5] = "";
+        /* the one sscanf writes tile_ground, grounddelta, ground_max and the gclips straight into the statics
+         * for every line, matching or not; intensity and shadowtable go to locals used only on a match */
+        sscanf(line, "mission=%4s globalintensity=%d tile_ground=%d grounddelta=%d ground_max=%d shadowtable=%d gclip=%d,%d,%d",
+               name, &intensity, &out->tile_ground, &out->grounddelta, &out->ground_max,
+               &shadow, &out->gclip[0], &out->gclip[1], &out->gclip[2]);
+        if (!name[0] || strncasecmp(name, mission, 4) != 0) continue;
+        out->intensity = intensity < 0 ? 0 : intensity > 128 ? 128 : intensity;
+        out->shadowtable = shadow;
+        out->tile_half = out->ground_max;        /* 0xb3f4c = ground_max */
+        out->tile_side = out->ground_max * 2;    /* 0xb3f48 doubled */
+        out->found = 1;
         break;
     }
     fclose(f);
+    if (!out->found) {
+        /* No line for the mission (the generated RAN<n> scenes of Instant Action and generated contracts):
+         * the statics keep the LAST line's tile_ground, grounddelta, ground_max and gclips, ground_max is not
+         * doubled into 0xb3f48, and 0xb3f4c keeps its earlier value (160000 at start, and every retail line
+         * sets 160000) */
+        out->tile_side = out->ground_max;
+    }
     return out->found ? 0 : -1;
 }
 

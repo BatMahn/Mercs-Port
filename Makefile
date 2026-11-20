@@ -128,6 +128,9 @@ test_mercs_audio_events: build/mercs/tests/test_mercs_audio_events.o $(filter-ou
 
 -include $(MERCS_OBJ:.o=.d) build/mercs_sim.d build/mercs_playthrough_sim.d build/mercs_playthrough_geometry.d
 
+test_mercs_skygnd: tests/test_mercs_skygnd.c src/skygnd.c src/mercsground.c src/skygnd.h src/mercsground.h
+	$(CC) $(CFLAGS) -Wno-conversion -Isrc $(filter %.c,$^) -o $@ -lm
+
 test_mercs_paths: tests/test_mercs_paths.c src/portcfg.c src/prj.c src/datapath.c src/portcfg.h src/datapath.h
 	$(CC) $(CFLAGS) -Isrc $(filter %.c,$^) -o $@
 
@@ -598,6 +601,7 @@ MERCS_TEST_BIN += test_mercs_mission_dispatch test_mercs_nuclear_wave
 MERCS_TEST_BIN += test_mercs_arrival test_mercs_playthrough_world_ray
 MERCS_TEST_BIN += test_mercs_projectile_terrain test_mercs_projectile_effect_points
 MERCS_TEST_BIN += test_mercs_ammo_capacity
+MERCS_TEST_BIN += test_mercs_skygnd
 MERCS_TEST_BIN += test_mercs_palette_cards 
 MERCS_TEST_BIN += test_mercs_fall
 MERCS_TEST_BIN += test_mercs_hud_controls test_mercs_bwdplace test_mercs_map test_mercs_map_render

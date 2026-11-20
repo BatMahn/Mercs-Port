@@ -3665,7 +3665,8 @@ static void dos_scene(glr *r, prj_archive *ma, const char *mission)
             texture *ground = g_scene.slot[0x4a];
             int i;
             memset(&cfg,0,sizeof cfg); cfg.mode = MERCS_GROUND_DOS;
-            cfg.size = 2.0f * sg.ground_max;
+            cfg.size = (float)sg.tile_side;
+            cfg.half = (float)sg.tile_half;
             cfg.repeats[0] = (float)sg.tile_ground / (float)ground->w;
             cfg.repeats[1] = (float)sg.tile_ground / (float)ground->h;
             for (i=0;i<3;i++) cfg.clip[i] = (float)sg.gclip[i];

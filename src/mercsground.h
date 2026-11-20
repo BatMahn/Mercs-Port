@@ -12,12 +12,16 @@ typedef struct {
     float repeats[2]; /* repeats across that edge / half-size */
     float clip[3];    /* DOS/3dfx SKYGND gclip; Titanium has fixed bands */
     int delta;        /* DOS grounddelta, added to LITE ambient */
+    float half;       /* DOS 0xb3f4c quadrant divisor; 0 = size / 2 */
 } mercs_ground;
 typedef struct { float x, z, u, v, depth, shade; } mercs_ground_vertex;
 #define MERCS_GROUND_MAX_VERTICES 384
 
 /* Original quadrant/grid rule, including negative exact tile boundaries. */
 int mercs_ground_tiles(int32_t x, int32_t z, int32_t side, int32_t tiles[4][2]);
+/* The same with DOS's own quadrant divisor (0xb3f4c), which is only half the
+ * tile when the scene's SKYGND.PAR line matched. */
+int mercs_ground_tiles_half(int32_t x, int32_t z, int32_t side, int32_t half, int32_t tiles[4][2]);
 /* Original DOS 0x4a1bc, depth in quarter-centimetres. */
 int mercs_ground_shade(int ambient, int delta, int near_cm, int far_cm,
                        int first_clip, int depth_quarter_cm);
