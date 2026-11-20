@@ -2638,9 +2638,15 @@ static void draw_view(glr *r, const glr_view *v, int x0, int y0, int w, int h)
             rb_texture(0, v->flat_ground && r->ground_flat && !r->dos ? r->ground_flat : r->mercs_ground_tex);
             rb_tex_filter(v->flat_ground && r->ground_flat && !r->dos ? r->ground_flat : r->mercs_ground_tex, (int)(r->dos ? RB_NEAREST : eminf), (int)(r->dos ? RB_NEAREST : emagf));
             /* Original bands overlap by200cm at gclip[0]; retain later-band
-             * precedence while writing depth for terrain and unit occlusion. */
+             * precedence while writing depth for terrain and unit occlusion.
+             * DOS: the ground is painted first and everything else over it (0x4a734 then the object lists), so terrain
+             * dipping under y 0 - the training missions' dune pits, down to 32 m - and the mechs walking in them stay in
+             * view; written into the depth buffer, the flat ground hid them ("quicksand", GitHub report). No depth
+             * write in the DOS look: later bands still paint over earlier ones in order. */
             rb_depth_func(RB_LEQUAL);
+            if (r->dos) rb_depth_write(0);
             glr_draw_arrays(r, 0, n);
+            if (r->dos) rb_depth_write(1);
             rb_depth_func(RB_LESS);
             r->F.u_dos = 0;
             r->D.u_tilit = 0;

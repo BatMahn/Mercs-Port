@@ -1,5 +1,14 @@
 # Mercenaries development history
 
+## v1.2.25: the training missions' dune pits are no longer "quicksand" — 2026-11-20
+
+- **Walking into a dip in the dunes no longer sinks you into the ground.** The dunes in Sgt. Unther's training
+  missions dip below ground level in places (one pit 6.4 m deep, where the report's screenshot reads Alt -6.30 m). DOS
+  paints the flat ground first and every object over it, so the pit's slopes and the mechs in it stay in view. The port
+  wrote the flat ground into the depth buffer, so it covered everything below ground level: the pit looked like a
+  flat sheet you sank through, and lancemates in it lost their legs (GitHub report). In the DOS look the ground no
+  longer hides what is drawn after it. (The v1.2.23 runway change stays: that was a separate floating surface.)
+
 ## v1.2.24: the near hillside stays in view at high resolutions — 2026-11-20
 
 - **Walking along a steep dune no longer cuts the slope out of the view.** DOS stops drawing anything nearer than a
