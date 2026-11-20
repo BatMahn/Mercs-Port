@@ -1,5 +1,14 @@
 # Mercenaries development history
 
+## v1.2.27: the commander's letter only on a fresh career; a taken contract hides its buttons — 2026-11-20
+
+- **Cmdr. Holly Harris's letter no longer replays after loading a save** (GitHub #28). The DOS shell plays it on the
+  news terminal only while the career is still on its starting campaign (save header +0x1fe = 3, in the mode
+  +0x23bb = 1; shell 0x5dd1e) - a new career, until its first contract is accepted. The port played it on the first
+  terminal visit after every load.
+- **Contracts: once one is accepted, only EXIT is shown.** The arrows and ACCEPT no longer stay on screen after a
+  contract is taken (they already did nothing then), as in DOS (GitHub report, Mercenary Commander).
+
 ## v1.2.26: tower windows hold still at any distance — 2026-11-20
 
 - **The office tower's window bands no longer flicker.** The tall glass tower in the report (S_1SMTWR, 232 m - the tall

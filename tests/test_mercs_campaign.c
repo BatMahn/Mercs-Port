@@ -40,9 +40,12 @@ static void check_regular(prj_archive *a,const char *dir)
     char e[384]={0};int selected;size_t expected_items;int32_t before,after;
     assert(v&&r);check(mercs_campaign_new(a,1,"CHECKER","TEST UNIT",&c,v,e,sizeof e),e);
     assert(v->owned_count==1&&v->funds==1000000&&v->pilot_instance_id==12);
+    /* the commander's letter (shell 0x5dd1e) is due: starting campaign kind 3 in mode 1 */
+    assert(mercs_save_header(c.document)[0x1fe]==3&&mercs_save_header(c.document)[0x23bb]==1);
     selected=mission(v,"BET1CAM1");assert(selected>=0);
     check(mercs_campaign_accept(a,&c,v,selected,e,sizeof e),e);
     assert(c.active&&c.accepted==selected&&!strcmp(v->starter_loadout,"PLY00MER"));
+    assert(mercs_save_header(c.document)[0x1fe]!=3);   /* and no longer once a contract is taken */
     assert(v->missions[selected].launchable);
     /* BET1's authored AMMO quantities are signed -1, hence no shop ammo. */
     assert(mercs_save_list_count(c.document,MERCS_SAVE_SHOP_AMMO)==0);

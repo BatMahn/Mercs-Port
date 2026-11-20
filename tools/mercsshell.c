@@ -325,6 +325,16 @@ static void open_game_menu(shell *s);
 static int play_cue(shell *s, mercs_shell_audio_cue cue);
 static int career_dirty(const shell *s);
 static void reset_text_reveal(shell *s);
+/* The commander's letter on the news terminal (DOS shell 0x5dd1e): only while the career's current campaign record is
+ * of kind 3 (header +0x1fe, the CPGN kind) in the mode +0x23bb 1 - a fresh career; the port had played it on the first
+ * terminal visit after any load (GitHub #28). Heard once per session as before. */
+static int letter_due(const shell *s)
+{
+    const uint8_t *h = s->campaign.document ? mercs_save_header(s->campaign.document) : NULL;
+    if (!s->mode || s->letter_heard || !h) return 0;
+    return (h[0x1fe] | h[0x1ff] << 8 | h[0x200] << 16 | (uint32_t)h[0x201] << 24) == 3;
+}
+
 static void poll_shell(shell *s);
 static int prepare_economy_page(shell *s, int fresh);
 
@@ -1354,7 +1364,7 @@ static void reset_text_reveal(shell *s)
 static void poll_shell(shell *s)
 {
     mercs_shell_audio_idle_enabled(s->shell_audio,
-        !(s->page == PAGE_NEWS && s->mode && !s->letter_heard));
+        !(s->page == PAGE_NEWS && letter_due(s)));
     mercs_shell_audio_tick(s->shell_audio);
     if (!s->dialog.active && !s->game_menu.active && !s->panel_mode && s->reveal_active) {
         if (s->reveal_rows < s->reveal_total) s->reveal_rows++;
@@ -2299,12 +2309,17 @@ static void draw_original(shell *s)
     } else if (s->page == PAGE_NEWS) {
         mercs_art_background(s->art, ui_news_background);
         art_button(s, &ui_news_sprites[0], &ui_news_hotspots[0]);
-        if (s->mode && !s->letter_heard) sprite(s, &ui_news_sprites[1]);
+        if (letter_due(s)) sprite(s, &ui_news_sprites[1]);
         mercs_text_draw_rows(&s->body, s->art, ui_news_text_x, ui_news_text_y, ui_news_text_h, s->scroll, 17, s->reveal_rows);
     } else if (s->page == PAGE_CONTRACTS) {
         static const int map[] = {3, 2, 0, 1};
+        const uint8_t *ch = s->campaign.document ? mercs_save_header(s->campaign.document) : NULL;
+        /* with a contract already taken (header +0x239d clear: the clicks below are refused then) only EXIT is drawn -
+         * the original takes the arrows and ACCEPT off the screen (GitHub report, DOS screenshots) */
+        const int taken = !ch || !ch[0x239d];
         mercs_art_background(s->art, ui_contracts_background);
         for (i = 0; i < COUNT(ui_contracts_sprites); i++) {
+            if (taken && map[i] != 1) continue;
             if ((i == 0 && s->selected + 1 >= s->career.mission_count) || (i == 1 && s->selected == 0)) continue;
             art_button(s, &ui_contracts_sprites[i], &ui_contracts_hotspots[map[i]]);
         }
