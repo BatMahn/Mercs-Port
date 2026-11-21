@@ -29,6 +29,7 @@ typedef struct {
     unsigned extra_shapes;
     int frame, finished, audio_loaded, rate, channels;
     unsigned page;
+    unsigned used;   /* the page it was last asked for on (open_clip): what a full cache drops first */
     int16_t *pcm;
     size_t pcm_frames;
     Uint64 last_tick;
@@ -265,15 +266,39 @@ int mercs_art_shape(mercs_art *a, int index, int frame, int x, int y)
     return 0;
 }
 
+static void clip_free(mercs_art *a, art_clip *c)
+{
+    int frame;
+    if (a->audio && c->pcm) sfx_stop_pcm(a->audio, (const unsigned char *)c->pcm);
+    free(c->pcm);
+    smk_close(c->movie);
+    shp_frame_free(&c->shape);
+    shp_frame_free(&c->active_shape);
+    for (frame = 0; frame < 5; frame++) shp_frame_free(&c->extra_shape[frame]);
+}
 static art_clip *open_clip(mercs_art *a, const char *name)
 {
     art_clip *clip;
     char path[2048], relative[64];
     int i;
     FILE *file;
-    for (i = 0; i < a->clip_count; i++) if (!strcmp(a->clips[i].name, name)) return &a->clips[i];
-    if (a->clip_count >= ART_CLIPS || strlen(name) >= sizeof a->clips[0].name) return NULL;
+    for (i = 0; i < a->clip_count; i++) if (!strcmp(a->clips[i].name, name)) { a->clips[i].used = a->page; return &a->clips[i]; }
+    if (strlen(name) >= sizeof a->clips[0].name) return NULL;
+    if (a->clip_count >= ART_CLIPS) {
+        /* The cache was never emptied: after enough pages (a long career session) every new name failed to open, and
+         * buttons and mech clips went missing from the pages visited last (GitHub: Weapons Grouping without its NEXT
+         * button or mech, the save screen without SAVE). Drop the clips no page has asked for since this one began. */
+        int k = 0;
+        for (i = 0; i < a->clip_count; i++) {
+            if (a->clips[i].used == a->page) { if (k != i) a->clips[k] = a->clips[i]; k++; continue; }
+            clip_free(a, &a->clips[i]);
+        }
+        a->clip_count = k;
+        if (a->clip_count >= ART_CLIPS) return NULL;
+    }
     clip = &a->clips[a->clip_count++];
+    memset(clip, 0, sizeof *clip);
+    clip->used = a->page;
     clip->page = a->page - 1;
     snprintf(clip->name, sizeof clip->name, "%s", name);
     snprintf(relative, sizeof relative, "SMK\\%s.SMK", name);

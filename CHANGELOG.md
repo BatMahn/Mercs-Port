@@ -1,5 +1,17 @@
 # Mercenaries development history
 
+## v1.2.31: the satellite map's cone from the mech on tall screens; shell art no longer runs out — 2026-11-21
+
+- **Satellite map (F3) on screens taller than 768 lines.** Its view cone and marks used the screen's pixels as HUD
+  units, but above 768 lines the HUD is drawn at height / 768: at 1080 lines the cone's point sat 1.4x off the
+  centre, down and to the right of the mech, and its lines swept from there (GitHub report). The map now converts
+  as the reticle does; the point is on the mech at 2560 x 1080 and 1024 x 768.
+- **Shell pictures and buttons going missing late in a session.** The shell kept every clip and button picture it
+  had opened, up to 96, and never let one go: after enough pages every new one failed to open. That is the Weapons
+  Grouping page with no mech and no NEXT button and the save screen without one of its buttons (GitHub
+  screenshots). When the cache is full, the pictures no page has used since the current one opened are dropped.
+  Checked by running the shell checks with a 6-entry cache.
+
 ## v1.2.30: the radar's view cone on wide screens, a clean satellite map, window bands on near walls — 2026-11-20
 
 - **The radar's view cone keeps its V on wide screens.** The DOS look took the rim points' aspect from the window's

@@ -31,6 +31,8 @@ What is still open in the Mercenaries port, in plain language.
     - MCC3: the port starts the player on top of a structure, 7 m up; DOS starts it at ground level.
     - SOL5 and SPA3: the port's player can be destroyed within two seconds of start-up; in DOS it lasts much longer.
     - SOL1's hangar lighting and beams, a lit building on LUT1's skyline and a bright cockpit moment on OUT4 differ.
+  - **Office tower window bands** (Instant Action) still shimmer on one side of the building for a tester; not yet
+    reproduced here (the tower renders unlit in the test captures).
   - **Satellite map (F3):** BET1's road shows as a black strip; DOSBox shows the ground there.
   - **REC1/REC2's external camera**, perched on the rocks: DOS shows dark, shaded rock faces beside the camera where the
     port shows the lit face nearest it. The rest of the view lines up, so the camera is in the same place. Neither the

@@ -8838,7 +8838,11 @@ int main(int argc, char **argv)
             if(g_satmap) {
                 hud_win mapbox={0};
                 HUD_SIDE(0);
-                mapbox.ux=hud_px_x(g_hud,1);mapbox.uy=hud_px_y(g_hud,1);
+                {   /* pixels -> HUD units as the reticle's (screens taller than 768 draw the HUD at h / 768: the box's
+                     * centre was 1.4x off the screen's at 1080 lines - the cone's point down and right of the mech) */
+                    const float ns=h>768?(float)h/768.0f:1.0f;
+                    mapbox.ux=hud_px_x(g_hud,1)/ns;mapbox.uy=hud_px_y(g_hud,1)/ns;
+                }
                 mapbox.x0=(int)lroundf(hud_left_x(g_hud)/mapbox.ux);
                 mapbox.x1=mapbox.x0+w-1;mapbox.y0=0;mapbox.y1=h-1;
                 mercs_satellite_marks(&mapbox,1);
