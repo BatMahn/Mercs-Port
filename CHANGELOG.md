@@ -1,5 +1,13 @@
 # Mercenaries development history
 
+## v1.2.32: the DOS end after the player's mech is destroyed — 2026-11-21
+
+- **"Exiting Mission Area..." and back to the shell, as DOS.** Traced in MW2.EXE (0x57918, the end-of-mission
+  manager): in single player, once the player's mech is destroyed the top bar says "Exiting Mission Area..." and the
+  sim leaves 0x16c ticks (2 s) later. DOSBox shows exactly that (DOU1 shot down, GRA1 Ctrl+Alt+X). The port had
+  shown "Press any key to exit..." and waited about 20 s: that prompt is in no Mercenaries DOS file - it came over
+  from the original MechWarrior 2. A mission ended by its objectives keeps its current end for now.
+
 ## v1.2.31: the satellite map's cone from the mech on tall screens; shell art no longer runs out — 2026-11-21
 
 - **Satellite map (F3) on screens taller than 768 lines.** Its view cone and marks used the screen's pixels as HUD

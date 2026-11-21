@@ -2259,8 +2259,19 @@ void msim_step(msim *s, int32_t dt_ms)
             }
             /* "Press CTRL-Q to exit..." on the message bar: 0x1536 ticks at priority 100 (0x10002f20) */
             if (s->dos_end) s->dos_resolved_s = (s->logic.result_time[s->player_table] >= 0 ? s->logic.result_time[s->player_table] : s->now) / 1000;   /* star +8; -1 alone is unset */
+            /* Mercenaries DOS (MW2.EXE 0x57918, single player: 0xb5dfc = 0): with the player's mech destroyed (0xa8e38) the
+             * top bar says "Exiting Mission Area..." (0xa30cc, priority 0x64) and the sim leaves 0x16c ticks later
+             * (0xb5e1c -> 0xa7e60). DOSBox DOU1 (shot down) and GRA1 (Ctrl+Alt+X): no "Press any key to exit..." - that
+             * prompt is not in any Mercenaries DOS file (the original MechWarrior 2's, carried over) */
+            if (s->dos_end && s->player_unit.destroyed) {
+                s->dos_exiting = 1;
+                s->end_at = s->now + 0x16c * 1000 / 182;
+                if (s->on_message) s->on_message(s->message_user, "Exiting Mission Area...", -0x1536);
+            }
             else if (s->on_message) s->on_message(s->message_user, "Press CTRL-Q to exit...", -0x1536);
         }
+    } else if (!s->over && s->dos_end && s->dos_exiting) {
+        if (s->now >= s->end_at) { s->over = 1; s->ended_at = s->now; }
     } else if (!s->over && s->dos_end) {
         /* DOS 0x16fbe..0x1703b: with no radio line playing (DAT_00097ddc), past 3 s the prompt (0x11020: 0x1554 ticks,
          * priority 100) once; past 0x14 s the loop's end (DAT_00095864 += 2) */
