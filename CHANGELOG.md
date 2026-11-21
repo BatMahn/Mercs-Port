@@ -1,5 +1,22 @@
 # Mercenaries development history
 
+## v1.2.30: the radar's view cone on wide screens, a clean satellite map, window bands on near walls — 2026-11-20
+
+- **The radar's view cone keeps its V on wide screens.** The DOS look took the rim points' aspect from the window's
+  shape (MW2.EXE scales by the screen's height / width x 4 / 3, which is 1 on DOS's 4:3 screen), so on a 21:9 window
+  the cone came out nearly flat (GitHub report). The aspect is now DOS's 4:3 at any window shape (320 x 200 keeps its
+  own).
+- **The satellite map (F3) is readable.** The DOS look grows each lit and textured polygon 3 pixels and lets its
+  span walk trim it; the satellite map paints flat map colours without that walk, so every mech's edge-on polygons
+  became 24-pixel spikes - the "green clumps" (GitHub report). No growth on the satellite map: the mechs are small
+  marks as in DOSBox (BET1, F3). The cone lines are now in the radar's colour 1 (DOSBox: 121, 97, 0), and the
+  reticle is no longer drawn over the map (DOSBox shows none) - it sat above the map's centre.
+- **Window bands on a near wall.** A grown lit polygon's corners were moved on screen but kept their depth, tilting
+  the polygon's depth plane; close to a wall that was enough for a band a few centimetres proud of it to sink into
+  it in a diagonal patch (GitHub video, office tower). Grown corners now stay on their triangle's plane, as the
+  textured ones already did. Not yet reproduced here: the Instant Action tower stays unlit in this build's captures.
+- Open (seen in the same comparison): the satellite map shows BET1's road as a black strip; DOSBox shows none.
+
 ## v1.2.29: a full comparison with the DOS game — 2026-11-20
 
 - **All 68 directly startable campaign missions compared with DOSBox**, one cockpit and one external frame each, at

@@ -23,7 +23,7 @@ static void mercs_satellite_marks(const hud_win *box,int full_screen)
             int point[2];
             mercs_map_edge(width,height,width/2+dx,height/2+dy,point);
             px_line(box,box->x0+width/2,box->y0+height/2,
-                    box->x0+point[0],box->y0+point[1],HP(14));
+                    box->x0+point[0],box->y0+point[1],HP(1));   /* colour 1, as the radar's cone (DOSBox BET1 F3: 121,97,0) */
         }
     }
     /* All visible navigation markers first, then the current unit/thing or

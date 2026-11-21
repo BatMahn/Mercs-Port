@@ -119,3 +119,7 @@ input/audio evidence limits remain in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 | DOS ground and depth | MW2.EXE 0x10478: the backdrop and tiled ground (0x4a734) are painted before the object lists | The DOS look draws the textured ground without writing depth, so terrain below y 0 and anything in it show over it; parts of other objects below ground level now show through it too, as painting would (the 3D looks keep their depth-written ground) |
 | Commander's letter | DOS shell 0x5dd1e: played when header +0x1fe == 3 and +0x23bb == 1 | The port also keeps its once-a-session latch (DOS would replay it on each terminal visit while the starting campaign lasts - not compared in DOSBox) |
 | Contracts buttons after acceptance | GitHub report screenshots of DOS | Arrows and ACCEPT hidden while header +0x239d is clear (the same flag that already refused their clicks) |
+
+- **Satellite map polygons (v1.2.30).** The DOS look's 3-pixel growth of lit and textured polygons is left out on the
+  satellite map, which paints flat map colours with no span walk to trim it. INFERRED from DOSBox BET1 (F3): mechs
+  are small solid marks.

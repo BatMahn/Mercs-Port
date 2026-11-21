@@ -114,7 +114,7 @@ VertexOut world_vertex(int vertex_id) {
     }
   }
 #if DOS_LOOK
-  if (u_dos != 0 && int(a_color.r + 0.5) == 3 && a_texsel > 0.5 && e < 256) {
+  if (u_dos != 0 && u_satellite == 0 && int(a_color.r + 0.5) == 3 && a_texsel > 0.5 && e < 256) {   /* (not the satellite map: it paints flat map colours, no walk to trim the growth) */
     int s = int(a_texsel + 0.5) - 1, rel = vertex_id - s, t = rel / 3, cn = rel - 3 * t;
     vec2 Q[18]; int n = 0; bool ok = true; vec2 h = 0.5 * u_vp;
     for (int k = 0; k < 16; k++) {
@@ -138,7 +138,25 @@ VertexOut world_vertex(int vertex_id) {
       vec2 m = n1 + n2; float d = 1.0 + dot(n1, n2);
       vec2 off = d > 1e-3 ? 3.0 * m / d : 3.0 * m;
       if (length(off) > 24.0) off = off / length(off) * 24.0;
-      result.clip.xy = (B + off) / h * result.clip.w;
+      vec2 S = (B + off) / h;
+      result.clip.xy = S * result.clip.w;
+      if (pit == 0) {   /* the grown corner's depth on its triangle's plane (cockpit sets keep their fixed depth) (as the textured corners below): moving x, y alone kept the
+           * corner's depth and tilted the polygon's depth plane by the growth - enough on a near wall for a window band
+           * a few cm proud of it to sink in and out of it (Instant Action office tower, GitHub video) */
+        int t0 = 3 * (vertex_id / 3);
+        vec3 P0 = vec3(world_vtx[t0 * 25], world_vtx[t0 * 25 + 1], world_vtx[t0 * 25 + 2]);
+        vec3 P1 = vec3(world_vtx[(t0 + 1) * 25], world_vtx[(t0 + 1) * 25 + 1], world_vtx[(t0 + 1) * 25 + 2]);
+        vec3 P2 = vec3(world_vtx[(t0 + 2) * 25], world_vtx[(t0 + 2) * 25 + 1], world_vtx[(t0 + 2) * 25 + 2]);
+        vec4 C0 = u_mvp * vec4(P0, 1.0), C1 = u_mvp * vec4(P1, 1.0), C2 = u_mvp * vec4(P2, 1.0);
+        vec3 dx = vec3(C0.x - S.x * C0.w, C1.x - S.x * C1.w, C2.x - S.x * C2.w), dy = vec3(C0.y - S.y * C0.w, C1.y - S.y * C1.w, C2.y - S.y * C2.w);
+        float a00 = dx.x - dx.z, a01 = dx.y - dx.z, a10 = dy.x - dy.z, a11 = dy.y - dy.z, det = a00 * a11 - a01 * a10;
+        float sc = max(max(abs(a00), abs(a01)), max(abs(a10), abs(a11)));
+        if (abs(det) > 1e-6 * sc * sc) {
+          float w0 = (-dx.z * a11 + dy.z * a01) / det, w1 = (-dy.z * a00 + dx.z * a10) / det, w2 = 1.0 - w0 - w1;
+          vec4 cg = u_mvp * vec4(w0 * P0 + w1 * P1 + w2 * P2, 1.0);
+          if (cg.w > 0.0) result.clip = vec4(S * cg.w, cg.z, cg.w);
+        }
+      }
     } else if (j < n && result.clip.w > 0.0 && result.clip.z + result.clip.w >= 0.0) {
       result.clip.xy = Q[j] / h * result.clip.w;
     }
@@ -191,7 +209,7 @@ VertexOut world_vertex(int vertex_id) {
    * pixels out as the Gouraud polygons' (above), the fragment shader discarding what the walk leaves. The moved corner
    * stays on its triangle's plane (the point whose projection is the grown corner, its position and texture coordinates
    * the triangle's own combination of its corners), so the texture mapping is the GPU's as before */
-  if (u_dos != 0 && pit == 0 && e < 256 && int(a_color.r + 0.5) == 2 && int(a_tic.a + 0.5) == 4 && (result.pstart & 0x1fffffff) > 0 && result.clip != vec4(2.0, 2.0, 2.0, 1.0)) {
+  if (u_dos != 0 && u_satellite == 0 && pit == 0 && e < 256 && int(a_color.r + 0.5) == 2 && int(a_tic.a + 0.5) == 4 && (result.pstart & 0x1fffffff) > 0 && result.clip != vec4(2.0, 2.0, 2.0, 1.0)) {
     int s = (result.pstart & 0x1fffffff) - 1, rel = vertex_id - s, tt = rel / 3, cn = rel - 3 * tt;
     vec2 Q[18]; int n = 0; bool ok = true; vec2 h = 0.5 * u_vp;
     for (int k = 0; k < 16; k++) {

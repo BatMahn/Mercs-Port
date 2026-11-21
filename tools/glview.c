@@ -8641,7 +8641,7 @@ int main(int argc, char **argv)
                 /* only from the cockpit camera: the HUD pass (0x1001e5f2 -> 0x10022230) draws it while DAT_1024e674 is set,
                  * which only mode 0 sets (0x1002e750); the external orbit, ordnance and ejection cameras clear it
                  * (0x1002dca5). DOSBox YELLSCN1 'c': the HUD without the reticle */
-                if (g_camode == 0) {
+                if (g_camode == 0 && !g_satmap) {   /* (DOSBox BET1 F3: no reticle over the satellite map) */
                     /* Mercs DOS 0x346b0 / retail Windows 0x10034b8e projects
                      * the current aim ray at unit +0xa0 convergence distance.
                      * The half-pitch cockpit camera and pilot glances do not
@@ -8894,7 +8894,7 @@ int main(int argc, char **argv)
                         const int32_t a0 = 0x5a0000 - (int32_t)((((int64_t)lrintf(g_pl.twist * 65536.0f)) % 0x1680000 + 0x1680000) % 0x1680000);
                         for (sd = -1; sd <= 1; sd += 2) {
                             int ex, ey;
-                            dos_radar_rim(rw.x1 - rw.x0 + 1, rw.y1 - rw.y0 + 1, a0 + sd * half, w, h, &ex, &ey);
+                            dos_radar_rim(rw.x1 - rw.x0 + 1, rw.y1 - rw.y0 + 1, a0 + sd * half, g_render_w == 320 ? w : 4, g_render_w == 320 ? h : 3, &ex, &ey);   /* the aspect of DOS's 4:3 screen: the radar is drawn round at any window shape (the window's own shape flattened the cone on wide screens) */
                             px_line(&rw, rcx, rcy, rw.x0 + ex, rw.y0 + ey, HP(1));
                         }
                     } else
