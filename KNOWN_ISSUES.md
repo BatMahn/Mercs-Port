@@ -23,6 +23,14 @@ What is still open in the Mercenaries port, in plain language.
     DOS remaps each pixel through the row. Remapping texel by texel was tried;
     with the port's overlapping shadow polygons it came out no closer to DOSBox, so it was left out.
 
+  - **From the full campaign sweep (v1.2.29, docs/DOSBOX_COMPARISON.md section 5), not yet fixed:**
+    - After the player's mech is destroyed DOS shows "Exiting Mission Area..." and leaves the mission 2 s later; the
+      port shows "Mission failed" and waits about 20 s for a key.
+    - BET4's rescue helicopter flies over the start from the first second in the port; DOS shows none early on.
+    - No unit shadows in DOS on WOU1, MED1 and MCC1 (fog-table missions); the port draws them.
+    - MCC3: the port starts the player on top of a structure, 7 m up; DOS starts it at ground level.
+    - SOL5 and SPA3: the port's player can be destroyed within two seconds of start-up; in DOS it lasts much longer.
+    - SOL1's hangar lighting and beams, a lit building on LUT1's skyline and a bright cockpit moment on OUT4 differ.
   - **REC1/REC2's external camera**, perched on the rocks: DOS shows dark, shaded rock faces beside the camera where the
     port shows the lit face nearest it. The rest of the view lines up, so the camera is in the same place. Neither the
     fog nor DOS's near plane (v1.0.2) is the cause; DOS draws without a depth buffer, in its sorted polygon order, and

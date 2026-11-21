@@ -111,3 +111,120 @@ At 640 x 480 the HUD, cockpit outline, compass, weapon list, radar and skyline l
 2. **Camo stripe edges.** DOS's texture spans are perspective-correct every 16 pixels and pick the nearest texel
    (MW2.EXE 0x7b43e); the DOS look now walks them the same way. What remains is the external view's geometry,
    about a pixel lower in the port than in DOSBox.
+
+## 5. Full campaign sweep (v1.2.28, 2026-11-20)
+
+All 68 campaign missions that start straight from `MW2 <scene>` were captured in DOSBox at 640 x 480 and in the port
+at the same mission time, one cockpit frame and one external frame each. Per-scene sheets (DOS | port | pixels more
+than 32 levels off) come from `scripts/dosbox/sweep_compare.py`; they stay on the user's machine.
+
+**Timing.** DOS draws the full HUD only once the player's mech is up, 0x43e + rand(0x16a) ticks into the mission
+(6.0-8.0 s). The DOS harness waits for that HUD, so "sync + 3 s" is mission time ~10 s, not 3 s. The port frames are
+taken at mission 10 s (cockpit) and 13 s (external, `c` at 10.3 s), with the start-up left on
+(`MERCS_NO_STARTUP` unset). An earlier pass at 3 s / 5 s compared different moments and is void.
+
+**Message bars.** The DOSBox config has no sound card, so DOS prints voiced lines as text ("Reactor, Sensors and
+Weapons on-line", "External camera engaged."). The port with voices plays them without text, as DOS does with sound.
+The top and bottom 30 rows are left out of the numbers below.
+
+**Result.** Cockpit frames: 54 of 68 have under 2 % of pixels more than 32 levels off, 62 under 5 % (median 0.4 %).
+External frames: 36 under 2 %, 55 under 5 % (median 1.9 %). Nearly all of what is left is units that moved
+differently.
+
+| Scene | cockpit mean | cockpit % off | external mean | external % off |
+|---|---|---|---|---|
+| BET1 | 2.5 | 0.5 | 5.4 | 3.3 |
+| BET2 | 1.5 | 1.0 | 2.7 | 2.7 |
+| BET3 | 1.3 | 0.2 | 4.0 | 2.0 |
+| BET4 | 1.0 | 0.6 | 1.9 | 2.2 |
+| BET5 | 0.2 | 0.1 | 2.0 | 1.8 |
+| BIG1 | 1.3 | 0.2 | 1.4 | 0.3 |
+| BUZ1 | 2.0 | 0.9 | 6.4 | 4.1 |
+| DOM1 | 1.3 | 0.0 | 4.2 | 1.8 |
+| DOU1 | 2.8 | 1.8 | 124.0 | 56.1 |
+| DOW2 | 0.4 | 0.0 | 1.3 | 1.7 |
+| GRA1 | 1.4 | 0.1 | 5.0 | 2.4 |
+| GRA2 | 0.6 | 0.3 | 2.0 | 0.4 |
+| GRA3 | 2.5 | 1.0 | 6.2 | 3.5 |
+| GRA4 | 2.2 | 0.5 | 5.2 | 3.0 |
+| GRA5 | 1.1 | 0.4 | 1.7 | 0.7 |
+| IVA1 | 1.2 | 0.6 | 3.5 | 2.9 |
+| IVA2 | 0.8 | 0.1 | 3.0 | 1.9 |
+| IVA3 | 4.3 | 0.7 | 11.2 | 7.4 |
+| IVA4 | 0.8 | 0.1 | 2.9 | 1.9 |
+| IVA5 | 3.5 | 0.8 | 5.0 | 3.0 |
+| LUT1 | 1.5 | 0.1 | 10.8 | 3.9 |
+| LUT2 | 0.8 | 0.2 | 3.8 | 2.8 |
+| LUT3 | 1.0 | 0.0 | 3.0 | 0.6 |
+| LUT4 | 1.0 | 0.0 | 2.8 | 0.5 |
+| LUT5 | 0.8 | 0.2 | 3.8 | 2.9 |
+| LUT6 | 1.0 | 0.0 | 2.9 | 0.6 |
+| MCC1 | 10.0 | 12.8 | 4.2 | 2.4 |
+| MCC2 | 2.3 | 1.4 | 0.3 | 0.1 |
+| MCC3 | 2.4 | 1.2 | 19.6 | 37.0 |
+| MCC4 | 5.5 | 0.1 | 7.5 | 2.0 |
+| MCC5 | 2.5 | 0.1 | 4.1 | 1.9 |
+| MCC6 | 0.8 | 0.1 | 4.3 | 2.6 |
+| MCC7 | 0.9 | 0.5 | 2.5 | 0.9 |
+| MED1 | 4.1 | 2.8 | 7.8 | 5.2 |
+| MOU1 | 1.4 | 0.1 | 4.2 | 1.4 |
+| MYB1 | 3.6 | 3.6 | 5.4 | 2.9 |
+| OUT1 | 1.7 | 0.8 | 2.3 | 0.4 |
+| OUT2 | 3.7 | 2.4 | 5.8 | 3.4 |
+| OUT3 | 4.4 | 2.9 | 10.4 | 10.2 |
+| OUT4 | 15.4 | 14.9 | 3.2 | 0.6 |
+| REC1 | 1.0 | 0.0 | 36.3 | 38.3 |
+| REC2 | 5.0 | 6.3 | 54.5 | 64.9 |
+| REV1 | 5.2 | 4.4 | 6.0 | 5.2 |
+| ROG1 | 0.2 | 0.0 | 1.1 | 0.0 |
+| SIG1 | 1.6 | 0.7 | 3.8 | 1.8 |
+| SIG2 | 3.2 | 2.0 | 5.3 | 3.8 |
+| SIG3 | 1.3 | 0.1 | 2.5 | 1.8 |
+| SIG4 | 1.1 | 0.1 | 2.9 | 1.4 |
+| SOL1 | 5.0 | 5.1 | 13.2 | 22.7 |
+| SOL2 | 1.5 | 0.3 | 2.1 | 1.0 |
+| SOL3 | 0.9 | 0.1 | 1.5 | 0.4 |
+| SOL4 | 0.4 | 0.0 | 1.5 | 0.5 |
+| SOL5 | 75.3 | 87.5 | 37.5 | 26.9 |
+| SOL6 | 0.9 | 0.3 | 1.8 | 0.2 |
+| SPA1 | 2.2 | 0.5 | 5.9 | 3.3 |
+| SPA2 | 4.2 | 3.1 | 9.3 | 7.0 |
+| SPA3 | 34.0 | 57.3 | 15.4 | 9.3 |
+| SUR1 | 4.2 | 2.7 | 32.5 | 64.0 |
+| TRA1 | 2.0 | 0.4 | 4.0 | 1.6 |
+| TRA2 | 2.5 | 0.4 | 4.1 | 1.5 |
+| TRA3 | 1.8 | 0.3 | 3.2 | 0.8 |
+| TRA4 | 1.8 | 0.3 | 4.1 | 1.6 |
+| WOL1 | 1.5 | 0.8 | 3.1 | 0.7 |
+| WOL2 | 3.2 | 0.0 | 5.6 | 1.2 |
+| WOL3 | 0.9 | 0.0 | 2.8 | 0.4 |
+| WOL4 | 3.1 | 0.0 | 7.0 | 0.6 |
+| WOL5 | 0.9 | 0.0 | 2.9 | 0.4 |
+| WOU1 | 0.9 | 0.0 | 3.3 | 0.7 |
+
+**Differences found (open, nothing changed yet):**
+
+1. **The end of a mission after the player dies.** DOS (MW2.EXE 0x57918, single player: 0xb5dfc = 0) puts
+   "Exiting Mission Area..." (0xa30cc) on the top bar as the mech goes up and leaves the sim 0x16c ticks (2.0 s)
+   later. Seen in DOU1 (killed by enemy fire) and GRA1 (Ctrl+Alt+X). The port's DOS end shows "Mission failed" and
+   "Press any key to exit..." and waits about 20 s. Its addresses (0x16e80, 0x9620c) are not in this MW2.EXE and
+   "Press any key to exit" is not among its strings; the port kept that end for a tester's reference picture. Left
+   as is until the reference picture's source is known.
+2. **BET4's rescue helicopter.** BET4ARE2 (S_1AHUEY, task `1;oneshot,rotate,helo`) flies north from 137 m in front
+   of the start, 100 m up, from the first second in the port; it shows as a dark shape over the city. DOSBox shows
+   no helicopter in the first 17 s. Already so in v1.2.22.
+3. **Unit shadows on fog-table missions.** Where SKYGND.PAR gives `shadowtable=15` (WOU1, MED1, MCC1) DOS draws no
+   visible shadow under the mech; the port draws one. The FOG LUMA row 15 maps the ground four levels darker, so
+   the table alone does not explain it; 0x507b4 takes another path when 0xb3f70 is 0 (not traced).
+4. **MCC3's start height.** The port stands the player on a structure (HUD Alt 7.24 m, feet 47.2 m); DOS shows Alt
+   0.00 m and its external camera sits inside that same mass, so DOS starts the mech at ground level inside it.
+5. **Early fights.** SOL5: the port's player is destroyed at 9.8 s by one 10-point PPC hit to the centre torso with
+   51 armour points left; in DOSBox the player is still up at mission ~13 s. SPA3: port player destroyed at 8.7 s
+   (two SRM volleys); DOSBox's is still up at mission ~25 s, and an enemy blows up next to it at ~12 s. DOU1 agrees (both
+   destroyed at 11-13 s).
+6. **SOL1's hangar.** DOS shows red beam lines and a brighter red far hall at mission 10 s; the port shows few lines
+   and a darker hall.
+7. **LUT1's skyline.** A building face behind the player is lit white in DOS and dark in the port.
+8. **OUT4's cockpit at 10 s** is lit bright in DOS (a glow ahead of the player) and dark in the port.
+
+The external camera beside rocks and buildings (REC1, REC2, SUR1) is the known issue in KNOWN_ISSUES.md.

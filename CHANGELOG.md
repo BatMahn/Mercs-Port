@@ -1,5 +1,15 @@
 # Mercenaries development history
 
+## v1.2.29: a full comparison with the DOS game — 2026-11-20
+
+- **All 68 directly startable campaign missions compared with DOSBox**, one cockpit and one external frame each, at
+  the same mission time (docs/DOSBOX_COMPARISON.md, section 5). Cockpit frames: 62 of 68 within 5 % of pixels;
+  external frames: 55 of 68. The differences found are listed there and in KNOWN_ISSUES.md; none is changed in this
+  release.
+- The capture timing is now documented: DOS shows its HUD only once the mech is up (6-8 s into the mission), so a
+  DOSBox frame taken 3 s after the HUD appears matches the port at about 10 s.
+- New: `scripts/dosbox/sweep_compare.py` makes the per-scene sheets and numbers.
+
 ## v1.2.28: the office tower's window bands, for real — 2026-11-20
 
 - **The Instant Action office tower's window bands stay whole.** Its bands (S_1SMTWR, the "Office Building" target)
