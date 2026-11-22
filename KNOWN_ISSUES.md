@@ -26,13 +26,13 @@ What is still open in the Mercenaries port, in plain language.
   - **From the full campaign sweep (v1.2.29, docs/DOSBOX_COMPARISON.md section 5), not yet fixed:**
     - MCC3: the port lands the player on a terrain piece's flat top, 47 m up, where the start is placed; DOS's start
       fall goes through that piece to the ground (not yet traced).
-    - SOL1: the far hall's back wall is bright red in DOS and dark in the port; its LITE record reads as DOS's, so the
-      cause is elsewhere (fog or texture shade levels). A lit building on
-      LUT1's skyline and a bright cockpit moment on OUT4 also differ.
+    - SOL1/SPA3: DOS's mechs start fighting a little earlier than the port's. LUT1's tower
+      facades and OUT4's cockpit and DropShip are lit in DOS and dark in the port: both missions have their sun at
+      +x (LITE x +100000); flipping its sign lights them but also the mech's back, which DOS keeps dark, so the vertex
+      normal transform (MW2.EXE 0x4f79f, vertex +0x20..+0x28) still needs tracing.
   - **Office tower window bands** (Instant Action) still shimmer on one side of the building for a tester; not yet
     reproduced here (the tower renders unlit in the test captures).
-  - **Satellite map (F3):** DOS also draws grey shapes from the 0xf0 row (kind-0x3000 materials) on BET1's map; the
-    port shows plain ground there.
+  - **Satellite map (F3):** the compass strip sits about 2 px off DOS's at the same bearing.
   - **REC1/REC2's external camera**, perched on the rocks: DOS shows dark, shaded rock faces beside the camera where the
     port shows the lit face nearest it. The rest of the view lines up, so the camera is in the same place. Neither the
     fog nor DOS's near plane (v1.0.2) is the cause; DOS draws without a depth buffer, in its sorted polygon order, and

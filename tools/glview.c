@@ -8260,6 +8260,36 @@ int main(int argc, char **argv)
                 v.point_light = bi >= 0;
                 memcpy(v.dos_mlit, g_dos_mlit, sizeof v.dos_mlit);
                 v.dos_mlit_n = g_tex_kind == 3 && g_multiple_lights ? g_dos_mlit_n : 0;   /* the list 0xb411c: Multiple Lights (0xb4124) */
+                if (v.dos_mlit_n < 4 && g_tex_kind == 3 && g_multiple_lights && g_sim_ok && !getenv("MERCS_NO_FXLIGHT")) {
+                    /* DOS's other lights on that list, as Titanium's (above in the engine's lineage): an effect started by
+                     * projectile visual 3, 6, 0x22 or 0x23 makes one at its point, box 20000, for its life (0x64ad8 ->
+                     * 0x64e7d / 0x64eba, the flag local_24 set at 0x64bc0 and for visual 6); the first projectile of a
+                     * weapon's volley carries one, box 10000, moved with it each frame (0x667ea / 0x6681f, flag 0xbedd8;
+                     * 0x645e0) and dropped when it ends (0x649f7). SOL1's arena wall glows red around a firefight in
+                     * DOSBox for as long as the shots fly. The list has no cap; the port's four: the MLIT lights, then
+                     * the nearest the eye. INFERRED: the projectiles that carry one - those with an object, as Titanium */
+                    float dl[8][4], d2l[8]; int nl = 0, j, at;
+                    for (k = 0; k < FX_LIVE + g_sim.shot_count; k++) {
+                        float p[3], bx, dx, dz, dy, d2;
+                        if (k < FX_LIVE) {
+                            const fx_live *e = &g_fxw.e[k];
+                            if (!e->alive || !fx_local_light(e->source_visual)) continue;
+                            memcpy(p, e->pos, sizeof p); bx = 20000.0f;
+                        } else {
+                            const msim_shot *sh = &g_sim.shots[k - FX_LIVE];
+                            if (!sh->first || !combat_weapon_has_object(sh->weapon)) continue;
+                            p[0] = sh->x; p[1] = sh->y; p[2] = sh->z; bx = 10000.0f;
+                        }
+                        dx = p[0] - v.eye[0]; dy = p[1] - v.eye[1]; dz = p[2] - v.eye[2]; d2 = dx * dx + dy * dy + dz * dz;
+                        at = nl < 4 - v.dos_mlit_n ? nl++ : -1;
+                        if (at < 0) {
+                            for (j = 0, at = 0; j < nl; j++) if (d2l[j] > d2l[at]) at = j;
+                            if (d2 >= d2l[at]) continue;
+                        }
+                        d2l[at] = d2; dl[at][0] = p[0]; dl[at][1] = p[1]; dl[at][2] = p[2]; dl[at][3] = bx;
+                    }
+                    for (j = 0; j < nl; j++) memcpy(v.dos_mlit[v.dos_mlit_n++], dl[j], sizeof dl[j]);
+                }
                 if (bi >= 0) {
                     int lvl = g_lite_level - 10;
                     if (lvl < 0 || lvl > 255) lvl = 64;

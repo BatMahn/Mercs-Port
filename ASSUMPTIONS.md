@@ -131,3 +131,9 @@ input/audio evidence limits remain in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
   default of 0xa76b8), because 0x1147c, the only code that applies the -1000 margin and recomputes the range, is not
   reached at a single-player mission start before the map draws. INFERRED from DOSBox BET1 (F3): ground at y 0..4 is
   0xd0; the margin would give 0xd1. Whether the range is 6400 or 7400 shows only on tall objects.
+
+- **DOS look point lights (v1.2.36).** Shots carry a light when they have an object (as the Titanium edition); the
+  port holds 4 lights and keeps the nearest. INFERRED; the light list and box test are traced (0xb411c, 0x4f5f8).
+
+- **Unanimated units' centre placement (v1.2.36).** A unit without animation whose MGEO centre height is set is placed
+  at feet + centre height with its root child's offset dropped. INFERRED from DOSBox OUT4 (TURRETE).

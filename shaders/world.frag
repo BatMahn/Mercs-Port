@@ -313,7 +313,7 @@ ivec2 dos_tspan(ivec3 L, ivec3 R, int n, int k) {
   return ivec2(int(uint(u) + uint(j) * uint(su)) >> 16, int(uint(v) + uint(j) * uint(sv)) >> 16);
 }
 float dos_tex_level() {
-  int s = (v_pstart & 0x1fffffff) - 1;
+  int s = (v_pstart & 0x00ffffff) - 1;
   dos_tok = false; dos_tbad = false;
   if (s < 0) return -1.0;
   for (int i = 0; i < 24; i++) { dos_tV[i] = ivec2(0); dos_tA[i] = s; dos_tB[i] = s; dos_tT[i] = 0.0; dos_tLv[i] = 0; dos_tUV[i] = ivec3(0, 0, 1); }   /* (every lane's reads stay in the buffer) */
@@ -416,6 +416,9 @@ vec3 dos_gouraud(float lev) {
 void main() {
   glFragCoord = vec4(gl_FragCoord.x, u_fbh - gl_FragCoord.y, gl_FragCoord.zw);
   if (u_dos != 0 && v_pit > 0 && -v_viewpos.z < 8.0) discard;
+#if DOS_LOOK
+  if ((v_pstart & 0x10000000) != 0) g_dos_lmask = (v_pstart >> 24) & 15;   /* (the vertex stage's 0x4f5f8) */
+#endif
   if(u_satellite != 0) {
     int kind=v_mapmat&61440; if(v_mapmat<0 || kind==32768 || kind==36864 || v_pit>0)discard;
     if(kind==0 || kind==16384) { int index=kind==0?(v_mapmat&255):((v_mapmat&240)+int(floor(v_mapshade+0.5)));
@@ -479,7 +482,7 @@ void main() {
     for (int i = 0; i < 4; i++) {
       if (i >= u_dos_mlit_n || light >= 128.0 || nl <= 0.0) break;
       vec3 d = u_dos_mlit[i].xyz - v_world;
-      if (any(greaterThan(abs(d), vec3(u_dos_mlit[i].w)))) continue;
+      if (!dos_lit_by(i, v_world)) continue;
       float lp = length(d), fi = lp > 0.0 ? trunc(128.0 * dot(nf, d / lp)) : 127.0;
       if (fi > 0.0) light += fi;
     }

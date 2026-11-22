@@ -158,6 +158,28 @@ float dos_cos(vec3 Lf, vec3 n) {
   int r = abs(v) / t; r = v < 0 ? -r : r;
   return float((r << 16) >> 16);   /* (a short) */
 }
+/* the point lights whose box (+-w, inclusive) holds any corner of the polygon whose fan starts at triangle t (MW2.EXE
+ * 0x4f5f8 tests the polygon's corners; 0x4f6c8 and 0x4fa4c then light all of it): bit i for u_dos_mlit[i]. -1 while
+ * the polygon is not known (each point tested alone) */
+int g_dos_lmask = -1;
+int dos_poly_lmask(int t) {
+  int m = 0;
+  for (int k = 0; k < 16; k++) {
+    int b = 3 * (t + k);
+    for (int c = 0; c < 3; c++) {
+      vec3 w = vec3(dos_float((b + c) * 13), dos_float((b + c) * 13 + 1), dos_float((b + c) * 13 + 2));
+      for (int i = 0; i < 4; i++) {
+        if (i >= u_dos_mlit_n) break;
+        if (all(lessThanEqual(abs(u_dos_mlit[i].xyz - w), vec3(u_dos_mlit[i].w)))) m |= 1 << i;
+      }
+    }
+    if (((int(dos_float(b * 13 + 12) + 0.5) % 32 / 3) & 2) != 0) break;
+  }
+  return m;
+}
+bool dos_lit_by(int i, vec3 p) {
+  return g_dos_lmask >= 0 ? (g_dos_lmask & (1 << i)) != 0 : all(lessThanEqual(abs(u_dos_mlit[i].xyz - p), vec3(u_dos_mlit[i].w)));
+}
 float dos_vertex_level(vec3 p, vec3 tn, float C) {
   /* 0x4f79f pushes the vertex normal +0x28, +0x24, +0x20 to 0x4d246 (the polygon's 0x4d20e: +0x14, +0x18, +0x1c), so a
    * vertex sees the light's x against its normal's z and z against x: in game axes nv = (nz, ny, nx), here (GL z = -game
@@ -171,7 +193,7 @@ float dos_vertex_level(vec3 p, vec3 tn, float C) {
   for (int i = 0; i < 4; i++) {
     if (i >= u_dos_mlit_n || light >= 128.0 || nl <= 0.0 || u_dos_fogpal != 0) break;   /* 0x4f84a: not with a fog table */
     vec3 d = u_dos_mlit[i].xyz - p;
-    if (any(greaterThan(abs(d), vec3(u_dos_mlit[i].w)))) continue;
+    if (!dos_lit_by(i, p)) continue;
     float lp = length(d), fi = lp > 0.0 ? trunc(128.0 * dot(nv, d / lp)) : 128.0;
     if (fi > 0.0) light = min(128.0, light + fi);
   }

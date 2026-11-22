@@ -883,7 +883,11 @@ static void solve_nodes_at_aim(const mech3d *m, const anim_set *anim, float t, i
      * controller publication (0x30c58 / 0x1001f531) writes that centre.
      * Applying another draw offset moved AIRCRFTA 100 m above its mounts
      * and target point. Keep all views and collision LODs on one skeleton. */
-    const int dos_hips = (mech3d_dos_hips || m->controller_centre) && m->bind_count > 0 && m->centre_h > 0;
+    /* (the DOS look: also the unanimated units - turrets - whose MGEO centre height matches their root child's OBJ height,
+     * TURRETD / E / H / I: DOSBox OUT4 draws TURRETE's DropShip sphere at the unit's place, not 93 m off at its child's
+     * (-8382, 1805, 4020); TURRET / A / B / C / F / G / J have centre 0 and keep their offsets) */
+    const int dos_hips = m->centre_h > 0 && (((mech3d_dos_hips || m->controller_centre) && m->bind_count > 0) ||
+                                             (mech3d_dos_hips && !m->controller_centre && m->bind_count == 0));
 
     mat3_axis(hr, 1, m->heading);
     if (m->fall_active) {

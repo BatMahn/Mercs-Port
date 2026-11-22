@@ -199,7 +199,10 @@ VertexOut world_vertex(int vertex_id) {
         for (c = 0; c < 3; c++) km = max(km, dos_camz(vec3(dos_float((b + c) * 13), dos_float((b + c) * 13 + 1), dos_float((b + c) * 13 + 2))));
         if (((int(dos_float(b * 13 + 12) + 0.5) % 32 / 3) & 2) != 0) { last = true; break; }
       }
-      result.dkey = km; result.pstart = (first && last ? 3 * t + 1 : 0) | bfl;   /* (a polygon walked whole, its first to its last triangle) */
+      /* the point lights whose box holds one of the polygon's corners (0x4f5f8), for its vertex levels and, in bits 24-27
+       * with 28 set, for the fragment stage */
+      if (first && u_dos_mlit_n > 0) g_dos_lmask = dos_poly_lmask(t);
+      result.dkey = km; result.pstart = (first && last ? 3 * t + 1 : 0) | bfl | (g_dos_lmask >= 0 ? 0x10000000 | (g_dos_lmask << 24) : 0);   /* (a polygon walked whole, its first to its last triangle) */
     }
   }
 #endif
@@ -209,8 +212,8 @@ VertexOut world_vertex(int vertex_id) {
    * pixels out as the Gouraud polygons' (above), the fragment shader discarding what the walk leaves. The moved corner
    * stays on its triangle's plane (the point whose projection is the grown corner, its position and texture coordinates
    * the triangle's own combination of its corners), so the texture mapping is the GPU's as before */
-  if (u_dos != 0 && u_satellite == 0 && pit == 0 && e < 256 && int(a_color.r + 0.5) == 2 && int(a_tic.a + 0.5) == 4 && (result.pstart & 0x1fffffff) > 0 && result.clip != vec4(2.0, 2.0, 2.0, 1.0)) {
-    int s = (result.pstart & 0x1fffffff) - 1, rel = vertex_id - s, tt = rel / 3, cn = rel - 3 * tt;
+  if (u_dos != 0 && u_satellite == 0 && pit == 0 && e < 256 && int(a_color.r + 0.5) == 2 && int(a_tic.a + 0.5) == 4 && (result.pstart & 0x00ffffff) > 0 && result.clip != vec4(2.0, 2.0, 2.0, 1.0)) {
+    int s = (result.pstart & 0x00ffffff) - 1, rel = vertex_id - s, tt = rel / 3, cn = rel - 3 * tt;
     vec2 Q[18]; int n = 0; bool ok = true; vec2 h = 0.5 * u_vp;
     for (int k = 0; k < 16; k++) {
       int b = s + 3 * k;

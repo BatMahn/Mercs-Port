@@ -1,5 +1,20 @@
 # Mercenaries development history
 
+## v1.2.36: DOS shot and explosion lights; OUT4's DropShip in place — 2026-11-22
+
+- **Shots and explosions light the scene in the DOS look,** as MW2.EXE's point-light list does (head 0xb411c, slots
+  0x4f4a8 / 0x4f4fc): the first shot of each volley carries a light with a 10000 box (0x667ea, moved each frame at
+  0x645e0, freed at 0x649f7), and explosions from projectile visuals 3, 6, 0x22 and 0x23 a 20000 box while they last
+  (0x64ad8). A light reaches a whole polygon when any corner is inside its box (0x4f5f8), adding up to 0x80 after fog
+  (0x4f6c8, 0x4fa4c), so a large arena wall lights all over; MLIT lights now use the same per-polygon test. DOSBox
+  SOL1: the hall's back wall glows red around a firefight and is as dark as the port's between them. Which shots
+  carry a light (those with an object, as in the Titanium edition) is INFERRED. The port keeps the 4 nearest.
+- **Unanimated units with an MGEO centre height sit at their place,** as animated ones already did in the DOS look:
+  OUT4's DropShip (TURRETE) was drawn 93 m to the left at its root child's offset; DOSBox has it dead ahead.
+  INFERRED from the DOSBox frame and the centre heights matching the child offsets (TURRETD, E, H, I).
+- Traced, no change: the grey shapes on BET1's DOSBox satellite map are the "Satellite link established." message
+  bar (the DOSBox setup has no sound card, so DOS prints voiced lines); with voice text on the port matches 99.7 %.
+
 ## v1.2.35: the DOS exit without a fade; solid thin flat polygons; the satellite ground shade — 2026-11-21
 
 - **"Exiting Mission Area..." leaves without dimming the picture.** Watched side by side in DOSBox (LUT5, star lost
