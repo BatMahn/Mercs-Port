@@ -123,3 +123,6 @@ input/audio evidence limits remain in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 - **Satellite map polygons (v1.2.30).** The DOS look's 3-pixel growth of lit and textured polygons is left out on the
   satellite map, which paints flat map colours with no span walk to trim it. INFERRED from DOSBox BET1 (F3): mechs
   are small solid marks.
+
+- **No unit shadows with a fog LUMA table (v1.2.33).** Traced (MW2.EXE 0x49d06, 0x509e8): not an assumption; noted
+  here because the port's other fog-table rules (Gouraud levels) come from the same flag.

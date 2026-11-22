@@ -1,5 +1,17 @@
 # Mercenaries development history
 
+## v1.2.33: no unit shadows on fog-table missions, as DOS — 2026-11-21
+
+- **Shadows follow the mission's LUMA table.** Traced in MW2.EXE: as a mission loads, 0x49d06 keeps the LUMA table's
+  first byte (FOG 1, STANDARD 0) in 0xb3f6c, and each unit's shadow (0x509e8) is skipped while it is not 0
+  (0x50a2f / 0x50a57). So fog-table missions (WOU1, MED1, MCC1, ...) draw no unit shadows at all; standard-table ones
+  (BET1) keep them. The port drew them everywhere. WOU1's external frame against DOSBox: 0.72 % -> 0.64 % of pixels
+  off; BET1 unchanged.
+- Traced, no change: BET4's helicopter flies from the start in DOS too (its path task starts at load, MW2.EXE
+  0x62754 / 0x22d3a, nothing holds it back); DOSBox's night sky is palette black there, so the dark helicopter most
+  likely just does not show. MCC3's start: DOS's ground query (0x234xx) and its 250 m grid (0x271b4) include the
+  terrain piece under the start, so why DOS falls through it needs a live DOS debugger (docs/DOSBOX_COMPARISON.md).
+
 ## v1.2.32: the DOS end after the player's mech is destroyed — 2026-11-21
 
 - **"Exiting Mission Area..." and back to the shell, as DOS.** Traced in MW2.EXE (0x57918, the end-of-mission

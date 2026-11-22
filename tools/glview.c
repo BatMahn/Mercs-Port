@@ -3778,7 +3778,9 @@ static void dos_scene(glr *r, prj_archive *ma, const char *mission)
          * all greys: on BET1 it leans green) */
         float k[3] = {0, 0, 0};
         const texture *gt = g_scene.slot[0x4a];
-        if (have_luma && g_dos_shadow_row > 0 && g_dos_shadow_row < 16 && gt && gt->rgba) {
+        /* none with a fog LUMA table: MW2.EXE 0x509e8 skips a unit's shadow (0x50a2f / 0x50a57) while 0xb3f6c - the
+         * table's first byte, 0x49d06 - is not 0 (FOG 1, STANDARD 0). DOSBox WOU1 / MED1 / MCC1: no shadow; BET1 has one */
+        if (have_luma && !luma[0] && g_dos_shadow_row > 0 && g_dos_shadow_row < 16 && gt && gt->rgba) {
             double a[3] = {0, 0, 0}, b[3] = {0, 0, 0};
             int i, c, n = gt->w * gt->h;
             for (i = 0; i < n; i++) {

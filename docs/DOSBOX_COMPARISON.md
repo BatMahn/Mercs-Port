@@ -216,12 +216,17 @@ differently.
 3. **Unit shadows on fog-table missions.** Where SKYGND.PAR gives `shadowtable=15` (WOU1, MED1, MCC1) DOS draws no
    visible shadow under the mech; the port draws one. The FOG LUMA row 15 maps the ground four levels darker, so
    the table alone does not explain it; 0x507b4 takes another path when 0xb3f70 is 0 (not traced).
-4. **MCC3's start height.** The port stands the player on a structure (HUD Alt 7.24 m, feet 47.2 m); DOS shows Alt
-   0.00 m and its external camera sits inside that same mass, so DOS starts the mech at ground level inside it.
-5. **Early fights.** SOL5: the port's player is destroyed at 9.8 s by one 10-point PPC hit to the centre torso with
-   51 armour points left; in DOSBox the player is still up at mission ~13 s. SPA3: port player destroyed at 8.7 s
-   (two SRM volleys); DOSBox's is still up at mission ~25 s, and an enemy blows up next to it at ~12 s. DOU1 agrees (both
-   destroyed at 11-13 s).
+4. **MCC3's start height.** The data puts the start (MCC3ST01, y 4800) just above the flat top of a terrain piece
+   (MCC3ARE1's TL1MCCHB at x -10000: its top polygons p46-p51 at 4721 span local x -11362..14306, so the start at
+   local x 6600 is over p47). The port lands on that top at 47.21 m. DOSBox shows Alt 0.00 m from the first HUD frame
+   and its external camera sits inside the piece, so DOS's fall from the start goes through it to 0; walking on,
+   DOS reads 11.43 m and 0.00 m again, so it does climb such pieces. Why the start's fall ignores it is not traced
+   (DOS's collision for type 0x800 pieces).
+5. **Early fights (resolved: not a bug).** The test mech (the harness's PLY00MER, used on both sides) has 5 armour
+   points per location and 15 on the head. SOL5's fatal shot was 10 points into the centre torso: 5 broke the armour
+   and the rest reached the structure, where the critical-hit rolls (rand(5) passes, 20 % each, 1 % of them destroying
+   the location: 0x30482..) can end the mech at once. The rolls follow the RNG, so one run in each engine dies early
+   and another does not; DOU1 shows both sides dying at 11-13 s.
 6. **SOL1's hangar.** DOS shows red beam lines and a brighter red far hall at mission 10 s; the port shows few lines
    and a darker hall.
 7. **LUT1's skyline.** A building face behind the player is lit white in DOS and dark in the port.

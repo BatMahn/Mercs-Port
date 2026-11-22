@@ -26,10 +26,10 @@ What is still open in the Mercenaries port, in plain language.
   - **From the full campaign sweep (v1.2.29, docs/DOSBOX_COMPARISON.md section 5), not yet fixed:**
     - A mission ended by its objectives: DOS (MW2.EXE 0x57918) appears to leave 2 s after "Exiting Mission Area..."
       there too; the port still waits for a key. Not yet checked in DOSBox.
-    - BET4's rescue helicopter flies over the start from the first second in the port; DOS shows none early on.
-    - No unit shadows in DOS on WOU1, MED1 and MCC1 (fog-table missions); the port draws them.
-    - MCC3: the port starts the player on top of a structure, 7 m up; DOS starts it at ground level.
-    - SOL5 and SPA3: the port's player can be destroyed within two seconds of start-up; in DOS it lasts much longer.
+    - BET4's rescue helicopter shows as a dark shape over the night city; in DOSBox it is not visible (DOS flies it too,
+      MW2.EXE 0x22d3a, so this is the night lighting of the model, not traced).
+    - MCC3: the port lands the player on a terrain piece's flat top, 47 m up, where the start is placed; DOS's start
+      fall goes through that piece to the ground (not yet traced).
     - SOL1's hangar lighting and beams, a lit building on LUT1's skyline and a bright cockpit moment on OUT4 differ.
   - **Office tower window bands** (Instant Action) still shimmer on one side of the building for a tester; not yet
     reproduced here (the tower renders unlit in the test captures).
