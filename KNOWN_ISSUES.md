@@ -24,16 +24,17 @@ What is still open in the Mercenaries port, in plain language.
     with the port's overlapping shadow polygons it came out no closer to DOSBox, so it was left out.
 
   - **From the full campaign sweep (v1.2.29, docs/DOSBOX_COMPARISON.md section 5), not yet fixed:**
-    - A mission ended by its objectives: DOS (MW2.EXE 0x57918) appears to leave 2 s after "Exiting Mission Area..."
-      there too; the port still waits for a key. Not yet checked in DOSBox.
-    - BET4's rescue helicopter shows as a dark shape over the night city; in DOSBox it is not visible (DOS flies it too,
-      MW2.EXE 0x22d3a, so this is the night lighting of the model, not traced).
+    - Missions ended by their objectives now leave as traced in MW2.EXE (v1.2.34); still to be watched side by side in
+      DOSBox (TRA1).
     - MCC3: the port lands the player on a terrain piece's flat top, 47 m up, where the start is placed; DOS's start
       fall goes through that piece to the ground (not yet traced).
-    - SOL1's hangar lighting and beams, a lit building on LUT1's skyline and a bright cockpit moment on OUT4 differ.
+    - SOL1: its scenery lasers (S_1LASER, about 0.35 m thick) draw as broken lines where DOS's span walk keeps every
+      row at least a pixel; the far hall is brighter in DOS (its PLNT LITE record not yet decoded). A lit building on
+      LUT1's skyline and a bright cockpit moment on OUT4 also differ.
   - **Office tower window bands** (Instant Action) still shimmer on one side of the building for a tester; not yet
     reproduced here (the tower renders unlit in the test captures).
-  - **Satellite map (F3):** BET1's road shows as a black strip; DOSBox shows the ground there.
+  - **Satellite map (F3):** BET1's ground mesh draws one shade lighter than DOSBox (0xd1 against 0xd0), so its road
+    cut shows as a faint band.
   - **REC1/REC2's external camera**, perched on the rocks: DOS shows dark, shaded rock faces beside the camera where the
     port shows the lit face nearest it. The rest of the view lines up, so the camera is in the same place. Neither the
     fog nor DOS's near plane (v1.0.2) is the cause; DOS draws without a depth buffer, in its sorted polygon order, and

@@ -2268,22 +2268,22 @@ void msim_step(msim *s, int32_t dt_ms)
                 s->end_at = s->now + 0x16c * 1000 / 182;
                 if (s->on_message) s->on_message(s->message_user, "Exiting Mission Area...", -0x1536);
             }
+            /* The player's star resolved, mech still up: MW2.EXE 0x1df08 (the star loop) sets 0xb5e48 on a tick after the
+             * player's star (0xa8f44, the alliance-0 table, 0x6274e) has its result, once the radio queue is empty
+             * (0xb5ba4, the playing line's list head, 0x52426 / 0x52463) and no launch switch holds the end (0xb5e34:
+             * switches D / M / X and network play, 0x54182 / 0x54234 / 0x54298); the manager 0x57918 then puts the same
+             * "Exiting Mission Area..." up (0x579b1) and leaves 0x16c ticks on (0xb5e1c -> 0xa7e60). The outcome line is
+             * queued here (below), so the wait for an empty queue runs in the steps after this one */
+            else if (s->dos_end) s->dos_exit_wait = 1;
             else if (s->on_message) s->on_message(s->message_user, "Press CTRL-Q to exit...", -0x1536);
         }
     } else if (!s->over && s->dos_end && s->dos_exiting) {
         if (s->now >= s->end_at) { s->over = 1; s->ended_at = s->now; }
-    } else if (!s->over && s->dos_end) {
-        /* DOS 0x16fbe..0x1703b: with no radio line playing (DAT_00097ddc), past 3 s the prompt (0x11020: 0x1554 ticks,
-         * priority 100) once; past 0x14 s the loop's end (DAT_00095864 += 2) */
-        int el = (int)(s->now / 1000) - (int)s->dos_resolved_s;
+    } else if (!s->over && s->dos_end && s->dos_exit_wait) {
         if (!s->radio_busy) {
-            if (!s->dos_prompted && el > 3) {
-                s->dos_prompted = 1;
-                if (s->on_message) s->on_message(s->message_user, "Press any key to exit...", -0x1554);
-            } else if (el > 0x14) {
-                s->over = 1;
-                s->ended_at = s->now;
-            }
+            s->dos_exiting = 1;
+            s->end_at = s->now + 0x16c * 1000 / 182;
+            if (s->on_message) s->on_message(s->message_user, "Exiting Mission Area...", -0x1536);
         }
     } else if (!s->over && s->now >= s->end_at) {
         s->over = 1;

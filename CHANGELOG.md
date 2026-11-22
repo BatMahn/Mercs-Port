@@ -1,5 +1,21 @@
 # Mercenaries development history
 
+## v1.2.34: missions end as DOS ends them; lit type-2 models; the satellite map's background — 2026-11-21
+
+- **A mission ended by its objectives leaves as DOS does.** Traced in MW2.EXE: the star loop (0x1df08) flags the end
+  once the player's star (0xa8f44, the alliance-0 table) has its result, the radio queue is empty (0xb5ba4) and no
+  launch switch holds it (0xb5e34); the manager (0x57918) then shows "Exiting Mission Area..." and leaves 0x16c ticks
+  (2 s) later. The port had the original MechWarrior 2's "Press any key to exit..." and a 20 s wait. (v1.2.32 had also
+  put the 3D editions' "Press CTRL-Q to exit..." on a DOS-look mission that ended with the mech alive: gone.)
+- **Colour type 2 polygons are lit and textured,** as 0x5000-0x7000 are (the colour function's 0x4682d branch, level
+  << 8); without their bitmap they take the flat lit ramp (DOS's 0x1000 fallback). The port had drawn them as an
+  unlit palette entry: BET4's night helicopter (S_1AHUEY, 0x2447) showed as a dark shape where DOS fogs it to black
+  against the black sky. BET4's cockpit frame against DOSBox 1.04 -> 0.97 mean; eight other compared scenes unchanged
+  or closer.
+- **The satellite map's background is the DOS ground grey.** DOS fills the window with palette 0xd0 (0xdf with a fog
+  LUMA table, 0x11970 -> 0x6aa20) before the map's polygons; the port cleared it to black, so gaps in a ground mesh -
+  BET1's road cut through TL1PLAIN - drew as a black strip.
+
 ## v1.2.33: no unit shadows on fog-table missions, as DOS — 2026-11-21
 
 - **Shadows follow the mission's LUMA table.** Traced in MW2.EXE: as a mission loads, 0x49d06 keeps the LUMA table's

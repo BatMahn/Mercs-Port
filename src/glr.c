@@ -789,7 +789,7 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
                         else if (bs == 0x3f) bs += c;   /* (the insignia: the star's own value, 0x62f8b) */
                     }
                     batch = GLR_SLOTS;
-                    if ((ty >= 5 || ty == 3) && !part->flat && slots && slots[bs]) batch = bs;
+                    if ((ty >= 5 || ty == 3 || ty == 2) && !part->flat && slots && slots[bs]) batch = bs;   /* (0x2000 textured as 0x5000-0x7000: 0x4682d) */
                 }
                 if (part->shadow) batch = GLR_SLOTS + 1;   /* a shadow: drawn last, translucent */
                 /* the 3D editions' type-0 polygons (colour word top nibble 0: the laser bolts 0x0070 / 0x00f0 / 0x00b0):
@@ -887,9 +887,12 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
                 }
                 if (r->dos && !model->extended) {   /* the DOS colour word (MW2.EXE 0x38ae3): (kind, base index, intensity) */
                     int ty = (q->color >> 12) & 7;
-                    if ((ty >= 5 || ty == 3) && batch < GLR_SLOTS) { poly_col[0] = 2; poly_col[1] = (float)(((q->color >> 8) & 0xf) * 16); poly_col[2] = 255; }
-                    else if (ty == 0 || ty == 2 || ty == 3) { poly_col[0] = 0; poly_col[1] = (float)((q->color >> 4) & 0xff); poly_col[2] = 0; }
-                    else { poly_col[0] = ty == 4 ? 3.0f : 1.0f; poly_col[1] = (float)(((q->color >> 8) & 0xf) * 16); poly_col[2] = ty >= 5 ? 255.0f : (float)(q->color & 0xff); }
+                    /* type 2 (0x2xxx) is lit and textured like 5-7 (0x4682d, its level << 8 before 0x46a7b); without its
+                     * bitmap it is the flat lit ramp, as DOS's 0x1000 fallback. BET4's night helicopter (S_1AHUEY, 0x2447)
+                     * drawn unlit as entry 0x44 showed against DOSBox's black (its light fogged to level 0) */
+                    if ((ty >= 5 || ty == 3 || ty == 2) && batch < GLR_SLOTS) { poly_col[0] = 2; poly_col[1] = (float)(((q->color >> 8) & 0xf) * 16); poly_col[2] = 255; }
+                    else if (ty == 0 || ty == 3) { poly_col[0] = 0; poly_col[1] = (float)((q->color >> 4) & 0xff); poly_col[2] = 0; }
+                    else { poly_col[0] = ty == 4 ? 3.0f : 1.0f; poly_col[1] = (float)(((q->color >> 8) & 0xf) * 16); poly_col[2] = ty >= 5 || ty == 2 ? 255.0f : (float)(q->color & 0xff); }
                 }
                 {   /* a polygon lying in the ground plane (a building's shadow or footing at y 0) flickered against the
                      * ground: raised 3 cm */
@@ -2315,6 +2318,7 @@ static void draw_view(glr *r, const glr_view *v, int x0, int y0, int w, int h)
     {
         float clear[4] = {0, 0, 0, 1};
         if (!v->wire && !v->solo && !v->satellite) memcpy(clear, v->sky_color, 3 * sizeof(float));
+        else if (v->satellite && !v->wire) memcpy(clear, v->map_clear, 3 * sizeof(float));
         rb_clear(clear, 1, 1);
     }
     rb_depth_test(1); /* The backend leaves face culling off: authored windings vary. */

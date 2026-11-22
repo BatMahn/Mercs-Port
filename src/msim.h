@@ -225,7 +225,7 @@ typedef struct {
     /* the DOS end (MW2.EXE 0x16e80, set by the front end for the DOS look): the player's star resolved, the radio idle -
      * "Press any key to exit..." once more than 3 s (whole seconds, clock / 0xb6) have passed, any key then ends
      * (0x45d80), and the mission ends by itself past 0x14 s; else the 3D editions' CTRL-Q prompt and 0x71c ticks */
-    int          dos_end, dos_prompted, dos_exiting;   /* dos_exiting: the player's mech gone - MW2.EXE 0x57918's quick exit */
+    int          dos_end, dos_prompted, dos_exiting, dos_exit_wait;   /* dos_exit_wait: the star resolved, waiting for the radio queue (0x1df08) */   /* dos_exiting: the player's mech gone - MW2.EXE 0x57918's quick exit */
     int32_t      dos_resolved_s;
     int         *seen_node;      /* per actor: the star's node last applied (0x10014520 runs on a change) */         /* per actor: whom it attacks (state 3), -1 the player, -2 none */    /* PLNT payload +0x38 == 0: explosions may take the scene light (0x1003de48 -> DAT_1025a6a8) */
     float       *centre_h;       /* per actor: centre above the feet, cm (MGEO int[0]: the climbable rise) */

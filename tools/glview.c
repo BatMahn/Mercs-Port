@@ -8341,6 +8341,9 @@ int main(int argc, char **argv)
             v.eye[1] = g_sim.player_unit.y + 500000.0f;
             v.look_yaw = 0.0f; v.look_pitch = -90.0f;
             v.ortho_w = range * (float)w / ((float)h * 4.0f / 3.0f);   /* the 4:3 area's width = the range */
+            /* DOS 0x11970 fills the window with [0xb3ea0] before the map polygons (0xd0, or 0xdf when LUMA[0] != 0, mw2.c
+             * ~45805), so gaps in the ground mesh (BET1's road cut in TL1PLAIN) show that grey, not black */
+            { int c; for (c = 0; c < 3; c++) v.map_clear[c] = g_scene.palette[g_dos_ground_index][c] / 255.0f; }
         }
         if (getenv("MERCS_VPORT")) { /* tests: retained historical 1 rear,2 down,3 weapon. */
             int mode=atoi(getenv("MERCS_VPORT"));
