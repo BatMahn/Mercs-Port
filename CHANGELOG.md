@@ -1,5 +1,23 @@
 # Mercenaries development history
 
+## v1.2.35: the DOS exit without a fade; solid thin flat polygons; the satellite ground shade — 2026-11-21
+
+- **"Exiting Mission Area..." leaves without dimming the picture.** Watched side by side in DOSBox (LUT5, star lost
+  leaving the area with the mech up, Sound Blaster on): the outcome voice, then "Exiting Mission Area..." once the radio
+  is clear, then black 2.0 s later and the C:\> prompt; the scene keeps full brightness to the last frame. The port's
+  timings matched (within 0.3 s) but it ran its 1.3 s exit fade first; that fade now stays only for ejection and the
+  original MechWarrior 2 path.
+- **Thin flat polygons keep at least a pixel per row,** as DOS's flat (0x6da0c) and flat-lit (0x6e703) fills do: every
+  row from the top corner to the bottom, each from the left edge's pixel to the right's, inclusive. SOL1's wall lasers
+  (S_1LASER, 0.35 m thick) are solid 1-pixel lines instead of dashes, and the vertical one shows. The DOS look grows
+  them and trims them to that walk, as it already did for Gouraud polygons.
+- **The satellite map's ground is shade 0.** The map shade (0x129bc) divides by 0xa76b8, which only 0x1147c sets (with
+  the -1000 margin), and a mission start does not reach it before the map draws; so the map shades from the PLNT low
+  over the data default 6400. BET1's ground is palette 0xd0 as in DOSBox (93.9 % of the map's pixels equal, from
+  12.7 %). INFERRED from the DOSBox frame (ASSUMPTIONS.md).
+- Traced, no change: SOL1PLT1's LITE record is read as DOS reads it (light vector, ambient, dir flag, fog distance;
+  +28 unused), so SOL1's brighter far hall comes from somewhere else.
+
 ## v1.2.34: missions end as DOS ends them; lit type-2 models; the satellite map's background — 2026-11-21
 
 - **A mission ended by its objectives leaves as DOS does.** Traced in MW2.EXE: the star loop (0x1df08) flags the end

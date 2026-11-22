@@ -24,17 +24,15 @@ What is still open in the Mercenaries port, in plain language.
     with the port's overlapping shadow polygons it came out no closer to DOSBox, so it was left out.
 
   - **From the full campaign sweep (v1.2.29, docs/DOSBOX_COMPARISON.md section 5), not yet fixed:**
-    - Missions ended by their objectives now leave as traced in MW2.EXE (v1.2.34); still to be watched side by side in
-      DOSBox (TRA1).
     - MCC3: the port lands the player on a terrain piece's flat top, 47 m up, where the start is placed; DOS's start
       fall goes through that piece to the ground (not yet traced).
-    - SOL1: its scenery lasers (S_1LASER, about 0.35 m thick) draw as broken lines where DOS's span walk keeps every
-      row at least a pixel; the far hall is brighter in DOS (its PLNT LITE record not yet decoded). A lit building on
+    - SOL1: the far hall's back wall is bright red in DOS and dark in the port; its LITE record reads as DOS's, so the
+      cause is elsewhere (fog or texture shade levels). A lit building on
       LUT1's skyline and a bright cockpit moment on OUT4 also differ.
   - **Office tower window bands** (Instant Action) still shimmer on one side of the building for a tester; not yet
     reproduced here (the tower renders unlit in the test captures).
-  - **Satellite map (F3):** BET1's ground mesh draws one shade lighter than DOSBox (0xd1 against 0xd0), so its road
-    cut shows as a faint band.
+  - **Satellite map (F3):** DOS also draws grey shapes from the 0xf0 row (kind-0x3000 materials) on BET1's map; the
+    port shows plain ground there.
   - **REC1/REC2's external camera**, perched on the rocks: DOS shows dark, shaded rock faces beside the camera where the
     port shows the lit face nearest it. The rest of the view lines up, so the camera is in the same place. Neither the
     fog nor DOS's near plane (v1.0.2) is the cause; DOS draws without a depth buffer, in its sorted polygon order, and

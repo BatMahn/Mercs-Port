@@ -215,7 +215,7 @@ static int       g_pit_first = -1;   /* this frame: index of the first cockpit-p
 static int       g_aux_cockpit_first = -1, g_aux_player_first = -1, g_aux_player_end = -1;
 static mech3d    g_frame_layer;     /* this frame's actor layer, kept for the viewport pass */
 static int       g_sat_i;   /* Mercs satellite descriptor4:100000..12500cm full width */
-static int32_t   g_map_low=-1000,g_map_high=6400;
+static int32_t   g_map_low=0,g_map_high=6400;  /* DOS data a76b0=0, a76b8=6400 */
 static int       g_radar_big, g_satmap;   /* F2 NEXT_RADAR_MODE (small / large centred), F3 RADAR_MAP_TOGGLE */
 static unsigned char g_nav_seen[256];   /* nav points reached (engine nav flag 0x20: RRTGTNP on the radar, autopilot skips them) */
 static int       g_radar_mode = 1;        /* engine 0x10003fb0: 1 small -> 2 large -> 0 off -> 1 */
@@ -4299,7 +4299,7 @@ static void load_view_far(prj_archive *ma, const char *scene)
     bwd_mission bm;
     int k, c;
     g_view_far = 0;
-    g_map_low=-1000;g_map_high=6400;
+    g_map_low=0;g_map_high=6400;
     if (bwd_mission_load(ma, scene, &bm) != 0) return;
     for (k = 0; k < bm.record_count; k++)
         for (c = 0; c < bm.records[k].chunk_count; c++) {
@@ -4311,7 +4311,14 @@ static void load_view_far(prj_archive *ma, const char *scene)
                 const unsigned char *lo=ch->data+40,*hi=ch->data+36;
                 int32_t low=(int32_t)((uint32_t)lo[0]|(uint32_t)lo[1]<<8|(uint32_t)lo[2]<<16|(uint32_t)lo[3]<<24);
                 int32_t high=(int32_t)((uint32_t)hi[0]|(uint32_t)hi[1]<<8|(uint32_t)hi[2]<<16|(uint32_t)hi[3]<<24);
-                if(low||high) {g_map_low=low>-2147482648?low-1000:INT32_MIN;g_map_high=high;}
+                /* DOS613a8 stores PLNT low/high in a76b0/a76b4, but the shade
+                 * divisor a76b8 (0x129bc) is only recomputed, with the -1000
+                 * margin on a76b0, by 0x1147c (via 0x400cc/0x30790), which a
+                 * single-player mission start does not reach before the map is
+                 * drawn. INFERRED from the DOS BET1 satellite frame: ground at
+                 * y 0..4 is palette 0xd0 (shade 0); low-1000 would give shade 1.
+                 * So the map shades with low=PLNT low, range=6400 (data default). */
+                if(low||high) {g_map_low=low;g_map_high=(int32_t)((int64_t)low+6400>INT32_MAX?INT32_MAX:(int64_t)low+6400);}
             }
         }
     bwd_mission_free(&bm);
@@ -8049,8 +8056,12 @@ int main(int argc, char **argv)
             g_mm_world_dirty = 0;
         }
         if (g_mm_quit) { write_results(); running = 0; exit_code = 42; }   /* Flee to Windows: the shell leaves too */
-        if (g_sim_ok && g_world && g_sim.over && g_tex_kind == 3 && g_exit_fade_t0 < 0 && !getenv("MERCS_NO_EXIT_FADE"))
-            g_exit_fade_t0 = g_sim.now;   /* DOS: the exit fade first (exit_fade_level) */
+        /* DOS: the exit fade first (exit_fade_level). Not on Mercenaries DOS's "Exiting Mission Area..." leave (manager
+         * 0x57918 -> 0xa7e60): DOSBox LUT5SCN1 (star lost leaving the area, mech up) keeps the full picture until the
+         * screen goes black 2.0 s after the message, then C:\> - no dimming in 0.2 s shots, with or without sound */
+        if (g_sim_ok && g_world && g_sim.over && g_tex_kind == 3 && g_exit_fade_t0 < 0 && !getenv("MERCS_NO_EXIT_FADE")
+            && !(g_sim.dos_end && g_sim.dos_exiting && !g_sim.player_unit.ejected))
+            g_exit_fade_t0 = g_sim.now;
         if (g_sim_ok && g_world && g_sim.over && exit_fade_level(NULL) >= 1.0f) {   /* the mission has ended: results for the shell, then leave */
             test_dump("over");   /* TEST hook */
             write_results();

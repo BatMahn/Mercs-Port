@@ -51,7 +51,7 @@ typedef struct {
     float target[3], distance_abs;
     float ortho_w;           /* > 0: an orthographic view this wide (cm) - the satellite map */
     int satellite;           /* original map materials/filter; separate from a generic orthographic camera */
-    int32_t map_low, map_high; /* PLNT altitude range; low already includes the original-1000cm margin */
+    int32_t map_low, map_high; /* map shade range: low = DOS a76b0, high-low = DOS a76b8 (0x129bc) */
     float map_clear[3];      /* satellite background (Mercs DOS 0x11970 -> 0x6aa20(window, [0xb3ea0]): palette 0xd0, 0xdf with a fog LUMA) */
     int   free_cam;          /* 1: first-person camera at eye[] (game coords) looking along look_yaw/look_pitch */
     float eye[3], look_yaw, look_pitch;

@@ -1034,6 +1034,11 @@ static int set_layer(glr *r, int li, const mech3d *m, const uint8_t palette[256]
                         f[11] = batch >= GLR_SLOTS && !part->tint && !(r->dos && !model->extended) ? (float)((ti_flat && tk4 ? v->a & 0xff : pidx) + 1) : batch < GLR_SLOTS ? (float)-notex_cls : 0.0f;
                         if (tk2 || tk_missing) f[11] = (float)-k2cls;   /* v_ticm 3: only the original texture-off shade */
                         if (r->dos && !model->extended && tk4 && batch == GLR_SLOTS) f[11] = (float)(pfirst + 1);   /* DOS Gouraud: its fan's first vertex + 1 (dos_gouraud) */
+                        /* DOS flat (0x6da0c) and flat lit (0x6e703, a ramp shade per corner) fills walk the rows from the top corner's
+                         * to the bottom's, both inclusive, and each row from the left edge's pixel to the right's, inclusive (sar 16,
+                         * sub, inc): a row under a pixel wide still gets one (S_1LASER, SOL1's 0.35 m thick wall lasers: DOS's solid
+                         * 1-pixel lines). Its fan start too, so the vertex stage grows it and dos_gouraud trims it to that walk */
+                        if (r->dos && !model->extended && !tk4 && !part->tint && batch == GLR_SLOTS && poly_col[0] < 1.5f) f[11] = (float)(pfirst + 1);
                         if (tik == 1 && batch >= GLR_TI && batch < GLR_TB) f[11] = (float)-k2cls;   /* (textured kinds 5-7: their switch class) */
                         if (batch < GLR_SLOTS && model->extended && !ti) {
                             /* the ATi Rage edition's path per colour type (ATi MW2.DLL dispatcher 0x100281f0 -> 0x1002dcb0, as

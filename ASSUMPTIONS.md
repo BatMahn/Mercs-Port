@@ -126,3 +126,8 @@ input/audio evidence limits remain in [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
 
 - **No unit shadows with a fog LUMA table (v1.2.33).** Traced (MW2.EXE 0x49d06, 0x509e8): not an assumption; noted
   here because the port's other fog-table rules (Gouraud levels) come from the same flag.
+
+- **Satellite map shade range (v1.2.35).** The map shade (0x129bc) uses low = PLNT low and range 6400 (the data
+  default of 0xa76b8), because 0x1147c, the only code that applies the -1000 margin and recomputes the range, is not
+  reached at a single-player mission start before the map draws. INFERRED from DOSBox BET1 (F3): ground at y 0..4 is
+  0xd0; the margin would give 0xd1. Whether the range is 6400 or 7400 shows only on tall objects.

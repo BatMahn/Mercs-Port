@@ -460,7 +460,7 @@ void main() {
      * quarter cm; 1.6 m at 640 x 480) is drawn - DOSBox REC1: the rock beside the perched external camera is cut away,
      * the rock behind it shows. The cockpit has its own (8, 0x10626) */
     if (v_pit == 0 && kind >= 1 && kind <= 3 && u_dos_near > 0 && u_dos_ortho == 0 && -v_viewpos.z * 4.0 <= float(u_dos_near)) discard;
-    if (kind == 0) { o_color = vec4(dos_colour(base), 1.0); return; }
+    if (kind == 0) { if (v_texsel > 0) dos_gouraud(0.0); o_color = vec4(dos_colour(base), 1.0); return; }   /* (the walk's coverage: 0x6da0c) */
     if (kind == 4) {
       if (u_dos_texture_linear != 0) { vec4 t = dos_texture_filtered(v_uv / u_texsize, 15.0, true); if (t.a < 0.5) discard; o_color = vec4(t.rgb, 1.0); return; }
       dos_tex_level(); vec4 tb = dos_tfetch(); if (tb.a < 0.5) discard; o_color = vec4(dos_colour(floor(tb.r * 255.0 + 0.5)), 1.0); return; }
@@ -484,7 +484,7 @@ void main() {
       if (fi > 0.0) light += fi;
     }
     float lev = dos_dnib(clamp(floor(floor(C / 2.0) * light / 1088.0), 0.0, 15.0), v_dnib);
-    if (kind == 1 || (kind == 2 && v_texsel < 0 && ((-v_texsel) & u_notex) != 0)) { o_color = vec4(dos_colour(base + lev), 1.0); return; }
+    if (kind == 1 || (kind == 2 && v_texsel < 0 && ((-v_texsel) & u_notex) != 0)) { if (kind == 1 && v_texsel > 0) dos_gouraud(lev); o_color = vec4(dos_colour(base + lev), 1.0); return; }   /* (0x6e703's coverage) */
     if (kind == 3) { o_color = vec4(dos_gouraud(lev), 1.0); return; }
     /* the vertices' levels across the polygon (0x4f6c8), in screen space. The light pass after the texel spans (MW2.EXE
      * 0x7bd2c, 0x7deb4) steps a 16.16 level from the left edge to the right and reads its integer part (truncated, with

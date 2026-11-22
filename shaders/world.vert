@@ -114,7 +114,7 @@ VertexOut world_vertex(int vertex_id) {
     }
   }
 #if DOS_LOOK
-  if (u_dos != 0 && u_satellite == 0 && int(a_color.r + 0.5) == 3 && a_texsel > 0.5 && e < 256) {   /* (not the satellite map: it paints flat map colours, no walk to trim the growth) */
+  if (u_dos != 0 && u_satellite == 0 && (int(a_color.r + 0.5) == 3 || int(a_color.r + 0.5) <= 1) && a_texsel > 0.5 && e < 256) {   /* (Gouraud and flat, kinds 3, 0 and 1: their fills walk alike - 0x6e703, 0x6da0c; not the satellite map: it paints flat map colours, no walk to trim the growth) */
     int s = int(a_texsel + 0.5) - 1, rel = vertex_id - s, t = rel / 3, cn = rel - 3 * t;
     vec2 Q[18]; int n = 0; bool ok = true; vec2 h = 0.5 * u_vp;
     for (int k = 0; k < 16; k++) {
